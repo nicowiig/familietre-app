@@ -1,35 +1,56 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { LoginPage }       from './pages/LoginPage'
+import { AccessPage }      from './pages/AccessPage'
+import { HomePage }        from './pages/HomePage'
+import { SearchPage }      from './pages/SearchPage'
+import { PersonPage }      from './pages/PersonPage'
+import { TreePage }        from './pages/TreePage'
+import { BranchesPage }    from './pages/BranchesPage'
+import { BranchDetailPage } from './pages/BranchDetailPage'
+import { AdminPage }       from './pages/AdminPage'
+import { ChangelogPage }   from './pages/ChangelogPage'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <BrowserRouter basename="/familietre-app">
+      <AuthProvider>
+        <Routes>
+          {/* Offentlige ruter */}
+          <Route path="/logg-inn" element={<LoginPage />} />
+          <Route path="/tilgang"  element={<AccessPage />} />
+
+          {/* Beskyttede ruter */}
+          <Route path="/" element={
+            <ProtectedRoute><HomePage /></ProtectedRoute>
+          } />
+          <Route path="/søk" element={
+            <ProtectedRoute><SearchPage /></ProtectedRoute>
+          } />
+          <Route path="/person/:id" element={
+            <ProtectedRoute><PersonPage /></ProtectedRoute>
+          } />
+          <Route path="/tre" element={
+            <ProtectedRoute><TreePage /></ProtectedRoute>
+          } />
+          <Route path="/grener" element={
+            <ProtectedRoute><BranchesPage /></ProtectedRoute>
+          } />
+          <Route path="/grener/:id" element={
+            <ProtectedRoute><BranchDetailPage /></ProtectedRoute>
+          } />
+          <Route path="/hva-er-nytt" element={
+            <ProtectedRoute><ChangelogPage /></ProtectedRoute>
+          } />
+          <Route path="/admin" element={
+            <ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>
+          } />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
-
-export default App
