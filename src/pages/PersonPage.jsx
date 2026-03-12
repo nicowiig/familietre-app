@@ -331,6 +331,7 @@ export function PersonPage() {
               families={families}
               spouseNamesMap={spouseNames}
               childBirths={childBirths}
+              roles={[...careerRoles, ...eduRoles]}
             />
             {careerRoles.length > 0 && <KarriereSection roles={careerRoles} deathYear={deathYear} />}
             {eduRoles.length > 0 && <UtdannelseSection roles={eduRoles} facts={facts} />}
@@ -744,6 +745,9 @@ function FactItem({ fact }) {
 // Fakta-typer som håndteres andre steder og ikke skal inn i tidslinjen
 const TIMELINE_SKIP_TYPES = new Set(['RESI', 'MARR'])
 
+// Roller som er utdanning (brukes i timeline-bygging)
+const EDU_ROLE_TYPES = new Set(['education', 'exam'])
+
 // Kildemapping for hendelsestyper
 function getFactSource(normType) {
   if (['BIRT', 'DEAT', 'CHR', 'BAPM', 'BURI'].includes(normType)) return 'Kirkebok'
@@ -771,7 +775,7 @@ const MÅNEDER_LANG = [
   'juli','august','september','oktober','november','desember',
 ]
 
-function buildTimelineEvents(facts, families, spouseNamesMap, childBirths) {
+function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles) {
   const events = []
 
   // Fra person_facts
@@ -841,6 +845,24 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths) {
     })
   })
 
+  // Fra roller: karriere og utdanning (ett innslag per rolle ved startår)
+  ;(roles || []).forEach(r => {
+    if (!r.date_from) return
+    const isEdu = EDU_ROLE_TYPES.has(r.role_type)
+    const label = isEdu
+      ? (r.place || r.value || 'Utdanning')
+      : [r.value, r.place].filter(Boolean).join(' · ')
+    events.push({
+      year: r.date_from,
+      month: null,
+      day: null,
+      label,
+      note: null,
+      place: null,
+      source: r.source || null,
+    })
+  })
+
   return events
 }
 
@@ -853,8 +875,8 @@ function sortYearEvents(events) {
   })
 }
 
-function TimelineSection({ facts, families, spouseNamesMap, childBirths }) {
-  const events = buildTimelineEvents(facts, families, spouseNamesMap, childBirths)
+function TimelineSection({ facts, families, spouseNamesMap, childBirths, roles }) {
+  const events = buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles)
   if (!events.length) return null
 
   // Grupper etter år
@@ -1171,6 +1193,11 @@ function KarriereRoleEntry({ role, compact, deathYear }) {
           {role.reason}
         </div>
       )}
+      {role.source && (
+        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-light)', marginTop: 'var(--space-1)' }}>
+          Kilde: {role.source}
+        </div>
+      )}
     </div>
   )
 }
@@ -1212,7 +1239,7 @@ function UtdannelseSection({ roles, facts }) {
     <div className="profile-section">
       <h2 className="profile-section-header">Utdannelse</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-        {roles.map((r, i) => <UtdannelseCard key={r.id || i} role={r} />)}
+        {[...roles].sort((a, b) => (b.date_from || 0) - (a.date_from || 0)).map((r, i) => <UtdannelseCard key={r.id || i} role={r} />)}
         {educFacts.map(f => <UtdannelseFactCard key={f.id} fact={f} />)}
       </div>
     </div>
@@ -1240,6 +1267,11 @@ function UtdannelseCard({ role }) {
         {role.reason && (
           <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)', fontStyle: 'italic' }}>
             {role.reason}
+          </div>
+        )}
+        {role.source && (
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-light)', marginTop: 'var(--space-1)' }}>
+            Kilde: {role.source}
           </div>
         )}
       </div>
