@@ -381,7 +381,7 @@ async function compressToWebP(file, maxPx = 1200, quality = 0.82) {
 }
 
 function PhotoArea({ photos, primaryPhoto, fullName, sex, personId, onPhotoUploaded }) {
-  const { isAdmin } = useAuth()
+  const { isAdmin, isApproved } = useAuth()
   const [lightbox,    setLightbox]    = useState(false)
   const [uploading,   setUploading]   = useState(false)
   const [uploadError, setUploadError] = useState(null)
@@ -445,7 +445,7 @@ function PhotoArea({ photos, primaryPhoto, fullName, sex, personId, onPhotoUploa
         </div>
       )}
 
-      {isAdmin && (
+      {isApproved && (
         <>
           <input
             ref={fileRef}
