@@ -6,7 +6,7 @@ import { Layout } from '../components/Layout'
 import { PersonCard } from '../components/PersonCard'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { formatLifespan, formatDate, isToday } from '../lib/dates'
-import { getPreferredName, formatName } from '../lib/persons'
+import { formatName } from '../lib/persons'
 
 export function HomePage() {
   const { user, personId } = useAuth()
@@ -344,11 +344,11 @@ function MyAncestors({ personId }) {
 /* ===== Nylig aktivitet ===== */
 function RecentActivity() {
   const [items, setItems] = useState([])
+  const [namesMap, setNamesMap] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      // Hent siste oppdaterte biografier som proxy for aktivitet
       const { data } = await supabase
         .from('person_biography')
         .select('person_id, last_updated, updated_by, is_ai_generated')
@@ -356,8 +356,25 @@ function RecentActivity() {
         .not('last_updated', 'is', null)
         .limit(8)
 
-      if (data) {
+      if (data?.length) {
         setItems(data)
+
+        // Én batched query for alle navn — erstatter N individuelle kall
+        const ids = data.map(d => d.person_id)
+        const { data: nameRows } = await supabase
+          .from('person_names')
+          .select('person_id, given_name, surname, middle_name, is_preferred')
+          .in('person_id', ids)
+
+        if (nameRows) {
+          const map = {}
+          nameRows.forEach(n => {
+            if (!map[n.person_id] || n.is_preferred) map[n.person_id] = n
+          })
+          const formatted = {}
+          Object.entries(map).forEach(([id, n]) => { formatted[id] = formatName(n) })
+          setNamesMap(formatted)
+        }
       }
       setLoading(false)
     }
@@ -379,7 +396,7 @@ function RecentActivity() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {items.map(item => (
-            <ActivityItem key={item.person_id} item={item} />
+            <ActivityItem key={item.person_id} item={item} name={namesMap[item.person_id]} />
           ))}
         </div>
       )}
@@ -387,19 +404,7 @@ function RecentActivity() {
   )
 }
 
-function ActivityItem({ item }) {
-  const [name, setName] = useState(null)
-
-  useEffect(() => {
-    supabase
-      .from('person_names')
-      .select('given_name, surname, middle_name, is_preferred')
-      .eq('person_id', item.person_id)
-      .then(({ data }) => {
-        if (data?.length) setName(formatName(getPreferredName(data)))
-      })
-  }, [item.person_id])
-
+function ActivityItem({ item, name }) {
   const date = item.last_updated
     ? new Date(item.last_updated).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' })
     : ''
