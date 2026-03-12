@@ -1033,19 +1033,74 @@ function expandRoleValue(value) {
   return ROLE_ABBREV[(value || '').toLowerCase().trim()] || value
 }
 
+const MONTH_NAMES_NO = ['jan.', 'feb.', 'mars', 'apr.', 'mai', 'jun.', 'jul.', 'aug.', 'sep.', 'okt.', 'nov.', 'des.']
+
+function parseRoleDate(val) {
+  if (!val) return null
+  const str = String(val)
+  const mm = str.match(/^(\d{4})-(\d{2})$/)
+  if (mm) return { year: parseInt(mm[1]), month: parseInt(mm[2]) }
+  const yy = str.match(/^(\d{4})$/)
+  if (yy) return { year: parseInt(yy[1]), month: null }
+  return null
+}
+
+function formatRoleDate(parsed) {
+  if (!parsed) return null
+  if (parsed.month) return `${MONTH_NAMES_NO[parsed.month - 1]} ${parsed.year}`
+  return String(parsed.year)
+}
+
 function formatRolePeriod(from, to, deathYear) {
   if (!from && !to) return null
-  const toStr = to ? String(to) : (deathYear ? String(deathYear) : 'nå')
-  if (from) return `${from} – ${toStr}`
+  const fromParsed = parseRoleDate(from)
+  const toParsed = parseRoleDate(to)
+  const fromStr = formatRoleDate(fromParsed)
+  let toStr
+  if (toParsed) {
+    toStr = formatRoleDate(toParsed)
+  } else if (deathYear) {
+    toStr = String(deathYear)
+  } else {
+    toStr = 'nå'
+  }
+  if (fromStr) return `${fromStr} – ${toStr}`
   return `frem til ${toStr}`
 }
 
 function calcYears(from, to, deathYear) {
   if (!from) return null
-  const end = to || deathYear || new Date().getFullYear()
-  const diff = end - from
-  if (diff <= 0) return null
-  return diff === 1 ? '1 år' : `${diff} år`
+  const fromParsed = parseRoleDate(from)
+  const toParsed = parseRoleDate(to)
+  if (!fromParsed) return null
+  const now = new Date()
+  const fromMonths = fromParsed.year * 12 + (fromParsed.month || 1)
+  let toMonths
+  if (toParsed) {
+    toMonths = toParsed.year * 12 + (toParsed.month || 12)
+  } else if (deathYear) {
+    toMonths = deathYear * 12 + 12
+  } else {
+    toMonths = now.getFullYear() * 12 + (now.getMonth() + 1)
+  }
+  const totalMonths = toMonths - fromMonths
+  if (totalMonths <= 0) return null
+  const years = Math.floor(totalMonths / 12)
+  const months = totalMonths % 12
+  if (years === 0) return months === 1 ? '1 mnd' : `${months} mnd`
+  if (months === 0) return years === 1 ? '1 år' : `${years} år`
+  return `${years} år ${months} mnd`
+}
+
+// Sortering: nyeste øverst. Støtter 'YYYY', 'YYYY-MM'
+function roleDateSort(a, b) {
+  const toNum = v => {
+    if (!v) return 0
+    const p = parseRoleDate(v)
+    if (!p) return 0
+    return p.year * 100 + (p.month || 0)
+  }
+  return toNum(b.date_from) - toNum(a.date_from)
 }
 
 // Ikon: koffert (karriere)
@@ -1095,7 +1150,7 @@ function KarriereSection({ roles, deathYear }) {
 
   // Sorter roller innen gruppe: nyeste øverst
   groups.forEach(g => {
-    g.roles.sort((a, b) => (b.date_from || 0) - (a.date_from || 0))
+    g.roles.sort(roleDateSort)
   })
 
   return (
@@ -1131,7 +1186,7 @@ function KarriereGroup({ group, deathYear }) {
   })
   const dedupedRoles = Object.values(deduped)
     .map(r => ({ ...r, date_from: r._minFrom, date_to: r._maxTo }))
-    .sort((a, b) => (b.date_from || 0) - (a.date_from || 0))
+    .sort(roleDateSort)
 
   const distinctValues = new Set(dedupedRoles.map(r => (r.value || '').toLowerCase().trim()))
   const hasMultiple = distinctValues.size > 1
@@ -1239,7 +1294,7 @@ function UtdannelseSection({ roles, facts }) {
     <div className="profile-section">
       <h2 className="profile-section-header">Utdannelse</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-        {[...roles].sort((a, b) => (b.date_from || 0) - (a.date_from || 0)).map((r, i) => <UtdannelseCard key={r.id || i} role={r} />)}
+        {[...roles].sort(roleDateSort).map((r, i) => <UtdannelseCard key={r.id || i} role={r} />)}
         {educFacts.map(f => <UtdannelseFactCard key={f.id} fact={f} />)}
       </div>
     </div>
@@ -1337,7 +1392,7 @@ function TitlerSection({ roles }) {
   if (!roles.length) return null
 
   // Sorter: nyeste øverst
-  const sorted = [...roles].sort((a, b) => (b.date_from || 0) - (a.date_from || 0))
+  const sorted = [...roles].sort(roleDateSort)
 
   return (
     <div className="profile-section">
