@@ -238,16 +238,17 @@ function UserLinkCard({ user, onLink }) {
   const [saving,      setSaving]      = useState(false)
   const [expanded,    setExpanded]    = useState(false)
 
-  async function enrichAndSort(nameRows) {
+  async function buildSuggestions(nameRows) {
+    if (!nameRows.length) return []
     const ids = [...new Set(nameRows.map(r => r.person_id))]
-    if (!ids.length) return []
 
-    const [factsRes, rolesRes] = await Promise.all([
+    const [factsRes, rolesRes, personsRes] = await Promise.all([
       supabase.from('person_facts').select('person_id, fact_type, date_year')
         .in('person_id', ids).in('fact_type', ['BIRT', 'DEAT']),
       supabase.from('person_roles').select('person_id, value, role_type, date_from, date_to')
         .in('person_id', ids)
         .in('role_type', ['occupation', 'position', 'OCCU', 'TITL', 'title']),
+      supabase.from('persons').select('person_id, is_living').in('person_id', ids),
     ])
 
     const factsMap = {}
@@ -265,22 +266,32 @@ function UserLinkCard({ user, onLink }) {
       }
     })
 
-    const enriched = nameRows.map(r => ({
+    const livingSet = new Set(
+      (personsRes.data || []).filter(p => p.is_living).map(p => p.person_id)
+    )
+
+    return nameRows.map(r => ({
       ...r,
-      birth: factsMap[r.person_id]?.birth ?? null,
-      death: factsMap[r.person_id]?.death ?? null,
-      title: rolesMap[r.person_id]?.title || null,
+      birth:  factsMap[r.person_id]?.birth  ?? null,
+      death:  factsMap[r.person_id]?.death  ?? null,
+      title:  rolesMap[r.person_id]?.title  || null,
+      isLiving: livingSet.has(r.person_id),
+      hasDeath: factsMap[r.person_id]?.death != null,
     }))
+  }
 
-    // Sorter: ingen dødsdato øverst, deretter nyeste fødselsdato (sannsynlig bruker)
-    enriched.sort((a, b) => {
-      const aAlive = a.death == null ? 0 : 1
-      const bAlive = b.death == null ? 0 : 1
-      if (aAlive !== bAlive) return aAlive - bAlive
-      return (b.birth || 0) - (a.birth || 0)
-    })
-
-    return enriched.slice(0, 6)
+  function scoreAndSort(enriched, scoreMap) {
+    return enriched
+      .map(r => ({
+        ...r,
+        // Navnescore + livsbonus: +2 levende, -2 avdød (dødsdato registrert)
+        finalScore: (scoreMap[r.person_id] || 0) + (r.hasDeath ? -2 : r.isLiving ? 2 : 0),
+      }))
+      .sort((a, b) => {
+        if (b.finalScore !== a.finalScore) return b.finalScore - a.finalScore
+        return (b.birth || 0) - (a.birth || 0)
+      })
+      .slice(0, 6)
   }
 
   async function loadSuggestions() {
@@ -302,19 +313,20 @@ function UserLinkCard({ user, onLink }) {
     const sets = await Promise.all(tokens.map(fetchToken))
     const allRows = sets.flat()
 
-    // Tell navnetreff per person_id, behold topp 20 som kandidater
     const scoreMap = {}
     allRows.forEach(r => {
-      if (!scoreMap[r.person_id]) scoreMap[r.person_id] = { row: r, score: 0 }
-      scoreMap[r.person_id].score++
+      if (!scoreMap[r.person_id]) scoreMap[r.person_id] = 0
+      scoreMap[r.person_id]++
     })
-    const topRows = Object.values(scoreMap)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 20)
-      .map(s => s.row)
 
-    // enrichAndSort henter datoer + yrke og sorterer levende/nyeste øverst, returnerer topp 6
-    setSuggestions(await enrichAndSort(topRows))
+    // Ta de 30 med høyest navnescore som kandidater
+    const uniqueRows = Object.entries(scoreMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 30)
+      .map(([pid]) => allRows.find(r => r.person_id === pid))
+
+    const enriched = await buildSuggestions(uniqueRows)
+    setSuggestions(scoreAndSort(enriched, scoreMap))
     setExpanded(true)
   }
 
@@ -336,8 +348,11 @@ function UserLinkCard({ user, onLink }) {
     const matched = sets[0]
       .filter(r => idSets.every(s => s.has(r.person_id)))
       .filter((r, i, arr) => arr.findIndex(x => x.person_id === r.person_id) === i)
-      .slice(0, 20)
-    setResults(await enrichAndSort(matched))
+      .slice(0, 30)
+    const scoreMap = {}
+    matched.forEach(r => { scoreMap[r.person_id] = tokens.length })
+    const enriched = await buildSuggestions(matched)
+    setResults(scoreAndSort(enriched, scoreMap))
   }
 
   async function doLink(personId) {
