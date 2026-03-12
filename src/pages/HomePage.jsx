@@ -336,7 +336,7 @@ function MyAncestors({ personId }) {
           <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 'var(--text-lg)' }}>
             {name || 'Min profil'}
           </div>
-          <div className="text-sm text-muted">Din profil i slektstreet</div>
+
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
