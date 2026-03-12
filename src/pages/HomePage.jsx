@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Layout } from '../components/Layout'
-import { PersonCard } from '../components/PersonCard'
+import { PersonCard, SilhouetteSvg } from '../components/PersonCard'
 import { formatDate, isToday } from '../lib/dates'
 import { formatName } from '../lib/persons'
 
@@ -291,31 +291,57 @@ function RandomPerson() {
   )
 }
 
-/* ===== Mine aner ===== */
+/* ===== Min profil ===== */
 function MyAncestors({ personId }) {
-  const [info, setInfo] = useState(null)
+  const [name,  setName]  = useState(null)
+  const [photo, setPhoto] = useState(null)
 
   useEffect(() => {
     async function load() {
-      // Enkel telling — aner tilbake 4 generasjoner
-      setInfo({ personId })
+      const [namesRes, photoRes] = await Promise.all([
+        supabase.from('person_names').select('given_name, middle_name, surname')
+          .eq('person_id', personId).eq('is_preferred', true).maybeSingle(),
+        supabase.from('person_photos').select('drive_url')
+          .eq('person_id', personId).eq('is_primary', true).limit(1),
+      ])
+      if (namesRes.data) {
+        const n = namesRes.data
+        setName([n.given_name, n.middle_name, n.surname].filter(Boolean).join(' '))
+      }
+      const photoPath = photoRes.data?.[0]?.drive_url
+      if (photoPath) {
+        const { data: signed } = await supabase.storage
+          .from('person-photos').createSignedUrls([photoPath], 3600)
+        setPhoto(signed?.[0]?.signedUrl || null)
+      }
     }
     load()
   }, [personId])
 
-  if (!info) return null
-
   return (
     <div className="card">
-      <h4 style={{ fontFamily: 'var(--font-heading)', marginBottom: 'var(--space-3)' }}>
-        Min profil
-      </h4>
-      <p className="text-sm text-muted mb-4">
-        Du er koblet til slektstreet som person <code style={{ fontSize: 'var(--text-xs)', background: 'var(--color-bg)', padding: '2px 6px', borderRadius: 3 }}>{personId}</code>.
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+        {photo ? (
+          <img
+            src={photo}
+            alt={name || ''}
+            style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', objectPosition: 'center 20%', flexShrink: 0 }}
+          />
+        ) : (
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <SilhouetteSvg type="unknown" size={32} />
+          </div>
+        )}
+        <div>
+          <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 'var(--text-lg)' }}>
+            {name || 'Min profil'}
+          </div>
+          <div className="text-sm text-muted">Din profil i slektstreet</div>
+        </div>
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
         <Link to={`/person/${personId}`} className="btn btn-secondary btn-sm w-full" style={{ justifyContent: 'center' }}>
-          Min profil
+          Se min profil
         </Link>
         <Link to={`/tre?person=${personId}&mode=aner`} className="btn btn-ghost btn-sm w-full" style={{ justifyContent: 'center' }}>
           Mine aner →
