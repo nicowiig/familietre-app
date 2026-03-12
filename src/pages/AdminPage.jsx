@@ -63,15 +63,32 @@ export function AdminPage() {
 }
 
 function AccessRequestsTab() {
-  const [requests, setRequests] = useState([])
-  const [loading, setLoading]   = useState(true)
+  const [requests,    setRequests]    = useState([])
+  const [personNames, setPersonNames] = useState({})
+  const [loading, setLoading]         = useState(true)
 
   async function load() {
     const { data } = await supabase
       .from('familietre_tilganger')
       .select('*')
       .order('requested_at', { ascending: false })
-    setRequests(data || [])
+    const reqs = data || []
+
+    const personIds = [...new Set(reqs.filter(r => r.person_id).map(r => r.person_id))]
+    const nameMap = {}
+    if (personIds.length) {
+      const { data: names } = await supabase
+        .from('person_names')
+        .select('person_id, given_name, middle_name, surname')
+        .in('person_id', personIds)
+        .eq('is_preferred', true)
+      ;(names || []).forEach(n => {
+        nameMap[n.person_id] = [n.given_name, n.middle_name, n.surname].filter(Boolean).join(' ')
+      })
+    }
+
+    setRequests(reqs)
+    setPersonNames(nameMap)
     setLoading(false)
   }
 
@@ -81,6 +98,14 @@ function AccessRequestsTab() {
     await supabase
       .from('familietre_tilganger')
       .update({ status, handled_at: new Date().toISOString() })
+      .eq('id', id)
+    load()
+  }
+
+  async function handleUnlink(id) {
+    await supabase
+      .from('familietre_tilganger')
+      .update({ person_id: null })
       .eq('id', id)
     load()
   }
@@ -105,6 +130,23 @@ function AccessRequestsTab() {
               <div className="text-xs text-muted mt-2">
                 Sendt: {r.requested_at ? new Date(r.requested_at).toLocaleString('nb-NO') : '—'}
               </div>
+              {r.status === 'approved' && r.person_id && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+                  <Link
+                    to={`/person/${r.person_id}`}
+                    style={{ color: 'var(--color-accent)', fontSize: 'var(--text-sm)' }}
+                  >
+                    → {personNames[r.person_id] || r.person_id}
+                  </Link>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ color: 'var(--color-error)' }}
+                    onClick={() => handleUnlink(r.id)}
+                  >
+                    Koble fra
+                  </button>
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', alignItems: 'flex-end', flexShrink: 0 }}>
               <span className={`badge badge-${r.status}`}>{STATUS_LABELS[r.status] || r.status}</span>
@@ -157,18 +199,20 @@ function UserLinkingTab() {
   useEffect(() => { load() }, [])
 
   async function link(userId, personId) {
-    await supabase
+    const { error } = await supabase
       .from('familietre_tilganger')
       .update({ person_id: personId })
       .eq('user_id', userId)
+    if (error) throw error
     load()
   }
 
   async function unlink(userId) {
-    await supabase
+    const { error } = await supabase
       .from('familietre_tilganger')
       .update({ person_id: null })
       .eq('user_id', userId)
+    if (error) throw error
     load()
   }
 
@@ -237,6 +281,8 @@ function UserLinkCard({ user, onLink }) {
   const [results,     setResults]     = useState([])
   const [saving,      setSaving]      = useState(false)
   const [expanded,    setExpanded]    = useState(false)
+  const [linkError,   setLinkError]   = useState(null)
+  const [linkedName,  setLinkedName]  = useState(null)
 
   async function buildSuggestions(nameRows) {
     if (!nameRows.length) return []
@@ -253,10 +299,11 @@ function UserLinkCard({ user, onLink }) {
 
     const factsMap = {}
     ;(factsRes.data || []).forEach(f => {
-      if (f.fact_type !== 'BIRT' && f.fact_type !== 'DEAT') return
+      const normType = f.fact_type.toUpperCase()
+      if (normType !== 'BIRT' && normType !== 'DEAT') return
       if (!factsMap[f.person_id]) factsMap[f.person_id] = {}
-      if (f.fact_type === 'BIRT') factsMap[f.person_id].birth = f.date_year
-      if (f.fact_type === 'DEAT') factsMap[f.person_id].death = f.date_year
+      if (normType === 'BIRT') factsMap[f.person_id].birth = f.date_year
+      if (normType === 'DEAT') factsMap[f.person_id].death = f.date_year
     })
 
     const rolesMap = {}
@@ -361,9 +408,15 @@ function UserLinkCard({ user, onLink }) {
     setResults(scoreAndSort(enriched, scoreMap))
   }
 
-  async function doLink(personId) {
+  async function doLink(personId, personName) {
     setSaving(true)
-    await onLink(personId)
+    setLinkError(null)
+    try {
+      await onLink(personId)
+      setLinkedName(personName)
+    } catch (err) {
+      setLinkError(err.message || 'Koblingen feilet. Sjekk Supabase RLS-policy.')
+    }
     setSaving(false)
   }
 
@@ -375,6 +428,16 @@ function UserLinkCard({ user, onLink }) {
         <div>
           <div style={{ fontWeight: 600 }}>{user.display_name || user.email}</div>
           <div className="text-sm text-muted">{user.email}</div>
+          {linkedName && (
+            <div className="text-sm" style={{ color: 'var(--color-success, #22c55e)', marginTop: 'var(--space-1)' }}>
+              ✓ Koblet til {linkedName}
+            </div>
+          )}
+          {linkError && (
+            <div className="text-sm" style={{ color: 'var(--color-error)', marginTop: 'var(--space-1)' }}>
+              ⚠ {linkError}
+            </div>
+          )}
         </div>
         <button
           className="btn btn-secondary btn-sm"
@@ -431,7 +494,7 @@ function UserLinkCard({ user, onLink }) {
                     className="btn btn-primary btn-sm"
                     style={{ flexShrink: 0 }}
                     disabled={saving}
-                    onClick={() => doLink(s.person_id)}
+                    onClick={() => doLink(s.person_id, fullName)}
                   >
                     Koble
                   </button>
