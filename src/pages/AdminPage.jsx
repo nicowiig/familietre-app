@@ -244,7 +244,7 @@ function UserLinkCard({ user, onLink }) {
 
     const [factsRes, rolesRes, personsRes] = await Promise.all([
       supabase.from('person_facts').select('person_id, fact_type, date_year')
-        .in('person_id', ids).in('fact_type', ['BIRT', 'DEAT']),
+        .in('person_id', ids),
       supabase.from('person_roles').select('person_id, value, role_type, date_from, date_to')
         .in('person_id', ids)
         .in('role_type', ['occupation', 'position', 'OCCU', 'TITL', 'title']),
@@ -253,6 +253,7 @@ function UserLinkCard({ user, onLink }) {
 
     const factsMap = {}
     ;(factsRes.data || []).forEach(f => {
+      if (f.fact_type !== 'BIRT' && f.fact_type !== 'DEAT') return
       if (!factsMap[f.person_id]) factsMap[f.person_id] = {}
       if (f.fact_type === 'BIRT') factsMap[f.person_id].birth = f.date_year
       if (f.fact_type === 'DEAT') factsMap[f.person_id].death = f.date_year
