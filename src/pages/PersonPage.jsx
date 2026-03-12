@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { Layout } from '../components/Layout'
@@ -222,6 +222,8 @@ export function PersonPage() {
               primaryPhoto={primaryPhoto}
               fullName={fullName}
               sex={person.sex}
+              personId={id}
+              onPhotoUploaded={() => load(id)}
             />
             <Link
               to={`/tre?person=${id}&mode=aner`}
@@ -347,34 +349,121 @@ export function PersonPage() {
 }
 
 /* ===== Bilder ===== */
-function PhotoArea({ photos, primaryPhoto, fullName, sex }) {
-  const [lightbox, setLightbox] = useState(false)
+async function compressToWebP(file, maxPx = 1200, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height))
+      const w = Math.round(img.width  * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      canvas.toBlob(blob => {
+        URL.revokeObjectURL(url)
+        blob ? resolve(blob) : reject(new Error('Komprimering feilet'))
+      }, 'image/webp', quality)
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Bildet kunne ikke leses')) }
+    img.src = url
+  })
+}
 
-  if (!primaryPhoto) {
-    return (
-      <div className="profile-photo-placeholder">
-        <SilhouetteSvg type={getSilhouetteType(sex)} size={80} />
-      </div>
-    )
+function PhotoArea({ photos, primaryPhoto, fullName, sex, personId, onPhotoUploaded }) {
+  const { isAdmin } = useAuth()
+  const [lightbox,    setLightbox]    = useState(false)
+  const [uploading,   setUploading]   = useState(false)
+  const [uploadError, setUploadError] = useState(null)
+  const fileRef = useRef()
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setUploadError(null)
+    try {
+      const blob = await compressToWebP(file)
+      const ext  = 'webp'
+      const path = `${personId}/${Date.now()}.${ext}`
+
+      const { error: uploadErr } = await supabase.storage
+        .from('person-photos')
+        .upload(path, blob, { contentType: 'image/webp', upsert: false })
+      if (uploadErr) throw uploadErr
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('person-photos')
+        .getPublicUrl(path)
+
+      const isPrimary = photos.length === 0
+      const { error: insertErr } = await supabase.from('person_photos').insert({
+        person_id:   personId,
+        drive_url:   publicUrl,
+        is_primary:  isPrimary,
+        photo_order: photos.length,
+      })
+      if (insertErr) throw insertErr
+
+      onPhotoUploaded?.()
+    } catch (err) {
+      setUploadError(err.message || 'Opplasting feilet')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
   }
 
   return (
-    <>
-      <img
-        src={primaryPhoto.drive_url}
-        alt={fullName}
-        className="profile-photo"
-        onClick={() => setLightbox(true)}
-        style={{ cursor: 'zoom-in' }}
-      />
-      {lightbox && (
-        <Lightbox
-          photos={photos}
-          initial={0}
-          onClose={() => setLightbox(false)}
-        />
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)' }}>
+      {primaryPhoto ? (
+        <>
+          <img
+            src={primaryPhoto.drive_url}
+            alt={fullName}
+            className="profile-photo"
+            onClick={() => setLightbox(true)}
+            style={{ cursor: 'zoom-in' }}
+          />
+          {lightbox && (
+            <Lightbox
+              photos={photos}
+              initial={0}
+              onClose={() => setLightbox(false)}
+            />
+          )}
+        </>
+      ) : (
+        <div className="profile-photo-placeholder">
+          <SilhouetteSvg type={getSilhouetteType(sex)} size={80} />
+        </div>
       )}
-    </>
+
+      {isAdmin && (
+        <>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ width: '100%', marginTop: 'var(--space-1)' }}
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? 'Laster opp…' : primaryPhoto ? '+ Nytt bilde' : '+ Last opp bilde'}
+          </button>
+          {uploadError && (
+            <p style={{ color: 'var(--color-danger)', fontSize: 'var(--text-xs)', textAlign: 'center' }}>
+              {uploadError}
+            </p>
+          )}
+        </>
+      )}
+    </div>
   )
 }
 
@@ -492,7 +581,7 @@ function PrimaryOccupation({ roles }) {
 
   return (
     <p style={{ fontSize: 'var(--text-md)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>
-      {occ.value}
+      {expandRoleValue(occ.value)}
       {occ.place && ` · ${occ.place}`}
     </p>
   )
@@ -1369,12 +1458,19 @@ function AddressItem({ addr }) {
   return (
     <div className="timeline-item">
       {period && <div className="timeline-date">{period}</div>}
-      <div className="timeline-title">{typeLabel}</div>
       {display && (
-        <div className="timeline-place">
-          <a href={mapsUrl(display)} target="_blank" rel="noreferrer">{display}</a>
+        <div className="timeline-title">
+          <a
+            href={mapsUrl(display)}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: 'var(--color-accent)', textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}
+          >
+            {display}
+          </a>
         </div>
       )}
+      <div className="timeline-place" style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>{typeLabel}</div>
       {addr.employer && (
         <div className="timeline-place">{addr.employer}{addr.department ? ` · ${addr.department}` : ''}</div>
       )}

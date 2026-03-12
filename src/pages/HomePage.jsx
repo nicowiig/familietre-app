@@ -1,45 +1,25 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Layout } from '../components/Layout'
 import { PersonCard } from '../components/PersonCard'
-import { LoadingSpinner } from '../components/LoadingSpinner'
-import { formatLifespan, formatDate, isToday } from '../lib/dates'
+import { formatDate, isToday } from '../lib/dates'
 import { formatName } from '../lib/persons'
 
 export function HomePage() {
   const { user, personId } = useAuth()
   const navigate = useNavigate()
-  const [search, setSearch] = useState('')
-
-  function handleSearch(e) {
-    e.preventDefault()
-    if (search.trim()) navigate(`/søk?q=${encodeURIComponent(search.trim())}`)
-  }
 
   return (
     <Layout>
-      {/* Hero-søk */}
+      {/* Hero */}
       <div className="home-hero">
         <div className="home-hero-content">
           <h1 className="home-hero-title">Familietre</h1>
           <p className="home-hero-subtitle">
             Utforsk slektens røtter — fra Bergen til verden
           </p>
-          <form className="home-hero-search" onSubmit={handleSearch}>
-            <input
-              type="search"
-              placeholder="Søk etter navn…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              autoFocus
-              aria-label="Søk etter person"
-            />
-            <button type="submit" className="btn btn-primary" style={{ height: 52 }}>
-              Søk
-            </button>
-          </form>
         </div>
       </div>
 

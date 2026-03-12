@@ -5,7 +5,6 @@ import { supabase } from '../supabase'
 
 const NAV_LINKS = [
   { to: '/',          label: 'Hjem' },
-  { to: '/søk',       label: 'Søk' },
   { to: '/grener',    label: 'Slektsgrener' },
   { to: '/tre',       label: 'Familietre' },
   { to: '/hva-er-nytt', label: 'Hva er nytt?' },
@@ -96,7 +95,22 @@ export function Layout({ children }) {
       }).slice(0, 6)
 
       if (unique.length) {
-        setSuggestions(unique)
+        // Hent fødsel og dødsdato for de matchede personene
+        const ids = unique.map(r => r.person_id)
+        const { data: facts } = await supabase
+          .from('person_facts')
+          .select('person_id, fact_type, date_year')
+          .in('person_id', ids)
+          .in('fact_type', ['BIRT', 'DEAT'])
+
+        const factsMap = {}
+        ;(facts || []).forEach(f => {
+          if (!factsMap[f.person_id]) factsMap[f.person_id] = {}
+          if (f.fact_type === 'BIRT') factsMap[f.person_id].birth = f.date_year
+          if (f.fact_type === 'DEAT') factsMap[f.person_id].death = f.date_year
+        })
+
+        setSuggestions(unique.map(r => ({ ...r, ...factsMap[r.person_id] })))
         setSugOpen(true)
       } else {
         setSuggestions([])
@@ -170,26 +184,53 @@ export function Layout({ children }) {
                 zIndex: 200,
                 overflow: 'hidden',
                 marginTop: 4,
+                minWidth: 280,
               }}>
-                {suggestions.map(s => (
-                  <Link
-                    key={s.person_id}
-                    to={`/person/${s.person_id}`}
-                    onClick={() => { setSugOpen(false); setNavSearch('') }}
-                    style={{
-                      display: 'block',
-                      padding: 'var(--space-3) var(--space-4)',
-                      color: 'var(--color-text)',
-                      textDecoration: 'none',
-                      fontSize: 'var(--text-sm)',
-                      borderBottom: '1px solid var(--color-border-light)',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-hover)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    {[s.given_name, s.middle_name, s.surname].filter(Boolean).join(' ')}
-                  </Link>
-                ))}
+                {suggestions.map(s => {
+                  const lifespan = s.birth
+                    ? s.death ? `${s.birth}–${s.death}` : `f. ${s.birth}`
+                    : null
+                  return (
+                    <Link
+                      key={s.person_id}
+                      to={`/person/${s.person_id}`}
+                      onClick={() => { setSugOpen(false); setNavSearch('') }}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: 'var(--space-3) var(--space-4)',
+                        color: 'var(--color-text)',
+                        textDecoration: 'none',
+                        fontSize: 'var(--text-sm)',
+                        borderBottom: '1px solid var(--color-border-light)',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-hover)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <span>{[s.given_name, s.middle_name, s.surname].filter(Boolean).join(' ')}</span>
+                      {lifespan && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', flexShrink: 0, marginLeft: 'var(--space-3)' }}>{lifespan}</span>}
+                    </Link>
+                  )
+                })}
+                <Link
+                  to={`/søk?q=${encodeURIComponent(navSearch.trim())}`}
+                  onClick={() => { setSugOpen(false); setNavSearch('') }}
+                  style={{
+                    display: 'block',
+                    padding: 'var(--space-2) var(--space-4)',
+                    color: 'var(--color-accent)',
+                    textDecoration: 'none',
+                    fontSize: 'var(--text-xs)',
+                    textAlign: 'center',
+                    borderTop: '1px solid var(--color-border)',
+                    background: 'var(--color-bg-elevated)',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                  onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                >
+                  Se alle resultater →
+                </Link>
               </div>
             )}
           </div>
