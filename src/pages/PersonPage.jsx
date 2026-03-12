@@ -474,13 +474,20 @@ const FACT_LABELS = {
   RETI: 'Pensjonering',
   PROB: 'Testament',
   WILL: 'Testament',
+  CONF: 'Konfirmasjon',
+  ILLN: 'Sykdom',
+  OCCU: 'Yrke',
+  TITL: 'Tittel',
 }
+
+// Typer som filtreres ut av tidslinjen
+const SKIP_FACT_TYPES = new Set(['BIRT', 'DEAT', 'CHR', 'BAPM', 'BURI', 'CENS', 'MARR'])
 
 function FactsSection({ facts, birth, death, christening, burial, families }) {
   // Vis viktige fakta i faktarutenett, resten i tidslinje
   const keyFacts = [birth, death, christening, burial].filter(Boolean)
   const otherFacts = facts.filter(f =>
-    !['BIRT', 'DEAT', 'CHR', 'BAPM', 'BURI', 'CENS'].includes(f.fact_type)
+    !SKIP_FACT_TYPES.has(f.fact_type?.toUpperCase())
   )
 
   // Vigsel fra familie
@@ -525,7 +532,7 @@ function FactsSection({ facts, birth, death, christening, burial, families }) {
 }
 
 function FactItem({ fact }) {
-  const label = FACT_LABELS[fact.fact_type] || fact.fact_type
+  const label = FACT_LABELS[fact.fact_type?.toUpperCase()] || fact.fact_type
   const date  = formatDateText(fact.date_text, fact.date_year, fact.date_month, fact.date_day)
   const place = fact.place_city || fact.place_raw
 
@@ -549,7 +556,7 @@ function FactItem({ fact }) {
 }
 
 function TimelineItem({ fact }) {
-  const label = FACT_LABELS[fact.fact_type] || fact.fact_type
+  const label = FACT_LABELS[fact.fact_type?.toUpperCase()] || fact.fact_type
   const date  = formatDateText(fact.date_text, fact.date_year, fact.date_month, fact.date_day) ||
                 (fact.date_year ? String(fact.date_year) : null)
   const place = fact.place_city || fact.place_raw
@@ -573,8 +580,7 @@ function TimelineItem({ fact }) {
 }
 
 /* ===== Roller ===== */
-const ROLE_TYPE_LABELS = {
-  OCCU:               'Yrke',
+const ROLE_TYPE_LABELS = {  OCCU:               'Yrke',
   TITL:               'Tittel',
   occupation:         'Yrke',
   title:              'Tittel',
@@ -589,13 +595,23 @@ const ROLE_TYPE_LABELS = {
   publication:        'Utgivelse',
 }
 
+// Forkortelser som normaliseres til fullform (brukes i dedup-nøkkel og visning)
+const ROLE_ABBREV = {
+  'h.r.adv':      'høyesterettsadvokat',
+  'h.r.adv.':     'høyesterettsadvokat',
+  'hr.adv':       'høyesterettsadvokat',
+  'h.r.advokat':  'høyesterettsadvokat',
+}
+
 function RolesSection({ roles }) {
-  // Grupper roller med samme verdi (case-insensitive) og slå sammen perioder
+  // Grupper roller med samme verdi (etter abbreviation-ekspansjon, case-insensitivt)
   const deduped = Object.values(
     roles.reduce((acc, r) => {
-      const key = (r.value || '').toLowerCase().trim()
+      const rawValue     = r.value || ''
+      const expandedValue = ROLE_ABBREV[rawValue.toLowerCase().trim()] || rawValue
+      const key          = expandedValue.toLowerCase().trim()
       if (!acc[key]) {
-        acc[key] = { ...r, _periods: [] }
+        acc[key] = { ...r, value: expandedValue, _periods: [] }
       }
       const period = [r.date_from, r.date_to].filter(Boolean).join(' – ')
       if (period) acc[key]._periods.push(period)
@@ -615,16 +631,9 @@ function RolesSection({ roles }) {
   )
 }
 
-const ROLE_ABBREV = {
-  'h.r.adv':      'høyesterettsadvokat',
-  'hr.adv':       'høyesterettsadvokat',
-  'h.r.advokat':  'høyesterettsadvokat',
-}
-
 function RoleItem({ role }) {
   const typeLabel    = ROLE_TYPE_LABELS[role.role_type] || role.role_type || 'Rolle'
-  const rawValue     = role.value || ''
-  const displayValue = ROLE_ABBREV[rawValue.toLowerCase().trim()] || rawValue
+  const displayValue = ROLE_ABBREV[role.value?.toLowerCase().trim()] || role.value
   const periods      = role._periods?.length > 0
     ? role._periods.join(', ')
     : [role.date_from, role.date_to].filter(Boolean).join(' – ')

@@ -69,15 +69,34 @@ export function Layout({ children }) {
     }
 
     debounceRef.current = setTimeout(async () => {
-      const { data } = await supabase
-        .from('person_names')
-        .select('person_id, given_name, surname')
-        .or(`given_name.ilike.%${val.trim()}%,surname.ilike.%${val.trim()}%`)
-        .eq('is_preferred', true)
-        .limit(6)
+      const tokens = val.trim().split(/\s+/).filter(Boolean)
+      if (tokens.length === 0) { setSuggestions([]); setSugOpen(false); return }
 
-      if (data?.length) {
-        setSuggestions(data)
+      // For hvert token, søk i alle navnefelt
+      async function fetchToken(token) {
+        const { data } = await supabase
+          .from('person_names')
+          .select('person_id, given_name, surname, middle_name')
+          .or(`given_name.ilike.%${token}%,surname.ilike.%${token}%,middle_name.ilike.%${token}%`)
+          .eq('is_preferred', true)
+          .limit(50)
+        return data || []
+      }
+
+      const tokenResults = await Promise.all(tokens.map(fetchToken))
+      const idSets = tokenResults.map(rows => new Set(rows.map(r => r.person_id)))
+      const matched = tokenResults[0].filter(r => idSets.every(s => s.has(r.person_id)))
+
+      // Dedupliser og begrens til 6
+      const seen = new Set()
+      const unique = matched.filter(r => {
+        if (seen.has(r.person_id)) return false
+        seen.add(r.person_id)
+        return true
+      }).slice(0, 6)
+
+      if (unique.length) {
+        setSuggestions(unique)
         setSugOpen(true)
       } else {
         setSuggestions([])
@@ -168,7 +187,7 @@ export function Layout({ children }) {
                     onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-hover)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    {[s.given_name, s.surname].filter(Boolean).join(' ')}
+                    {[s.given_name, s.middle_name, s.surname].filter(Boolean).join(' ')}
                   </Link>
                 ))}
               </div>

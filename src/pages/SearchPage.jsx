@@ -31,32 +31,46 @@ export function SearchPage() {
     if (!q.trim()) return
     setLoading(true)
     try {
-      // Søk i person_names (dekker alle navneregistreringer inkl. kallenavn)
-      const { data: nameMatches } = await supabase
-        .from('person_names')
-        .select('person_id, given_name, middle_name, surname, nickname, is_preferred, name_type')
-        .or(
-          `given_name.ilike.%${q}%,` +
-          `surname.ilike.%${q}%,` +
-          `middle_name.ilike.%${q}%,` +
-          `nickname.ilike.%${q}%`
-        )
-        .limit(200)
+      // Støtte for flerordsøk: hvert ord må matche minst ett navnefelt (AND mellom ord)
+      const tokens = q.trim().split(/\s+/).filter(Boolean)
 
-      if (!nameMatches?.length) {
+      async function fetchForToken(token) {
+        const { data } = await supabase
+          .from('person_names')
+          .select('person_id, given_name, middle_name, surname, nickname, is_preferred, name_type')
+          .or(
+            `given_name.ilike.%${token}%,` +
+            `surname.ilike.%${token}%,` +
+            `middle_name.ilike.%${token}%,` +
+            `nickname.ilike.%${token}%`
+          )
+          .limit(200)
+        return data || []
+      }
+
+      // Hent treff for hvert token, finn intersection av person_ids
+      const tokenResults = await Promise.all(tokens.map(fetchForToken))
+      const idSets = tokenResults.map(rows => new Set(rows.map(r => r.person_id)))
+      const intersectedIds = [...idSets[0]].filter(id => idSets.every(s => s.has(id)))
+
+      if (!intersectedIds.length) {
         setResults([])
         setTotal(0)
         return
       }
 
-      // Samle unike person-IDer (behold alle navnematcher for vising)
+      // Samle alle navnerader for de matchede personene
+      const allNameRows = tokenResults.flat()
       const idToNames = {}
-      nameMatches.forEach(n => {
+      allNameRows.forEach(n => {
+        if (!intersectedIds.includes(n.person_id)) return
         if (!idToNames[n.person_id]) idToNames[n.person_id] = []
-        idToNames[n.person_id].push(n)
+        // Unngå duplikater (samme rad fra flere token-spørringer)
+        const already = idToNames[n.person_id].some(x => x.person_id === n.person_id && x.given_name === n.given_name && x.surname === n.surname && x.is_preferred === n.is_preferred)
+        if (!already) idToNames[n.person_id].push(n)
       })
 
-      const uniqueIds = Object.keys(idToNames)
+      const uniqueIds = intersectedIds
       setTotal(uniqueIds.length)
 
       const pageIds = uniqueIds.slice(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE)
@@ -67,7 +81,7 @@ export function SearchPage() {
         supabase.from('person_facts')
           .select('person_id, fact_type, date_year, date_month, date_day, date_text, place_city, place_raw')
           .in('person_id', pageIds)
-          .in('fact_type', ['BIRT', 'DEAT']),
+          .in('fact_type', ['BIRT', 'DEAT', 'birth', 'death']),
       ])
 
       const persons  = personsRes.data || []
@@ -80,8 +94,8 @@ export function SearchPage() {
       // Bygg resultatobjekter
       const items = persons.map(p => {
         const personFacts  = factsMap[p.person_id] || []
-        const birth = personFacts.find(f => f.fact_type === 'BIRT')
-        const death = personFacts.find(f => f.fact_type === 'DEAT')
+        const birth = personFacts.find(f => f.fact_type?.toUpperCase() === 'BIRT')
+        const death = personFacts.find(f => f.fact_type?.toUpperCase() === 'DEAT')
         const preferred = getPreferredName(idToNames[p.person_id])
         // Finn alle andre navn som matchet søket (for sub-visning)
         const matchedNames = idToNames[p.person_id] || []

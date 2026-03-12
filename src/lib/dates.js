@@ -71,14 +71,16 @@ export function formatDateShort(year, month, day) {
 }
 
 /**
- * Finn fødselsdato og dødsdato fra en liste med person_facts
+ * Finn fødselsdato og dødsdato fra en liste med person_facts.
+ * Sammenligner case-insensitivt siden DB kan ha blanding av "BIRT" og "birth".
  */
 export function extractBirthDeath(facts) {
   if (!facts) return { birth: null, death: null, christening: null, burial: null }
-  const birth      = facts.find(f => f.fact_type === 'BIRT')
-  const death      = facts.find(f => f.fact_type === 'DEAT')
-  const christening = facts.find(f => f.fact_type === 'CHR' || f.fact_type === 'BAPM')
-  const burial     = facts.find(f => f.fact_type === 'BURI')
+  const t = f => f.fact_type?.toUpperCase()
+  const birth       = facts.find(f => t(f) === 'BIRT')
+  const death       = facts.find(f => t(f) === 'DEAT')
+  const christening = facts.find(f => t(f) === 'CHR' || t(f) === 'BAPM')
+  const burial      = facts.find(f => t(f) === 'BURI')
   return { birth, death, christening, burial }
 }
 
@@ -108,13 +110,26 @@ export function isToday(month, day) {
 }
 
 /**
- * Parser rå datostreng fra families.marr_date ("1934" eller "1934-11-05")
- * til norsk tekst. Returnerer null ved manglende verdi.
+ * Parser rå datostreng fra families.marr_date.
+ * Støtter ISO ("1934-11-05"), GEDCOM ("5 NOV 1927") og årstall ("1934").
  */
+const ENG_MONTHS = {
+  JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6,
+  JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12,
+}
+
 export function parseFamilyDate(dateStr) {
   if (!dateStr) return null
+  // ISO: "1934-11-05"
   const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/)
   if (iso) return formatDate(+iso[1], +iso[2], +iso[3])
+  // GEDCOM: "5 NOV 1927"
+  const ged = dateStr.match(/^(\d{1,2})\s+([A-Z]{3})\s+(\d{4})$/i)
+  if (ged) {
+    const month = ENG_MONTHS[ged[2].toUpperCase()]
+    if (month) return formatDate(+ged[3], month, +ged[1])
+  }
+  // Bare år: "1934"
   if (/^\d{4}$/.test(dateStr)) return dateStr
   return dateStr  // vis rå tekst som fallback
 }
