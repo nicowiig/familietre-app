@@ -182,10 +182,11 @@ export function PersonPage() {
     </Layout>
   )
 
-  const preferred  = getPreferredName(names)
-  const fullName   = formatName(preferred)
-  const birthName  = getBirthName(names)
-  const nickname   = preferred?.nickname || getNickname(names)
+  const preferred   = getPreferredName(names)
+  const fullName    = formatName(preferred)
+  const birthName   = getBirthName(names)
+  const nickname    = preferred?.nickname || getNickname(names)
+  const signedName  = names.find(n => n.name_type === 'signed')
   const { birth, death, christening, burial } = extractBirthDeath(facts)
   const primaryPhoto = photos.find(p => p.is_primary) || photos[0]
 
@@ -238,6 +239,12 @@ export function PersonPage() {
             )}
 
             <h1 className="profile-name">{fullName}</h1>
+
+            {signedName && (
+              <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-1)', fontSize: 'var(--text-sm)' }}>
+                Kjent som: {formatName(signedName)}
+              </p>
+            )}
 
             {nickname && (
               <p style={{ fontStyle: 'italic', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
