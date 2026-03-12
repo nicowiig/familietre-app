@@ -240,6 +240,7 @@ function UserLinkCard({ user, onLink }) {
 
   async function enrichAndSort(nameRows) {
     const ids = [...new Set(nameRows.map(r => r.person_id))]
+    if (!ids.length) return []
 
     const [factsRes, rolesRes] = await Promise.all([
       supabase.from('person_facts').select('person_id, fact_type, date_year')
@@ -256,7 +257,6 @@ function UserLinkCard({ user, onLink }) {
       if (f.fact_type === 'DEAT') factsMap[f.person_id].death = f.date_year
     })
 
-    // Velg primæryrke: lengst fartstid, ikke avdød-periode-yrker
     const rolesMap = {}
     ;(rolesRes.data || []).forEach(r => {
       const duration = (r.date_to || 9999) - (r.date_from || 0)
@@ -267,19 +267,20 @@ function UserLinkCard({ user, onLink }) {
 
     const enriched = nameRows.map(r => ({
       ...r,
-      ...factsMap[r.person_id],
+      birth: factsMap[r.person_id]?.birth ?? null,
+      death: factsMap[r.person_id]?.death ?? null,
       title: rolesMap[r.person_id]?.title || null,
     }))
 
-    // Sorter: ingen dødsdato øverst, deretter synkende fødselsdato
+    // Sorter: ingen dødsdato øverst, deretter nyeste fødselsdato (sannsynlig bruker)
     enriched.sort((a, b) => {
-      const aAlive = !a.death ? 0 : 1
-      const bAlive = !b.death ? 0 : 1
+      const aAlive = a.death == null ? 0 : 1
+      const bAlive = b.death == null ? 0 : 1
       if (aAlive !== bAlive) return aAlive - bAlive
       return (b.birth || 0) - (a.birth || 0)
     })
 
-    return enriched
+    return enriched.slice(0, 6)
   }
 
   async function loadSuggestions() {
@@ -294,13 +295,14 @@ function UserLinkCard({ user, onLink }) {
         .from('person_names')
         .select('person_id, given_name, surname, middle_name')
         .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%`)
-        .eq('is_preferred', true).limit(30)
+        .eq('is_preferred', true).limit(50)
       return data || []
     }
 
     const sets = await Promise.all(tokens.map(fetchToken))
     const allRows = sets.flat()
 
+    // Tell navnetreff per person_id, behold topp 20 som kandidater
     const scoreMap = {}
     allRows.forEach(r => {
       if (!scoreMap[r.person_id]) scoreMap[r.person_id] = { row: r, score: 0 }
@@ -308,9 +310,10 @@ function UserLinkCard({ user, onLink }) {
     })
     const topRows = Object.values(scoreMap)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 8)
+      .slice(0, 20)
       .map(s => s.row)
 
+    // enrichAndSort henter datoer + yrke og sorterer levende/nyeste øverst, returnerer topp 6
     setSuggestions(await enrichAndSort(topRows))
     setExpanded(true)
   }
@@ -325,7 +328,7 @@ function UserLinkCard({ user, onLink }) {
         .from('person_names')
         .select('person_id, given_name, surname, middle_name')
         .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%`)
-        .eq('is_preferred', true).limit(20)
+        .eq('is_preferred', true).limit(30)
       return data || []
     }
     const sets = await Promise.all(tokens.map(ft))
@@ -333,7 +336,7 @@ function UserLinkCard({ user, onLink }) {
     const matched = sets[0]
       .filter(r => idSets.every(s => s.has(r.person_id)))
       .filter((r, i, arr) => arr.findIndex(x => x.person_id === r.person_id) === i)
-      .slice(0, 8)
+      .slice(0, 20)
     setResults(await enrichAndSort(matched))
   }
 
