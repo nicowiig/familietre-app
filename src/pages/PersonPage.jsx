@@ -221,7 +221,10 @@ export function PersonPage() {
               families={families}
             />
             {roles.length > 0 && <RolesSection roles={roles} />}
-            {addresses.length > 0 && <AddressesSection addresses={addresses} />}
+            <AddressesSection
+              addresses={addresses}
+              resiFacts={facts.filter(f => normFact(f.fact_type) === 'RESI')}
+            />
             {sources.length > 0 && <SourcesSection sources={sources} />}
           </div>
 
@@ -456,6 +459,25 @@ function BiographySection({ biography, personId }) {
 }
 
 /* ===== Fakta ===== */
+
+// Normaliserer fulle engelske ord til GEDCOM-koder (DB kan ha blanding)
+const FACT_TYPE_NORMALIZE = {
+  'BIRTH': 'BIRT', 'DEATH': 'DEAT',
+  'BAPTISM': 'BAPM', 'CHRISTENING': 'CHR',
+  'BURIAL': 'BURI', 'MARRIAGE': 'MARR',
+  'DIVORCE': 'DIV', 'CENSUS': 'CENS',
+  'RESIDENCE': 'RESI', 'EMIGRATION': 'EMIG',
+  'IMMIGRATION': 'IMMI', 'CONFIRMATION': 'CONF',
+  'ILLNESS': 'ILLN', 'OCCUPATION': 'OCCU',
+  'TITLE': 'TITL', 'PROBATE': 'PROB',
+}
+
+function normFact(type) {
+  if (!type) return ''
+  const upper = type.toUpperCase()
+  return FACT_TYPE_NORMALIZE[upper] || upper
+}
+
 const FACT_LABELS = {
   BIRT: 'Fødsel',
   DEAT: 'Død',
@@ -480,14 +502,14 @@ const FACT_LABELS = {
   TITL: 'Tittel',
 }
 
-// Typer som filtreres ut av tidslinjen
-const SKIP_FACT_TYPES = new Set(['BIRT', 'DEAT', 'CHR', 'BAPM', 'BURI', 'CENS', 'MARR'])
+// Typer som filtreres ut av tidslinjen (inkl. RESI som vises i Adresser-seksjonen)
+const SKIP_FACT_TYPES = new Set(['BIRT', 'DEAT', 'CHR', 'BAPM', 'BURI', 'CENS', 'MARR', 'RESI'])
 
 function FactsSection({ facts, birth, death, christening, burial, families }) {
   // Vis viktige fakta i faktarutenett, resten i tidslinje
   const keyFacts = [birth, death, christening, burial].filter(Boolean)
   const otherFacts = facts.filter(f =>
-    !SKIP_FACT_TYPES.has(f.fact_type?.toUpperCase())
+    !SKIP_FACT_TYPES.has(normFact(f.fact_type))
   )
 
   // Vigsel fra familie
@@ -532,7 +554,7 @@ function FactsSection({ facts, birth, death, christening, burial, families }) {
 }
 
 function FactItem({ fact }) {
-  const label = FACT_LABELS[fact.fact_type?.toUpperCase()] || fact.fact_type
+  const label = FACT_LABELS[normFact(fact.fact_type)] || fact.fact_type
   const date  = formatDateText(fact.date_text, fact.date_year, fact.date_month, fact.date_day)
   const place = fact.place_city || fact.place_raw
 
@@ -556,7 +578,7 @@ function FactItem({ fact }) {
 }
 
 function TimelineItem({ fact }) {
-  const label = FACT_LABELS[fact.fact_type?.toUpperCase()] || fact.fact_type
+  const label = FACT_LABELS[normFact(fact.fact_type)] || fact.fact_type
   const date  = formatDateText(fact.date_text, fact.date_year, fact.date_month, fact.date_day) ||
                 (fact.date_year ? String(fact.date_year) : null)
   const place = fact.place_city || fact.place_raw
@@ -667,19 +689,31 @@ const ADDR_TYPE_LABELS = {
   RESI:            'Bosted',
 }
 
-function AddressesSection({ addresses }) {
-  const displayAddresses = addresses.filter(a =>
-    a.address_type !== 'census_record' ||
-    a.street_name || a.place_raw
-  )
-  if (!displayAddresses.length) return null
+function AddressesSection({ addresses, resiFacts = [] }) {
+  // Konverter RESI-fakta til adresse-lignende objekter
+  const resiAddresses = resiFacts.map(f => ({
+    _id: `fact-${f.id}`,
+    address_type: 'residence',
+    date_from: f.date_year || null,
+    date_to: null,
+    place_raw: f.place_raw || f.place_city || null,
+    street_name: null,
+    notes: f.notes || null,
+  }))
+
+  // Slå sammen og filtrer census-poster uten innhold
+  const combined = [...addresses, ...resiAddresses]
+    .filter(a => a.address_type !== 'census_record' || a.street_name || a.place_raw)
+    .sort((a, b) => (a.date_from || 0) - (b.date_from || 0))
+
+  if (!combined.length) return null
 
   return (
     <div className="profile-section">
       <h2 className="profile-section-header">Adresser og bosteder</h2>
       <div className="timeline">
-        {displayAddresses.map((a, i) => (
-          <AddressItem key={a.id || i} addr={a} />
+        {combined.map((a, i) => (
+          <AddressItem key={a.id || a._id || i} addr={a} />
         ))}
       </div>
     </div>
@@ -704,6 +738,9 @@ function AddressItem({ addr }) {
       )}
       {addr.employer && (
         <div className="timeline-place">{addr.employer}{addr.department ? ` · ${addr.department}` : ''}</div>
+      )}
+      {addr.notes && (
+        <div className="timeline-place" style={{ fontStyle: 'italic', color: 'var(--color-text-light)' }}>{addr.notes}</div>
       )}
     </div>
   )

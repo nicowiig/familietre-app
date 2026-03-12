@@ -72,15 +72,20 @@ export function formatDateShort(year, month, day) {
 
 /**
  * Finn fødselsdato og dødsdato fra en liste med person_facts.
- * Sammenligner case-insensitivt siden DB kan ha blanding av "BIRT" og "birth".
+ * Håndterer blanding av GEDCOM-koder ("BIRT") og fulle engelske ord ("birth").
  */
+const BIRTH_TYPES       = new Set(['BIRT', 'BIRTH'])
+const DEATH_TYPES       = new Set(['DEAT', 'DEATH'])
+const CHRISTENING_TYPES = new Set(['CHR', 'BAPM', 'BAPTISM', 'CHRISTENING'])
+const BURIAL_TYPES      = new Set(['BURI', 'BURIAL'])
+
 export function extractBirthDeath(facts) {
   if (!facts) return { birth: null, death: null, christening: null, burial: null }
-  const t = f => f.fact_type?.toUpperCase()
-  const birth       = facts.find(f => t(f) === 'BIRT')
-  const death       = facts.find(f => t(f) === 'DEAT')
-  const christening = facts.find(f => t(f) === 'CHR' || t(f) === 'BAPM')
-  const burial      = facts.find(f => t(f) === 'BURI')
+  const up = f => f.fact_type?.toUpperCase() || ''
+  const birth       = facts.find(f => BIRTH_TYPES.has(up(f)))
+  const death       = facts.find(f => DEATH_TYPES.has(up(f)))
+  const christening = facts.find(f => CHRISTENING_TYPES.has(up(f)))
+  const burial      = facts.find(f => BURIAL_TYPES.has(up(f)))
   return { birth, death, christening, burial }
 }
 
