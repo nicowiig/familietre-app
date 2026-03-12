@@ -94,8 +94,8 @@ export function SearchPage() {
       // Bygg resultatobjekter
       const items = persons.map(p => {
         const personFacts  = factsMap[p.person_id] || []
-        const birth = personFacts.find(f => f.fact_type?.toUpperCase() === 'BIRT')
-        const death = personFacts.find(f => f.fact_type?.toUpperCase() === 'DEAT')
+        const birth = personFacts.find(f => ['BIRT', 'birth'].includes(f.fact_type))
+        const death = personFacts.find(f => ['DEAT', 'death'].includes(f.fact_type))
         const preferred = getPreferredName(idToNames[p.person_id])
         // Finn alle andre navn som matchet søket (for sub-visning)
         const matchedNames = idToNames[p.person_id] || []
