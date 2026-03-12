@@ -848,13 +848,15 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles
   // Fra roller: karriere og utdanning (ett innslag per rolle ved startår)
   ;(roles || []).forEach(r => {
     if (!r.date_from) return
+    const parsed = parseRoleDate(r.date_from)
+    if (!parsed?.year) return
     const isEdu = EDU_ROLE_TYPES.has(r.role_type)
     const label = isEdu
       ? (r.place || r.value || 'Utdanning')
       : [r.value, r.place].filter(Boolean).join(' · ')
     events.push({
-      year: r.date_from,
-      month: null,
+      year: parsed.year,
+      month: parsed.month || null,
       day: null,
       label,
       note: null,
