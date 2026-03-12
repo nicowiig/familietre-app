@@ -305,7 +305,7 @@ function UserLinkCard({ user, onLink }) {
       const { data } = await supabase
         .from('person_names')
         .select('person_id, given_name, surname, middle_name')
-        .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%`)
+        .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%,middle_name.ilike.%${t}%`)
         .eq('is_preferred', true).limit(50)
       return data || []
     }
@@ -339,7 +339,7 @@ function UserLinkCard({ user, onLink }) {
       const { data } = await supabase
         .from('person_names')
         .select('person_id, given_name, surname, middle_name')
-        .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%`)
+        .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%,middle_name.ilike.%${t}%`)
         .eq('is_preferred', true).limit(30)
       return data || []
     }
