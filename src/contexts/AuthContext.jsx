@@ -28,12 +28,14 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     // onAuthStateChange leverer INITIAL_SESSION ved oppstart — ingen separat getSession() nødvendig.
-    // Å kalle begge samtidig gir to samtidige lock-forsøk og trigger gotrue-js lock timeout.
+    // VIKTIG: Ikke bruk async/await inne i callbacken — gotrue-js holder auth-locken mens
+    // subscribers kjøres, og await-ing her forhindrer token-refresh fra å ta locken → 5000ms timeout.
+    // fetchAccess kalles uten await og kjører parallelt mens app-en allerede viser innhold.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         setSession(session)
         if (session?.user) {
-          await fetchAccess(session.user.id)
+          fetchAccess(session.user.id)
         } else {
           setAccess(null)
         }
