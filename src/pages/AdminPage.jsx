@@ -232,56 +232,86 @@ function UserLinkingTab() {
 }
 
 function UserLinkCard({ user, onLink }) {
-  const [suggestions, setSuggestions] = useState(null) // null = ikke lastet ennå
+  const [suggestions, setSuggestions] = useState(null)
   const [search,      setSearch]      = useState('')
   const [results,     setResults]     = useState([])
   const [saving,      setSaving]      = useState(false)
   const [expanded,    setExpanded]    = useState(false)
 
+  async function enrichAndSort(nameRows) {
+    const ids = [...new Set(nameRows.map(r => r.person_id))]
+
+    const [factsRes, rolesRes] = await Promise.all([
+      supabase.from('person_facts').select('person_id, fact_type, date_year')
+        .in('person_id', ids).in('fact_type', ['BIRT', 'DEAT']),
+      supabase.from('person_roles').select('person_id, value, role_type, date_from, date_to')
+        .in('person_id', ids)
+        .in('role_type', ['occupation', 'position', 'OCCU', 'TITL', 'title']),
+    ])
+
+    const factsMap = {}
+    ;(factsRes.data || []).forEach(f => {
+      if (!factsMap[f.person_id]) factsMap[f.person_id] = {}
+      if (f.fact_type === 'BIRT') factsMap[f.person_id].birth = f.date_year
+      if (f.fact_type === 'DEAT') factsMap[f.person_id].death = f.date_year
+    })
+
+    // Velg primæryrke: lengst fartstid, ikke avdød-periode-yrker
+    const rolesMap = {}
+    ;(rolesRes.data || []).forEach(r => {
+      const duration = (r.date_to || 9999) - (r.date_from || 0)
+      if (!rolesMap[r.person_id] || duration > rolesMap[r.person_id].duration) {
+        rolesMap[r.person_id] = { title: r.value, duration }
+      }
+    })
+
+    const enriched = nameRows.map(r => ({
+      ...r,
+      ...factsMap[r.person_id],
+      title: rolesMap[r.person_id]?.title || null,
+    }))
+
+    // Sorter: ingen dødsdato øverst, deretter synkende fødselsdato
+    enriched.sort((a, b) => {
+      const aAlive = !a.death ? 0 : 1
+      const bAlive = !b.death ? 0 : 1
+      if (aAlive !== bAlive) return aAlive - bAlive
+      return (b.birth || 0) - (a.birth || 0)
+    })
+
+    return enriched
+  }
+
   async function loadSuggestions() {
     if (suggestions !== null) return
-    // Splitt display_name i tokens og søk i person_names
     const tokens = (user.display_name || user.email.split('@')[0])
-      .split(/[\s._-]+/)
-      .filter(t => t.length > 1)
+      .split(/[\s._-]+/).filter(t => t.length > 1)
 
     if (!tokens.length) { setSuggestions([]); return }
 
-    // Hent kandidater for hvert token, finn overlapp
     async function fetchToken(t) {
       const { data } = await supabase
         .from('person_names')
         .select('person_id, given_name, surname, middle_name')
         .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%`)
-        .eq('is_preferred', true)
-        .limit(30)
+        .eq('is_preferred', true).limit(30)
       return data || []
     }
 
     const sets = await Promise.all(tokens.map(fetchToken))
     const allRows = sets.flat()
 
-    // Tell treff per person_id og behold topp 5
     const scoreMap = {}
-    allRows.forEach(r => { scoreMap[r.person_id] = (scoreMap[r.person_id] || { row: r, score: 0 }); scoreMap[r.person_id].score++ })
-    const scored = Object.values(scoreMap).sort((a, b) => b.score - a.score).slice(0, 5)
-
-    // Hent fødsel/dødsdato for disse
-    const ids = scored.map(s => s.row.person_id)
-    const { data: facts } = await supabase
-      .from('person_facts')
-      .select('person_id, fact_type, date_year')
-      .in('person_id', ids)
-      .in('fact_type', ['BIRT', 'DEAT'])
-
-    const factsMap = {}
-    ;(facts || []).forEach(f => {
-      if (!factsMap[f.person_id]) factsMap[f.person_id] = {}
-      if (f.fact_type === 'BIRT') factsMap[f.person_id].birth = f.date_year
-      if (f.fact_type === 'DEAT') factsMap[f.person_id].death = f.date_year
+    allRows.forEach(r => {
+      if (!scoreMap[r.person_id]) scoreMap[r.person_id] = { row: r, score: 0 }
+      scoreMap[r.person_id].score++
     })
+    const topRows = Object.values(scoreMap)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8)
+      .map(s => s.row)
 
-    setSuggestions(scored.map(s => ({ ...s.row, ...factsMap[s.row.person_id], score: s.score })))
+    setSuggestions(await enrichAndSort(topRows))
     setExpanded(true)
   }
 
@@ -295,20 +325,16 @@ function UserLinkCard({ user, onLink }) {
         .from('person_names')
         .select('person_id, given_name, surname, middle_name')
         .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%`)
-        .eq('is_preferred', true)
-        .limit(20)
+        .eq('is_preferred', true).limit(20)
       return data || []
     }
     const sets = await Promise.all(tokens.map(ft))
     const idSets = sets.map(rows => new Set(rows.map(r => r.person_id)))
-    const matched = sets[0].filter(r => idSets.every(s => s.has(r.person_id)))
-    const ids = [...new Set(matched.map(r => r.person_id))].slice(0, 6)
-    const { data: facts } = await supabase
-      .from('person_facts').select('person_id, fact_type, date_year')
-      .in('person_id', ids).in('fact_type', ['BIRT', 'DEAT'])
-    const fm = {}
-    ;(facts || []).forEach(f => { if (!fm[f.person_id]) fm[f.person_id] = {}; if (f.fact_type === 'BIRT') fm[f.person_id].birth = f.date_year; if (f.fact_type === 'DEAT') fm[f.person_id].death = f.date_year })
-    setResults(matched.slice(0, 6).map(r => ({ ...r, ...fm[r.person_id] })))
+    const matched = sets[0]
+      .filter(r => idSets.every(s => s.has(r.person_id)))
+      .filter((r, i, arr) => arr.findIndex(x => x.person_id === r.person_id) === i)
+      .slice(0, 8)
+    setResults(await enrichAndSort(matched))
   }
 
   async function doLink(personId) {
@@ -331,7 +357,7 @@ function UserLinkCard({ user, onLink }) {
           onClick={loadSuggestions}
           disabled={expanded}
         >
-          {suggestions === null ? 'Finn forslag' : expanded ? 'Forslag lastet' : 'Finn forslag'}
+          {suggestions === null ? 'Finn forslag' : 'Forslag lastet'}
         </button>
       </div>
 
@@ -375,7 +401,7 @@ function UserLinkCard({ user, onLink }) {
                       {fullName}
                     </Link>
                     {lifespan && <span className="text-xs text-muted" style={{ marginLeft: 'var(--space-2)' }}>{lifespan}</span>}
-                    <div className="text-xs text-muted">{s.person_id}</div>
+                    {s.title && <div className="text-xs text-muted">{s.title}</div>}
                   </div>
                   <button
                     className="btn btn-primary btn-sm"
