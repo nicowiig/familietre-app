@@ -385,6 +385,32 @@ function PrimaryOccupation({ roles }) {
 }
 
 /* ===== Biografi ===== */
+const TAG_RE = /<a\s+href="([^"]*)"[^>]*>(.*?)<\/a>/gi
+
+function renderBiographyParagraph(text, paraKey) {
+  const parts = []
+  let lastIndex = 0
+  let match
+  TAG_RE.lastIndex = 0
+  while ((match = TAG_RE.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index))
+    }
+    const href = match[1]
+    const label = match[2]
+    if (href.startsWith('/')) {
+      parts.push(<Link key={match.index} to={href}>{label}</Link>)
+    } else {
+      parts.push(<a key={match.index} href={href} target="_blank" rel="noreferrer">{label}</a>)
+    }
+    lastIndex = match.index + match[0].length
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex))
+  }
+  return <p key={paraKey}>{parts}</p>
+}
+
 function BiographySection({ biography, personId }) {
   const [expanded, setExpanded] = useState(false)
   const text = biography?.biography_text
@@ -398,9 +424,7 @@ function BiographySection({ biography, personId }) {
     <div className="profile-section">
       <h2 className="profile-section-header">Biografi</h2>
       <div className="profile-biography">
-        {displayText.split('\n\n').map((para, i) => (
-          <p key={i}>{para}</p>
-        ))}
+        {displayText.split('\n\n').map((para, i) => renderBiographyParagraph(para, i))}
       </div>
       {isLong && (
         <button
