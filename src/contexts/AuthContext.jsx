@@ -27,13 +27,8 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    // Hent nåværende sesjon
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      if (session?.user) fetchAccess(session.user.id)
-    })
-
-    // Lytt på auth-endringer
+    // onAuthStateChange leverer INITIAL_SESSION ved oppstart — ingen separat getSession() nødvendig.
+    // Å kalle begge samtidig gir to samtidige lock-forsøk og trigger gotrue-js lock timeout.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session)
