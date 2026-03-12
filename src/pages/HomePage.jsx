@@ -243,7 +243,15 @@ function RandomPerson() {
       setPerson(p)
       setNames(namesRes.data || [])
       setFacts(factsRes.data || [])
-      setPhoto(photoRes.data?.[0]?.drive_url || null)
+      const photoPath = photoRes.data?.[0]?.drive_url || null
+      if (photoPath) {
+        const { data: signed } = await supabase.storage
+          .from('person-photos')
+          .createSignedUrls([photoPath], 3600)
+        setPhoto(signed?.[0]?.signedUrl || null)
+      } else {
+        setPhoto(null)
+      }
     } finally {
       setLoading(false)
     }

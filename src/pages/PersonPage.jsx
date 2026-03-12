@@ -61,7 +61,17 @@ export function PersonPage() {
       setAddresses(addrRes.data || [])
       setBiography(bioRes.data || null)
       setRoles(rolesRes.data || [])
-      setPhotos(photosRes.data || [])
+      const rawPhotos = photosRes.data || []
+      if (rawPhotos.length > 0) {
+        const { data: signed } = await supabase.storage
+          .from('person-photos')
+          .createSignedUrls(rawPhotos.map(p => p.drive_url), 3600)
+        const signedMap = {}
+        ;(signed || []).forEach(s => { signedMap[s.path] = s.signedUrl })
+        setPhotos(rawPhotos.map(p => ({ ...p, signedUrl: signedMap[p.drive_url] || null })))
+      } else {
+        setPhotos([])
+      }
       setSources(sourcesRes.data || [])
 
       // Hent familier der personen er ektefelle
@@ -392,14 +402,10 @@ function PhotoArea({ photos, primaryPhoto, fullName, sex, personId, onPhotoUploa
         .upload(path, blob, { contentType: 'image/webp', upsert: false })
       if (uploadErr) throw uploadErr
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('person-photos')
-        .getPublicUrl(path)
-
       const isPrimary = photos.length === 0
       const { error: insertErr } = await supabase.from('person_photos').insert({
         person_id:   personId,
-        drive_url:   publicUrl,
+        drive_url:   path,
         is_primary:  isPrimary,
         photo_order: photos.length,
       })
@@ -419,7 +425,7 @@ function PhotoArea({ photos, primaryPhoto, fullName, sex, personId, onPhotoUploa
       {primaryPhoto ? (
         <>
           <img
-            src={primaryPhoto.drive_url}
+            src={primaryPhoto.signedUrl}
             alt={fullName}
             className="profile-photo"
             onClick={() => setLightbox(true)}
@@ -497,7 +503,7 @@ function Lightbox({ photos, initial, onClose }) {
         style={{ position: 'absolute', left: 24, color: '#fff', background: 'none', border: 'none', fontSize: 32, cursor: 'pointer' }}
       >‹</button>
       <img
-        src={photo.drive_url}
+        src={photo.signedUrl}
         alt=""
         style={{ maxHeight: '90vh', maxWidth: '90vw', objectFit: 'contain' }}
         onClick={e => e.stopPropagation()}
@@ -524,7 +530,7 @@ function PhotosSection({ photos, fullName }) {
         {photos.map((p, i) => (
           <img
             key={p.id}
-            src={p.drive_url}
+            src={p.signedUrl}
             alt={fullName}
             style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', objectPosition: 'center 20%', borderRadius: 'var(--radius)', cursor: 'zoom-in', filter: 'sepia(30%) contrast(1.05)' }}
             onClick={() => setLightbox(i)}
