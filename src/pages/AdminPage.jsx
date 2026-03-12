@@ -28,8 +28,9 @@ export function AdminPage() {
         {/* Faner */}
         <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-8)', borderBottom: '1px solid var(--color-border)', paddingBottom: 0 }}>
           {[
-            { id: 'tilganger', label: 'Tilgangsforespørsler' },
-            { id: 'rettelser', label: 'Innsendte rettelser' },
+            { id: 'tilganger',    label: 'Tilgangsforespørsler' },
+            { id: 'brukerkobling', label: 'Brukerkobling' },
+            { id: 'rettelser',   label: 'Innsendte rettelser' },
             { id: 'datakvalitet', label: 'Datakvalitet' },
           ].map(t => (
             <button
@@ -48,7 +49,8 @@ export function AdminPage() {
           ))}
         </div>
 
-        {tab === 'tilganger' && <AccessRequestsTab />}
+        {tab === 'tilganger'    && <AccessRequestsTab />}
+        {tab === 'brukerkobling' && <UserLinkingTab />}
         {tab === 'datakvalitet' && <DataQualityTab />}
         {tab === 'rettelser' && (
           <div className="text-muted text-center" style={{ padding: 'var(--space-10)' }}>
@@ -135,6 +137,262 @@ const STATUS_LABELS = {
   pending:  'Venter',
   approved: 'Godkjent',
   rejected: 'Avvist',
+}
+
+/* ===== Brukerkobling ===== */
+function UserLinkingTab() {
+  const [users,   setUsers]   = useState([])
+  const [loading, setLoading] = useState(true)
+
+  async function load() {
+    const { data } = await supabase
+      .from('familietre_tilganger')
+      .select('id, user_id, email, display_name, status, person_id, is_admin')
+      .eq('status', 'approved')
+      .order('display_name')
+    setUsers(data || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  async function link(userId, personId) {
+    await supabase
+      .from('familietre_tilganger')
+      .update({ person_id: personId })
+      .eq('user_id', userId)
+    load()
+  }
+
+  async function unlink(userId) {
+    await supabase
+      .from('familietre_tilganger')
+      .update({ person_id: null })
+      .eq('user_id', userId)
+    load()
+  }
+
+  if (loading) return <LoadingSpinner text="Laster brukere…" />
+
+  const linked   = users.filter(u => u.person_id)
+  const unlinked = users.filter(u => !u.person_id)
+
+  return (
+    <div>
+      <p className="text-sm text-muted" style={{ marginBottom: 'var(--space-6)' }}>
+        Koble innloggede brukere til en person i slektstreet. Koblingen gjør at «Min profil»-lenken dukker opp i brukermenyen.
+      </p>
+
+      {unlinked.length > 0 && (
+        <div style={{ marginBottom: 'var(--space-8)' }}>
+          <h3 style={{ fontFamily: 'var(--font-heading)', marginBottom: 'var(--space-4)', fontSize: 'var(--text-lg)' }}>
+            Ikke koblet ({unlinked.length})
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            {unlinked.map(u => (
+              <UserLinkCard key={u.user_id} user={u} onLink={pid => link(u.user_id, pid)} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {linked.length > 0 && (
+        <div>
+          <h3 style={{ fontFamily: 'var(--font-heading)', marginBottom: 'var(--space-4)', fontSize: 'var(--text-lg)' }}>
+            Koblet ({linked.length})
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            {linked.map(u => (
+              <div key={u.user_id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-4)' }}>
+                <div>
+                  <div style={{ fontWeight: 600 }}>{u.display_name || u.email}</div>
+                  <div className="text-sm text-muted">{u.email}</div>
+                  <Link to={`/person/${u.person_id}`} className="text-sm" style={{ color: 'var(--color-accent)' }}>
+                    → {u.person_id}
+                  </Link>
+                </div>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--color-error)', flexShrink: 0 }}
+                  onClick={() => unlink(u.user_id)}
+                >
+                  Koble fra
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {users.length === 0 && (
+        <p className="text-muted text-center" style={{ padding: 'var(--space-10)' }}>Ingen godkjente brukere.</p>
+      )}
+    </div>
+  )
+}
+
+function UserLinkCard({ user, onLink }) {
+  const [suggestions, setSuggestions] = useState(null) // null = ikke lastet ennå
+  const [search,      setSearch]      = useState('')
+  const [results,     setResults]     = useState([])
+  const [saving,      setSaving]      = useState(false)
+  const [expanded,    setExpanded]    = useState(false)
+
+  async function loadSuggestions() {
+    if (suggestions !== null) return
+    // Splitt display_name i tokens og søk i person_names
+    const tokens = (user.display_name || user.email.split('@')[0])
+      .split(/[\s._-]+/)
+      .filter(t => t.length > 1)
+
+    if (!tokens.length) { setSuggestions([]); return }
+
+    // Hent kandidater for hvert token, finn overlapp
+    async function fetchToken(t) {
+      const { data } = await supabase
+        .from('person_names')
+        .select('person_id, given_name, surname, middle_name')
+        .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%`)
+        .eq('is_preferred', true)
+        .limit(30)
+      return data || []
+    }
+
+    const sets = await Promise.all(tokens.map(fetchToken))
+    const allRows = sets.flat()
+
+    // Tell treff per person_id og behold topp 5
+    const scoreMap = {}
+    allRows.forEach(r => { scoreMap[r.person_id] = (scoreMap[r.person_id] || { row: r, score: 0 }); scoreMap[r.person_id].score++ })
+    const scored = Object.values(scoreMap).sort((a, b) => b.score - a.score).slice(0, 5)
+
+    // Hent fødsel/dødsdato for disse
+    const ids = scored.map(s => s.row.person_id)
+    const { data: facts } = await supabase
+      .from('person_facts')
+      .select('person_id, fact_type, date_year')
+      .in('person_id', ids)
+      .in('fact_type', ['BIRT', 'DEAT'])
+
+    const factsMap = {}
+    ;(facts || []).forEach(f => {
+      if (!factsMap[f.person_id]) factsMap[f.person_id] = {}
+      if (f.fact_type === 'BIRT') factsMap[f.person_id].birth = f.date_year
+      if (f.fact_type === 'DEAT') factsMap[f.person_id].death = f.date_year
+    })
+
+    setSuggestions(scored.map(s => ({ ...s.row, ...factsMap[s.row.person_id], score: s.score })))
+    setExpanded(true)
+  }
+
+  async function handleSearch(e) {
+    const val = e.target.value
+    setSearch(val)
+    if (val.trim().length < 2) { setResults([]); return }
+    const tokens = val.trim().split(/\s+/)
+    async function ft(t) {
+      const { data } = await supabase
+        .from('person_names')
+        .select('person_id, given_name, surname, middle_name')
+        .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%`)
+        .eq('is_preferred', true)
+        .limit(20)
+      return data || []
+    }
+    const sets = await Promise.all(tokens.map(ft))
+    const idSets = sets.map(rows => new Set(rows.map(r => r.person_id)))
+    const matched = sets[0].filter(r => idSets.every(s => s.has(r.person_id)))
+    const ids = [...new Set(matched.map(r => r.person_id))].slice(0, 6)
+    const { data: facts } = await supabase
+      .from('person_facts').select('person_id, fact_type, date_year')
+      .in('person_id', ids).in('fact_type', ['BIRT', 'DEAT'])
+    const fm = {}
+    ;(facts || []).forEach(f => { if (!fm[f.person_id]) fm[f.person_id] = {}; if (f.fact_type === 'BIRT') fm[f.person_id].birth = f.date_year; if (f.fact_type === 'DEAT') fm[f.person_id].death = f.date_year })
+    setResults(matched.slice(0, 6).map(r => ({ ...r, ...fm[r.person_id] })))
+  }
+
+  async function doLink(personId) {
+    setSaving(true)
+    await onLink(personId)
+    setSaving(false)
+  }
+
+  const displayList = search.trim().length >= 2 ? results : (suggestions || [])
+
+  return (
+    <div className="card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-3)' }}>
+        <div>
+          <div style={{ fontWeight: 600 }}>{user.display_name || user.email}</div>
+          <div className="text-sm text-muted">{user.email}</div>
+        </div>
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={loadSuggestions}
+          disabled={expanded}
+        >
+          {suggestions === null ? 'Finn forslag' : expanded ? 'Forslag lastet' : 'Finn forslag'}
+        </button>
+      </div>
+
+      {expanded && (
+        <div>
+          <input
+            type="search"
+            placeholder="Søk manuelt etter navn i treet…"
+            value={search}
+            onChange={handleSearch}
+            style={{
+              width: '100%', padding: 'var(--space-2) var(--space-3)',
+              background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius)', color: 'var(--color-text)',
+              fontSize: 'var(--text-sm)', marginBottom: 'var(--space-3)', boxSizing: 'border-box',
+            }}
+          />
+
+          {displayList.length === 0 && (
+            <p className="text-sm text-muted">Ingen treff — prøv å søke manuelt.</p>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            {displayList.map(s => {
+              const fullName = [s.given_name, s.middle_name, s.surname].filter(Boolean).join(' ')
+              const lifespan = s.birth ? (s.death ? `${s.birth}–${s.death}` : `f. ${s.birth}`) : null
+              return (
+                <div
+                  key={s.person_id}
+                  style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: 'var(--space-2) var(--space-3)',
+                    background: 'var(--color-bg-elevated)',
+                    borderRadius: 'var(--radius)',
+                    border: '1px solid var(--color-border-light)',
+                    gap: 'var(--space-3)',
+                  }}
+                >
+                  <div>
+                    <Link to={`/person/${s.person_id}`} target="_blank" style={{ fontWeight: 600, color: 'var(--color-accent)', fontSize: 'var(--text-sm)' }}>
+                      {fullName}
+                    </Link>
+                    {lifespan && <span className="text-xs text-muted" style={{ marginLeft: 'var(--space-2)' }}>{lifespan}</span>}
+                    <div className="text-xs text-muted">{s.person_id}</div>
+                  </div>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    style={{ flexShrink: 0 }}
+                    disabled={saving}
+                    onClick={() => doLink(s.person_id)}
+                  >
+                    Koble
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function DataQualityTab() {
