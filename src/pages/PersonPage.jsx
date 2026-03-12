@@ -6,7 +6,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner'
 import { SilhouetteSvg } from '../components/PersonCard'
 import { useAuth } from '../contexts/AuthContext'
 import {
-  formatDate, formatDateText, formatLifespan, calcAge, mapsUrl, extractBirthDeath,
+  formatDate, formatDateText, formatLifespan, calcAge, mapsUrl, extractBirthDeath, parseFamilyDate,
 } from '../lib/dates'
 import {
   getPreferredName, formatName, getBirthName, getNickname, getSilhouetteType,
@@ -75,7 +75,7 @@ export function PersonPage() {
         const famIds = famAsChild.data.map(f => f.family_id)
         const { data: parentFams } = await supabase
           .from('families')
-          .select('*')
+          .select('*, family_children(child_id)')
           .in('family_id', famIds)
         setChildren(parentFams || [])
       }
@@ -107,6 +107,8 @@ export function PersonPage() {
   const deathYear  = death?.date_year
   const lifespan   = formatLifespan(birthYear, deathYear, person.is_living)
   const age        = calcAge(birthYear, deathYear)
+  const birthDateText = birth ? formatDateText(birth.date_text, birth.date_year, birth.date_month, birth.date_day) : null
+  const birthDisplay  = birthDateText || birth?.place_raw || birth?.place_city
 
   return (
     <Layout>
@@ -156,15 +158,15 @@ export function PersonPage() {
 
             {/* Datoer */}
             <div className="profile-dates">
-              {birth && (
+              {birth && birthDisplay && (
                 <span>
                   f.{' '}
                   {birth.place_raw
                     ? <a href={mapsUrl(birth.place_raw)} target="_blank" rel="noreferrer">
-                        {formatDateText(birth.date_text, birth.date_year, birth.date_month, birth.date_day)}
+                        {birthDateText}
                         {birth.place_city && ` · ${birth.place_city}`}
                       </a>
-                    : formatDateText(birth.date_text, birth.date_year, birth.date_month, birth.date_day)
+                    : birthDateText
                   }
                 </span>
               )}
@@ -370,11 +372,21 @@ function RelationBadge({ personId, myPersonId }) {
 }
 
 /* ===== Primæryrke ===== */
+const LOW_PRIORITY_OCC = ['advokatfullmektig', 'dommerfullmektig', 'fullmektig']
+
 function PrimaryOccupation({ roles }) {
-  const occ = roles.find(r =>
+  const occRoles = roles.filter(r =>
     ['OCCU', 'TITL', 'occupation', 'title', 'position'].includes(r.role_type) && r.value
   )
-  if (!occ) return null
+  if (!occRoles.length) return null
+
+  const scored = occRoles.map(r => ({
+    ...r,
+    duration: (r.date_to || 9999) - (r.date_from || 0),
+    isLow: LOW_PRIORITY_OCC.some(l => r.value?.toLowerCase().includes(l)),
+  }))
+  scored.sort((a, b) => a.isLow - b.isLow || b.duration - a.duration)
+  const occ = scored[0]
 
   return (
     <p style={{ fontSize: 'var(--text-md)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>
@@ -468,7 +480,7 @@ function FactsSection({ facts, birth, death, christening, burial, families }) {
   // Vis viktige fakta i faktarutenett, resten i tidslinje
   const keyFacts = [birth, death, christening, burial].filter(Boolean)
   const otherFacts = facts.filter(f =>
-    !['BIRT', 'DEAT', 'CHR', 'BAPM', 'BURI'].includes(f.fact_type)
+    !['BIRT', 'DEAT', 'CHR', 'BAPM', 'BURI', 'CENS'].includes(f.fact_type)
   )
 
   // Vigsel fra familie
@@ -489,7 +501,7 @@ function FactsSection({ facts, birth, death, christening, burial, families }) {
             <div key={m.family_id} className="fact-item">
               <span className="fact-label">Vigsel</span>
               <span className="fact-value">
-                {m.marr_date}
+                {parseFamilyDate(m.marr_date)}
                 {m.marr_place_raw && (
                   <a href={mapsUrl(m.marr_place_raw)} target="_blank" rel="noreferrer">
                     {' '}· {m.marr_place_raw}
@@ -562,24 +574,40 @@ function TimelineItem({ fact }) {
 
 /* ===== Roller ===== */
 const ROLE_TYPE_LABELS = {
-  OCCU:        'Yrke',
-  TITL:        'Tittel',
-  occupation:  'Yrke',
-  title:       'Tittel',
-  military:    'Militær rang',
-  education:   'Utdannelse',
-  exam:        'Eksamen',
-  position:    'Stilling',
-  membership:  'Medlemskap',
-  nobility:    'Rang/adel',
+  OCCU:               'Yrke',
+  TITL:               'Tittel',
+  occupation:         'Yrke',
+  title:              'Tittel',
+  military:           'Militær rang',
+  'Military Service': 'Militærtjeneste',
+  education:          'Utdannelse',
+  exam:               'Eksamen',
+  position:           'Stilling',
+  membership:         'Medlemskap',
+  nobility:           'Rang/adel',
+  Publication:        'Utgivelse',
+  publication:        'Utgivelse',
 }
 
 function RolesSection({ roles }) {
+  // Grupper roller med samme verdi (case-insensitive) og slå sammen perioder
+  const deduped = Object.values(
+    roles.reduce((acc, r) => {
+      const key = (r.value || '').toLowerCase().trim()
+      if (!acc[key]) {
+        acc[key] = { ...r, _periods: [] }
+      }
+      const period = [r.date_from, r.date_to].filter(Boolean).join(' – ')
+      if (period) acc[key]._periods.push(period)
+      return acc
+    }, {})
+  )
+
   return (
     <div className="profile-section">
       <h2 className="profile-section-header">Titler og roller</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-        {roles.map((r, i) => (
+        {deduped.map((r, i) => (
           <RoleItem key={r.id || i} role={r} />
         ))}
       </div>
@@ -587,16 +615,26 @@ function RolesSection({ roles }) {
   )
 }
 
+const ROLE_ABBREV = {
+  'h.r.adv':      'høyesterettsadvokat',
+  'hr.adv':       'høyesterettsadvokat',
+  'h.r.advokat':  'høyesterettsadvokat',
+}
+
 function RoleItem({ role }) {
-  const typeLabel = ROLE_TYPE_LABELS[role.role_type] || role.role_type || 'Rolle'
-  const period    = [role.date_from, role.date_to].filter(Boolean).join(' – ')
+  const typeLabel    = ROLE_TYPE_LABELS[role.role_type] || role.role_type || 'Rolle'
+  const rawValue     = role.value || ''
+  const displayValue = ROLE_ABBREV[rawValue.toLowerCase().trim()] || rawValue
+  const periods      = role._periods?.length > 0
+    ? role._periods.join(', ')
+    : [role.date_from, role.date_to].filter(Boolean).join(' – ')
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-        <strong style={{ fontSize: 'var(--text-base)' }}>{role.value}</strong>
+        <strong style={{ fontSize: 'var(--text-base)' }}>{displayValue}</strong>
         <span className="text-xs text-muted">{typeLabel}</span>
-        {period && <span className="text-xs text-light">{period}</span>}
+        {periods && <span className="text-xs text-light">{periods}</span>}
       </div>
       {role.place && (
         <span className="text-sm text-muted">{role.place}</span>
@@ -621,11 +659,17 @@ const ADDR_TYPE_LABELS = {
 }
 
 function AddressesSection({ addresses }) {
+  const displayAddresses = addresses.filter(a =>
+    a.address_type !== 'census_record' ||
+    a.street_name || a.place_raw
+  )
+  if (!displayAddresses.length) return null
+
   return (
     <div className="profile-section">
       <h2 className="profile-section-header">Adresser og bosteder</h2>
       <div className="timeline">
-        {addresses.map((a, i) => (
+        {displayAddresses.map((a, i) => (
           <AddressItem key={a.id || i} addr={a} />
         ))}
       </div>
@@ -730,9 +774,10 @@ function FamilySection({ person, families, parentFamilies }) {
   )
 }
 
-function ParentFamilyCard({ family }) {
+function ParentFamilyCard({ family, personId }) {
   const [fatherName, setFatherName] = useState(null)
   const [motherName, setMotherName] = useState(null)
+  const [siblings,   setSiblings]   = useState([])
 
   useEffect(() => {
     async function load() {
@@ -750,9 +795,28 @@ function ParentFamilyCard({ family }) {
         if (family.husband_id) setFatherName(byId[family.husband_id])
         if (family.wife_id) setMotherName(byId[family.wife_id])
       }
+
+      // Hent søsken
+      const siblingIds = (family.family_children || [])
+        .map(c => c.child_id)
+        .filter(id => id !== personId)
+
+      if (siblingIds.length > 0) {
+        const { data: sibNames } = await supabase
+          .from('person_names')
+          .select('person_id, given_name, surname, middle_name, is_preferred')
+          .in('person_id', siblingIds)
+        if (sibNames) {
+          const sibById = {}
+          sibNames.forEach(n => {
+            if (!sibById[n.person_id] || n.is_preferred) sibById[n.person_id] = n
+          })
+          setSiblings(siblingIds.map(id => ({ id, name: sibById[id] })))
+        }
+      }
     }
     load()
-  }, [family])
+  }, [family, personId])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
@@ -761,6 +825,14 @@ function ParentFamilyCard({ family }) {
       )}
       {family.wife_id && (
         <RelativeLink id={family.wife_id} name={motherName} label="Mor" />
+      )}
+      {siblings.length > 0 && (
+        <>
+          <div style={{ marginTop: 'var(--space-3)', marginBottom: 'var(--space-1)', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-text-light)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Søsken</div>
+          {siblings.map(s => (
+            <RelativeLink key={s.id} id={s.id} name={s.name} />
+          ))}
+        </>
       )}
     </div>
   )
@@ -807,7 +879,7 @@ function SpouseFamilyCard({ family, personId, sex }) {
 
       {family.marr_date && (
         <p className="text-sm text-muted mt-2">
-          Gift: {family.marr_date}
+          Gift: {parseFamilyDate(family.marr_date)}
           {family.marr_place_raw && ` · ${family.marr_place_raw}`}
         </p>
       )}

@@ -106,3 +106,15 @@ export function isToday(month, day) {
   const d = new Date()
   return d.getMonth() + 1 === month && d.getDate() === day
 }
+
+/**
+ * Parser rå datostreng fra families.marr_date ("1934" eller "1934-11-05")
+ * til norsk tekst. Returnerer null ved manglende verdi.
+ */
+export function parseFamilyDate(dateStr) {
+  if (!dateStr) return null
+  const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (iso) return formatDate(+iso[1], +iso[2], +iso[3])
+  if (/^\d{4}$/.test(dateStr)) return dateStr
+  return dateStr  // vis rå tekst som fallback
+}

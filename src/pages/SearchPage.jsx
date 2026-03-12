@@ -5,7 +5,7 @@ import { Layout } from '../components/Layout'
 import { PersonCard } from '../components/PersonCard'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { getPreferredName, formatName } from '../lib/persons'
-import { formatLifespan } from '../lib/dates'
+import { formatLifespan, formatDateText } from '../lib/dates'
 
 const PAGE_SIZE = 20
 
@@ -65,7 +65,7 @@ export function SearchPage() {
       const [personsRes, factsRes] = await Promise.all([
         supabase.from('persons').select('*').in('person_id', pageIds).eq('is_deleted', false),
         supabase.from('person_facts')
-          .select('person_id, fact_type, date_year, place_city, place_raw')
+          .select('person_id, fact_type, date_year, date_month, date_day, date_text, place_city, place_raw')
           .in('person_id', pageIds)
           .in('fact_type', ['BIRT', 'DEAT']),
       ])
@@ -89,8 +89,8 @@ export function SearchPage() {
         return {
           person: p,
           preferred,
-          birthYear:  birth?.date_year,
-          deathYear:  death?.date_year,
+          birth,
+          death,
           birthPlace: birth?.place_city || birth?.place_raw,
           matchedNames,
         }
@@ -189,9 +189,20 @@ export function SearchPage() {
 }
 
 function SearchResultItem({ result, query }) {
-  const { person, preferred, birthYear, deathYear, birthPlace, matchedNames } = result
+  const { person, preferred, birth, death, birthPlace, matchedNames } = result
   const mainName = formatName(preferred)
-  const lifespan = formatLifespan(birthYear, deathYear, person.is_living)
+
+  const birthDateText = birth ? formatDateText(birth.date_text, birth.date_year, birth.date_month, birth.date_day) : null
+  const deathDateText = death ? formatDateText(death.date_text, death.date_year, death.date_month, death.date_day) : null
+
+  let lifespan = null
+  if (person.is_living) {
+    lifespan = birthDateText ? `f. ${birthDateText}` : null
+  } else if (birthDateText || deathDateText) {
+    if (birthDateText && deathDateText) lifespan = `f. ${birthDateText}  –  d. ${deathDateText}`
+    else if (birthDateText) lifespan = `f. ${birthDateText}`
+    else lifespan = `d. ${deathDateText}`
+  }
 
   // Finn kallenavn / alternative navn som matchet
   const altNames = matchedNames
