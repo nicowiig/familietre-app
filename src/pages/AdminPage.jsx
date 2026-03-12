@@ -314,9 +314,14 @@ function UserLinkCard({ user, onLink }) {
     const allRows = sets.flat()
 
     const scoreMap = {}
-    allRows.forEach(r => {
-      if (!scoreMap[r.person_id]) scoreMap[r.person_id] = 0
-      scoreMap[r.person_id]++
+    // Fornavn teller +2, mellomnavn og etternavn +1
+    tokens.forEach((t, ti) => {
+      ;(sets[ti] || []).forEach(r => {
+        if (!scoreMap[r.person_id]) scoreMap[r.person_id] = 0
+        const tLower = t.toLowerCase()
+        const points = (r.given_name || '').toLowerCase().includes(tLower) ? 2 : 1
+        scoreMap[r.person_id] += points
+      })
     })
 
     // Ta de 30 med høyest navnescore som kandidater
