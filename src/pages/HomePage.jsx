@@ -9,7 +9,6 @@ import { formatName } from '../lib/persons'
 
 export function HomePage() {
   const { user, personId } = useAuth()
-  const navigate = useNavigate()
 
   return (
     <Layout>
