@@ -1012,11 +1012,6 @@ function TimelineEventRow({ event }) {
             {note}
           </div>
         )}
-        {source && (
-          <span style={{ color: 'var(--color-text-light)', fontSize: 'var(--text-xs)', marginLeft: 4 }}>
-            ({source})
-          </span>
-        )}
       </div>
     </div>
   )
@@ -1145,8 +1140,9 @@ function KarriereSection({ roles, deathYear }) {
 
   // Sorter grupper: nyeste rolle øverst
   groups.sort((a, b) => {
-    const aMax = Math.max(...a.roles.map(r => r.date_to || r.date_from || 0))
-    const bMax = Math.max(...b.roles.map(r => r.date_to || r.date_from || 0))
+    const toNum = v => { const p = parseRoleDate(v); return p ? p.year * 100 + (p.month || 0) : 0 }
+    const aMax = Math.max(...a.roles.map(r => toNum(r.date_to) || toNum(r.date_from) || 0))
+    const bMax = Math.max(...b.roles.map(r => toNum(r.date_to) || toNum(r.date_from) || 0))
     return bMax - aMax
   })
 
@@ -1250,11 +1246,6 @@ function KarriereRoleEntry({ role, compact, deathYear }) {
           {role.reason}
         </div>
       )}
-      {role.source && (
-        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-light)', marginTop: 'var(--space-1)' }}>
-          Kilde: {role.source}
-        </div>
-      )}
     </div>
   )
 }
@@ -1324,11 +1315,6 @@ function UtdannelseCard({ role }) {
         {role.reason && (
           <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)', fontStyle: 'italic' }}>
             {role.reason}
-          </div>
-        )}
-        {role.source && (
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-light)', marginTop: 'var(--space-1)' }}>
-            Kilde: {role.source}
           </div>
         )}
       </div>
