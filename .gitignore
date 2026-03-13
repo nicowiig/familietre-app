@@ -25,3 +25,6 @@ dist-ssr
 
 # Lokale env-variabler
 .env.local
+
+# Admin/engangsskript med potensielle hemmeligheter
+scripts/
