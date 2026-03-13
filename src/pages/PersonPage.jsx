@@ -1036,6 +1036,8 @@ const MONTH_NAMES_NO = ['jan.', 'feb.', 'mars', 'apr.', 'mai', 'jun.', 'jul.', '
 function parseRoleDate(val) {
   if (!val) return null
   const str = String(val)
+  const full = str.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (full) return { year: parseInt(full[1]), month: parseInt(full[2]), day: parseInt(full[3]) }
   const mm = str.match(/^(\d{4})-(\d{2})$/)
   if (mm) return { year: parseInt(mm[1]), month: parseInt(mm[2]) }
   const yy = str.match(/^(\d{4})$/)
