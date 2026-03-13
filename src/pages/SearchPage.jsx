@@ -31,8 +31,7 @@ export function SearchPage() {
     if (!q.trim()) return
     setLoading(true)
     try {
-      // Støtte for flerordsøk: hvert ord må matche minst ett navnefelt (AND mellom ord)
-      const tokens = q.trim().split(/\s+/).filter(Boolean)
+      const tokens = q.trim().slice(0, 100).split(/\s+/).filter(Boolean).slice(0, 5)
 
       async function fetchForToken(token) {
         const { data } = await supabase

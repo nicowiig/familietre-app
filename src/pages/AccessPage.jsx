@@ -17,12 +17,18 @@ export function AccessPage() {
   // Ikke innlogget
   if (status === 'unauthenticated') return <Navigate to="/logg-inn" replace />
 
+  const MAX_MESSAGE = 500
+
   async function handleSubmit(e) {
     e.preventDefault()
+    if (message.length > MAX_MESSAGE) {
+      setError(`Meldingen kan ikke være lengre enn ${MAX_MESSAGE} tegn.`)
+      return
+    }
     setSubmit(true)
     setError(null)
     try {
-      await submitAccessRequest(message)
+      await submitAccessRequest(message.trim())
       setSubmitted(true)
     } catch (err) {
       setError(err.message || 'Noe gikk galt. Prøv igjen.')
@@ -139,7 +145,11 @@ function RequestForm({ user, message, setMessage, onSubmit, submitting, error, o
             placeholder="Hvem er du? Hva er din tilknytning til familien?"
             value={message}
             onChange={e => setMessage(e.target.value)}
+            maxLength={500}
           />
+          <div style={{ fontSize: 'var(--text-xs)', color: message.length > 450 ? 'var(--color-warning, #b45309)' : 'var(--color-text-muted)', textAlign: 'right', marginTop: 4 }}>
+            {message.length}/500
+          </div>
         </div>
         <div className="flex gap-3">
           <button
