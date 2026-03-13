@@ -1547,13 +1547,24 @@ function AddressesSection({ addresses, deathYear }) {
     return null
   }
 
-  // Skjul city/county/country-oppføringer dersom personen har minst én spesifikk adresse
-  const hasSpecificAddr = addresses.some(a => ['full_address', 'street', 'locality'].includes(a.granularity))
+  // Skjul city/county/country-oppføringer dersom personen har spesifikke adresser
+  // som OVERLAPPER tidsmessig — historiske vage adresser som avsluttes før de spesifikke
+  // starter, vises likevel (f.eks. Trondheim-oppvekst før Bergen-adresser)
   const VAGUE = new Set(['city', 'county', 'country', 'unknown'])
+  const specificAddrs = addresses.filter(a => ['full_address', 'street', 'locality'].includes(a.granularity))
+  const hasSpecificAddr = specificAddrs.length > 0
+  const earliestSpecificStart = hasSpecificAddr
+    ? Math.min(...specificAddrs.map(a => addrDateNum(a.date_from)).filter(Boolean))
+    : Infinity
 
   const filtered = addresses
     .filter(a => {
-      if (VAGUE.has(a.granularity) && hasSpecificAddr) return false
+      if (VAGUE.has(a.granularity) && hasSpecificAddr) {
+        // Vis likevel hvis adressen tydelig avsluttes FØR de spesifikke starter
+        const thisEnd = addrDateNum(a.date_to)
+        if (thisEnd && thisEnd <= earliestSpecificStart) return true
+        return false
+      }
       if (a.address_type !== 'census_record') return true
       return a.street_name || a.place_raw || a.notes
     })
