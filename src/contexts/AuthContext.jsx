@@ -49,6 +49,7 @@ export function AuthProvider({ children }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
+        scopes: 'openid email profile',
         redirectTo: window.location.origin + '/familietre-app/',
       },
     })
