@@ -46,7 +46,7 @@ export function PersonPage() {
         supabase.from('persons').select('*').eq('person_id', personId).eq('is_deleted', false).maybeSingle(),
         supabase.from('person_names').select('*').eq('person_id', personId).order('is_preferred', { ascending: false }),
         supabase.from('person_facts').select('*').eq('person_id', personId).order('date_year'),
-        supabase.from('person_addresses').select('*').eq('person_id', personId).order('date_from'),
+        supabase.from('address_periods').select('*, addresses(*)').eq('entity_type', 'person').eq('entity_id', personId).order('date_from'),
         supabase.from('person_biography').select('*').eq('person_id', personId).maybeSingle(),
         supabase.from('person_roles').select('*').eq('person_id', personId).order('date_from'),
         supabase.from('person_photos').select('*').eq('person_id', personId).order('photo_order'),
@@ -58,7 +58,30 @@ export function PersonPage() {
       setPerson(personRes.data)
       setNames(namesRes.data || [])
       setFacts(factsRes.data || [])
-      setAddresses(addrRes.data || [])
+      // Flat struktur: slår sammen address_periods + addresses til én rad per periode
+      const flatAddresses = (addrRes.data || []).map(p => ({
+        id:           p.id,
+        address_type: p.period_type,
+        date_from:    p.date_from,
+        date_to:      p.date_to,
+        is_current:   p.is_current,
+        employer:     p.employer,
+        department:   p.department,
+        notes:        p.notes,
+        is_readonly:  p.is_readonly,
+        source_type:  p.source_type,
+        street_name:  p.addresses?.street_name  || null,
+        street_number: p.addresses?.house_number
+          ? `${p.addresses.house_number}${p.addresses.house_letter || ''}`
+          : null,
+        city:         p.addresses?.city         || null,
+        postal_code:  p.addresses?.postal_code  || null,
+        place_raw:    p.addresses?.place_raw    || null,
+        display_name: p.addresses?.display_name || null,
+        granularity:  p.addresses?.granularity  || 'unknown',
+        address_id:   p.address_id,
+      }))
+      setAddresses(flatAddresses)
       setBiography(bioRes.data || null)
       setRoles(rolesRes.data || [])
       const rawPhotos = photosRes.data || []
@@ -339,7 +362,6 @@ export function PersonPage() {
             {otherRoles.length > 0 && <RolesSection roles={otherRoles} title="Andre roller" />}
             <AddressesSection
               addresses={addresses}
-              resiFacts={facts.filter(f => normFact(f.fact_type) === 'RESI')}
               deathYear={deathYear}
             />
             {sources.length > 0 && <SourcesSection sources={sources} />}
@@ -1506,17 +1528,7 @@ const ADDR_TYPE_LABELS = {
   RESI:            'Bosted',
 }
 
-function AddressesSection({ addresses, resiFacts = [], deathYear }) {
-  const resiAddresses = resiFacts.map(f => ({
-    _id: `fact-${f.id}`,
-    address_type: 'residence',
-    date_from: f.date_year || null,
-    date_to: null,
-    place_raw: f.place_raw || f.place_city || null,
-    street_name: null,
-    notes: f.notes || null,
-  }))
-
+function AddressesSection({ addresses, deathYear }) {
   function addrDateNum(v) {
     if (!v) return 0
     const s = String(v)
@@ -1535,17 +1547,16 @@ function AddressesSection({ addresses, resiFacts = [], deathYear }) {
     return null
   }
 
-  const filtered = [...addresses, ...resiAddresses]
+  const filtered = addresses
     .filter(a => a.address_type !== 'census_record' || a.street_name || a.place_raw || a.notes)
 
   const sorted = filtered.sort((a, b) => addrDateNum(a.date_from) - addrDateNum(b.date_from))
 
-  // Kun person_addresses (ikke RESI-fakta) brukes til å beregne neste adresse i kjeden
-  const sortedDbOnly = addresses
-    .filter(a => a.address_type !== 'census_record' || a.street_name || a.place_raw)
+  // Kun bostedstyper brukes til å beregne neste adresse i kjeden (ikke workplace etc.)
+  const RESIDENTIAL_TYPES = new Set(['residence', 'childhood_home', 'student_housing', 'census_record'])
+  const sortedDbOnly = filtered
+    .filter(a => RESIDENTIAL_TYPES.has(a.address_type) && (a.street_name || a.place_raw))
     .sort((a, b) => addrDateNum(a.date_from) - addrDateNum(b.date_from))
-
-  const RESIDENTIAL_TYPES = new Set(['residence', 'childhood_home', 'student_housing', 'census_record', 'RESI'])
 
   // Beregn effective_date_to: neste DB-adresses startår, ellers dødsfallsår (kun for bostedstyper)
   const processed = sorted.map((a) => {
