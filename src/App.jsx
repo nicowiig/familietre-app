@@ -11,6 +11,7 @@ import { BranchesPage }    from './pages/BranchesPage'
 import { BranchDetailPage } from './pages/BranchDetailPage'
 import { AdminPage }       from './pages/AdminPage'
 import { ChangelogPage }   from './pages/ChangelogPage'
+import { PlacePage }       from './pages/PlacePage'
 
 export default function App() {
   return (
@@ -42,6 +43,9 @@ export default function App() {
           } />
           <Route path="/hva-er-nytt" element={
             <ProtectedRoute><ChangelogPage /></ProtectedRoute>
+          } />
+          <Route path="/place/:articleId" element={
+            <ProtectedRoute><PlacePage /></ProtectedRoute>
           } />
           <Route path="/admin" element={
             <ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>

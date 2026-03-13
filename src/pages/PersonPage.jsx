@@ -46,7 +46,7 @@ export function PersonPage() {
         supabase.from('persons').select('*').eq('person_id', personId).eq('is_deleted', false).maybeSingle(),
         supabase.from('person_names').select('*').eq('person_id', personId).order('is_preferred', { ascending: false }),
         supabase.from('person_facts').select('*').eq('person_id', personId).order('date_year'),
-        supabase.from('address_periods').select('*, addresses(*)').eq('entity_type', 'person').eq('entity_id', personId).order('date_from'),
+        supabase.from('address_periods').select('*, addresses(*, place_articles(id, title))').eq('entity_type', 'person').eq('entity_id', personId).order('date_from'),
         supabase.from('person_biography').select('*').eq('person_id', personId).maybeSingle(),
         supabase.from('person_roles').select('*').eq('person_id', personId).order('date_from'),
         supabase.from('person_photos').select('*').eq('person_id', personId).order('photo_order'),
@@ -79,7 +79,10 @@ export function PersonPage() {
         place_raw:    p.addresses?.place_raw    || null,
         display_name: p.addresses?.display_name || null,
         granularity:  p.addresses?.granularity  || 'unknown',
+        building_name: p.addresses?.building_name || null,
         address_id:   p.address_id,
+        place_article_id:    p.addresses?.place_articles?.[0]?.id    || null,
+        place_article_title: p.addresses?.place_articles?.[0]?.title || null,
       }))
       setAddresses(flatAddresses)
       setBiography(bioRes.data || null)
@@ -1668,6 +1671,11 @@ function AddressItem({ addr, deathYear }) {
           </a>
         </div>
       )}
+      {addr.building_name && (
+        <div className="timeline-place" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-light)', fontStyle: 'italic' }}>
+          {addr.building_name}
+        </div>
+      )}
       <div className="timeline-place" style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>{typeLabel}</div>
       {addr.employer && (
         <div className="timeline-place">{addr.employer}{addr.department ? ` · ${addr.department}` : ''}</div>
@@ -1676,6 +1684,14 @@ function AddressItem({ addr, deathYear }) {
         <div className="timeline-place" style={{ fontStyle: 'italic', color: 'var(--color-text-light)' }}>
           {noteText}
         </div>
+      )}
+      {addr.place_article_id && (
+        <Link
+          to={`/place/${addr.place_article_id}`}
+          style={{ fontSize: 'var(--text-xs)', color: '#b45309', textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}
+        >
+          Les mer om {addr.place_article_title} →
+        </Link>
       )}
     </div>
   )
