@@ -1287,7 +1287,10 @@ function UtdannelseSection({ roles, facts }) {
     <div className="profile-section">
       <h2 className="profile-section-header">Utdannelse</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-        {[...roles].sort(roleDateSort).map((r, i) => <UtdannelseCard key={r.id || i} role={r} />)}
+        {[...roles].sort((a, b) => {
+          const toNum = v => { const p = parseRoleDate(v); return p ? p.year * 100 + (p.month || 0) : 0 }
+          return toNum(b.date_to) - toNum(a.date_to)
+        }).map((r, i) => <UtdannelseCard key={r.id || i} role={r} />)}
         {educFacts.map(f => <UtdannelseFactCard key={f.id} fact={f} />)}
       </div>
     </div>
@@ -1549,7 +1552,9 @@ function formatAddrDate(val) {
 
 function AddressItem({ addr }) {
   const typeLabel = ADDR_TYPE_LABELS[addr.address_type] || addr.address_type || 'Bosted'
-  const period    = [formatAddrDate(addr.date_from), formatAddrDate(addr.date_to)].filter(Boolean).join(' – ')
+  const duration  = calcYears(addr.date_from, addr.date_to)
+  const periodParts = [formatAddrDate(addr.date_from), formatAddrDate(addr.date_to)].filter(Boolean).join(' – ')
+  const period    = duration ? `${periodParts} · ${duration}` : periodParts
   const streetPart = addr.street_name ? `${addr.street_name} ${addr.street_number || ''}`.trim() : null
   const postalPart = [addr.postal_code, addr.city].filter(Boolean).join(' ')
   const display   = streetPart
