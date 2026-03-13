@@ -17,12 +17,23 @@ export function Layout({ children }) {
   const [userOpen,  setUserOpen]        = useState(false)
   const [suggestions, setSuggestions]   = useState([])
   const [sugOpen,   setSugOpen]         = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
 
   const navigate      = useNavigate()
   const inputRef      = useRef()
   const userRef       = useRef()
   const suggestRef    = useRef()
   const debounceRef   = useRef()
+
+  // Hent antall ventende tilgangsforespørsler (kun for admins)
+  useEffect(() => {
+    if (!isAdmin) return
+    supabase
+      .from('familietre_tilganger')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+      .then(({ count }) => setPendingCount(count || 0))
+  }, [isAdmin])
 
   // Lukk avatar-dropdown ved klikk utenfor
   useEffect(() => {
@@ -239,13 +250,13 @@ export function Layout({ children }) {
           <div ref={userRef} style={{ position: 'relative' }}>
             <button
               className="btn btn-ghost"
-              style={{ padding: 0, display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
+              style={{ padding: 0, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', position: 'relative' }}
               onClick={() => setUserOpen(o => !o)}
               aria-label="Brukermeny"
             >
-              {user?.user_metadata?.avatar_url ? (
+              {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
                 <img
-                  src={user.user_metadata.avatar_url}
+                  src={user.user_metadata.avatar_url || user.user_metadata.picture}
                   alt={user.user_metadata.full_name || ''}
                   className="nav-avatar"
                   style={{ cursor: 'pointer' }}
@@ -258,6 +269,18 @@ export function Layout({ children }) {
                 }}>
                   {user?.user_metadata?.full_name?.[0] || '?'}
                 </div>
+              )}
+              {pendingCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: -2, right: -2,
+                  background: '#ef4444', color: '#fff',
+                  borderRadius: '50%', width: 16, height: 16,
+                  fontSize: 10, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  lineHeight: 1, pointerEvents: 'none',
+                }}>
+                  {pendingCount}
+                </span>
               )}
             </button>
 
@@ -297,7 +320,9 @@ export function Layout({ children }) {
                     to="/admin"
                     onClick={() => setUserOpen(false)}
                     style={{
-                      display: 'block',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
                       padding: 'var(--space-3) var(--space-4)',
                       color: 'var(--color-text-nav-muted)',
                       textDecoration: 'none',
@@ -307,7 +332,16 @@ export function Layout({ children }) {
                     onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
                     onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-nav-muted)'}
                   >
-                    Admin
+                    <span>Admin</span>
+                    {pendingCount > 0 && (
+                      <span style={{
+                        background: '#ef4444', color: '#fff',
+                        borderRadius: 99, padding: '1px 6px',
+                        fontSize: 10, fontWeight: 700, lineHeight: 1.6,
+                      }}>
+                        {pendingCount}
+                      </span>
+                    )}
                   </Link>
                 )}
                 <button
