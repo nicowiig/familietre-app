@@ -1547,8 +1547,16 @@ function AddressesSection({ addresses, deathYear }) {
     return null
   }
 
+  // Skjul city/county/country-oppføringer dersom personen har minst én spesifikk adresse
+  const hasSpecificAddr = addresses.some(a => ['full_address', 'street', 'locality'].includes(a.granularity))
+  const VAGUE = new Set(['city', 'county', 'country', 'unknown'])
+
   const filtered = addresses
-    .filter(a => a.address_type !== 'census_record' || a.street_name || a.place_raw || a.notes)
+    .filter(a => {
+      if (VAGUE.has(a.granularity) && hasSpecificAddr) return false
+      if (a.address_type !== 'census_record') return true
+      return a.street_name || a.place_raw || a.notes
+    })
 
   const sorted = filtered.sort((a, b) => addrDateNum(a.date_from) - addrDateNum(b.date_from))
 
