@@ -1540,13 +1540,21 @@ function AddressesSection({ addresses, resiFacts = [], deathYear }) {
 
   const sorted = filtered.sort((a, b) => addrDateNum(a.date_from) - addrDateNum(b.date_from))
 
+  // Kun person_addresses (ikke RESI-fakta) brukes til å beregne neste adresse i kjeden
+  const sortedDbOnly = addresses
+    .filter(a => a.address_type !== 'census_record' || a.street_name || a.place_raw)
+    .sort((a, b) => addrDateNum(a.date_from) - addrDateNum(b.date_from))
+
   const RESIDENTIAL_TYPES = new Set(['residence', 'childhood_home', 'student_housing', 'census_record', 'RESI'])
 
-  // Beregn effective_date_to: neste adresses startår, ellers dødsfallsår (kun for bostedstyper)
-  const processed = sorted.map((a, i) => {
+  // Beregn effective_date_to: neste DB-adresses startår, ellers dødsfallsår (kun for bostedstyper)
+  const processed = sorted.map((a) => {
     if (a.date_to) return a
     if (!RESIDENTIAL_TYPES.has(a.address_type)) return { ...a, effective_date_to: null }
-    const next = sorted.slice(i + 1).find(n => RESIDENTIAL_TYPES.has(n.address_type) && n.date_from)
+    const myNum = addrDateNum(a.date_from)
+    const next = sortedDbOnly.find(n =>
+      RESIDENTIAL_TYPES.has(n.address_type) && n.date_from && addrDateNum(n.date_from) > myNum
+    )
     const effective_date_to = next?.date_from
       ? String(next.date_from).slice(0, 4)
       : deathYear ? String(deathYear) : null
