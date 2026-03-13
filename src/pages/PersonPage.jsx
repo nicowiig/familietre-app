@@ -340,6 +340,7 @@ export function PersonPage() {
             <AddressesSection
               addresses={addresses}
               resiFacts={facts.filter(f => normFact(f.fact_type) === 'RESI')}
+              deathYear={deathYear}
             />
             {sources.length > 0 && <SourcesSection sources={sources} />}
           </div>
@@ -1503,7 +1504,7 @@ const ADDR_TYPE_LABELS = {
   RESI:            'Bosted',
 }
 
-function AddressesSection({ addresses, resiFacts = [] }) {
+function AddressesSection({ addresses, resiFacts = [], deathYear }) {
   const resiAddresses = resiFacts.map(f => ({
     _id: `fact-${f.id}`,
     address_type: 'residence',
@@ -1517,6 +1518,8 @@ function AddressesSection({ addresses, resiFacts = [] }) {
   function addrDateNum(v) {
     if (!v) return 0
     const s = String(v)
+    const full = s.match(/^(\d{4})-(\d{2})-\d{2}$/)
+    if (full) return parseInt(full[1]) * 100 + parseInt(full[2])
     const mm = s.match(/^(\d{4})-(\d{2})$/)
     if (mm) return parseInt(mm[1]) * 100 + parseInt(mm[2])
     const yy = s.match(/^(\d{4})$/)
@@ -1524,9 +1527,54 @@ function AddressesSection({ addresses, resiFacts = [] }) {
     return 0
   }
 
-  const combined = [...addresses, ...resiAddresses]
-    .filter(a => a.address_type !== 'census_record' || a.street_name || a.place_raw)
-    .sort((a, b) => addrDateNum(b.date_from) - addrDateNum(a.date_from))
+  function addrKey(a) {
+    if (a.street_name) return `${a.street_name} ${a.street_number || ''}`.trim().toLowerCase()
+    if (a.place_raw) return a.place_raw.toLowerCase()
+    return null
+  }
+
+  const filtered = [...addresses, ...resiAddresses]
+    .filter(a => a.address_type !== 'census_record' || a.street_name || a.place_raw || a.notes)
+
+  const sorted = filtered.sort((a, b) => addrDateNum(a.date_from) - addrDateNum(b.date_from))
+
+  const RESIDENTIAL_TYPES = new Set(['residence', 'childhood_home', 'student_housing', 'census_record', 'RESI'])
+
+  // Beregn effective_date_to: neste adresses startår, ellers dødsfallsår (kun for bostedstyper)
+  const processed = sorted.map((a, i) => {
+    if (a.date_to) return a
+    if (!RESIDENTIAL_TYPES.has(a.address_type)) return { ...a, effective_date_to: null }
+    const next = sorted.slice(i + 1).find(n => RESIDENTIAL_TYPES.has(n.address_type) && n.date_from)
+    const effective_date_to = next?.date_from
+      ? String(next.date_from).slice(0, 4)
+      : deathYear ? String(deathYear) : null
+    return { ...a, effective_date_to }
+  })
+
+  // Slå sammen påfølgende census-poster på samme adresse
+  const deduped = []
+  for (const a of processed) {
+    const last = deduped[deduped.length - 1]
+    if (
+      last &&
+      a.address_type === 'census_record' &&
+      last.address_type === 'census_record' &&
+      addrKey(a) &&
+      addrKey(a) === addrKey(last)
+    ) {
+      // Behold første census år som start, bruk siste census år som slutt
+      const endFromThis = a.date_from ? String(a.date_from).slice(0, 4) : null
+      deduped[deduped.length - 1] = {
+        ...last,
+        effective_date_to: endFromThis ?? a.date_to ?? last.effective_date_to,
+      }
+    } else {
+      deduped.push(a)
+    }
+  }
+
+  // Reverser til synkende rekkefølge for visning
+  const combined = deduped.reverse()
 
   if (!combined.length) return null
 
@@ -1535,7 +1583,7 @@ function AddressesSection({ addresses, resiFacts = [] }) {
       <h2 className="profile-section-header">Adresser og bosteder</h2>
       <div className="timeline">
         {combined.map((a, i) => (
-          <AddressItem key={a.id || a._id || i} addr={a} />
+          <AddressItem key={a.id || a._id || i} addr={a} deathYear={deathYear} />
         ))}
       </div>
     </div>
@@ -1545,21 +1593,25 @@ function AddressesSection({ addresses, resiFacts = [] }) {
 function formatAddrDate(val) {
   if (!val) return null
   const s = String(val)
+  const full = s.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (full) return `${parseInt(full[3])}. ${MONTH_NAMES_NO[parseInt(full[2]) - 1]} ${full[1]}`
   const mm = s.match(/^(\d{4})-(\d{2})$/)
   if (mm) return `${MONTH_NAMES_NO[parseInt(mm[2]) - 1]} ${mm[1]}`
   return s
 }
 
-function AddressItem({ addr }) {
+function AddressItem({ addr, deathYear }) {
   const typeLabel = ADDR_TYPE_LABELS[addr.address_type] || addr.address_type || 'Bosted'
-  const duration  = calcYears(addr.date_from, addr.date_to)
-  const periodParts = [formatAddrDate(addr.date_from), formatAddrDate(addr.date_to)].filter(Boolean).join(' – ')
+  const dateTo = addr.date_to ?? addr.effective_date_to
+  const duration  = calcYears(addr.date_from, dateTo, deathYear)
+  const periodParts = [formatAddrDate(addr.date_from), formatAddrDate(dateTo)].filter(Boolean).join(' – ')
   const period    = duration ? `${periodParts} · ${duration}` : periodParts
   const streetPart = addr.street_name ? `${addr.street_name} ${addr.street_number || ''}`.trim() : null
   const postalPart = [addr.postal_code, addr.city].filter(Boolean).join(' ')
   const display   = streetPart
     ? [streetPart, postalPart].filter(Boolean).join(', ')
-    : addr.place_raw
+    : addr.place_raw || (addr.address_type === 'census_record' ? addr.notes : null)
+  const noteText = addr.notes || (streetPart && addr.place_raw ? addr.place_raw : null)
 
   return (
     <div className="timeline-item">
@@ -1580,9 +1632,9 @@ function AddressItem({ addr }) {
       {addr.employer && (
         <div className="timeline-place">{addr.employer}{addr.department ? ` · ${addr.department}` : ''}</div>
       )}
-      {(addr.notes || (streetPart && addr.place_raw)) && (
+      {noteText && (
         <div className="timeline-place" style={{ fontStyle: 'italic', color: 'var(--color-text-light)' }}>
-          {addr.notes || addr.place_raw}
+          {noteText}
         </div>
       )}
     </div>
