@@ -893,7 +893,7 @@ function TimelineSection({ facts, families, spouseNamesMap, childBirths, roles }
     }
   })
 
-  const years = Object.keys(byYear).map(Number).sort()
+  const years = Object.keys(byYear).map(Number).sort((a, b) => b - a)
 
   return (
     <div className="profile-section">
@@ -1511,9 +1511,19 @@ function AddressesSection({ addresses, resiFacts = [] }) {
     notes: f.notes || null,
   }))
 
+  function addrDateNum(v) {
+    if (!v) return 0
+    const s = String(v)
+    const mm = s.match(/^(\d{4})-(\d{2})$/)
+    if (mm) return parseInt(mm[1]) * 100 + parseInt(mm[2])
+    const yy = s.match(/^(\d{4})$/)
+    if (yy) return parseInt(yy[1]) * 100
+    return 0
+  }
+
   const combined = [...addresses, ...resiAddresses]
     .filter(a => a.address_type !== 'census_record' || a.street_name || a.place_raw)
-    .sort((a, b) => (a.date_from || 0) - (b.date_from || 0))
+    .sort((a, b) => addrDateNum(b.date_from) - addrDateNum(a.date_from))
 
   if (!combined.length) return null
 
@@ -1529,11 +1539,21 @@ function AddressesSection({ addresses, resiFacts = [] }) {
   )
 }
 
+function formatAddrDate(val) {
+  if (!val) return null
+  const s = String(val)
+  const mm = s.match(/^(\d{4})-(\d{2})$/)
+  if (mm) return `${MONTH_NAMES_NO[parseInt(mm[2]) - 1]} ${mm[1]}`
+  return s
+}
+
 function AddressItem({ addr }) {
   const typeLabel = ADDR_TYPE_LABELS[addr.address_type] || addr.address_type || 'Bosted'
-  const period    = [addr.date_from, addr.date_to].filter(Boolean).join(' – ')
-  const display   = addr.street_name
-    ? [addr.street_name, addr.street_number, addr.postal_code, addr.city].filter(Boolean).join(' ')
+  const period    = [formatAddrDate(addr.date_from), formatAddrDate(addr.date_to)].filter(Boolean).join(' – ')
+  const streetPart = addr.street_name ? `${addr.street_name} ${addr.street_number || ''}`.trim() : null
+  const postalPart = [addr.postal_code, addr.city].filter(Boolean).join(' ')
+  const display   = streetPart
+    ? [streetPart, postalPart].filter(Boolean).join(', ')
     : addr.place_raw
 
   return (
@@ -1555,8 +1575,10 @@ function AddressItem({ addr }) {
       {addr.employer && (
         <div className="timeline-place">{addr.employer}{addr.department ? ` · ${addr.department}` : ''}</div>
       )}
-      {addr.notes && (
-        <div className="timeline-place" style={{ fontStyle: 'italic', color: 'var(--color-text-light)' }}>{addr.notes}</div>
+      {(addr.notes || (streetPart && addr.place_raw)) && (
+        <div className="timeline-place" style={{ fontStyle: 'italic', color: 'var(--color-text-light)' }}>
+          {addr.notes || addr.place_raw}
+        </div>
       )}
     </div>
   )
