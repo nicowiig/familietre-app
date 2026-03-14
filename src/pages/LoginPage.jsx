@@ -3,10 +3,18 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 
+function isWebView() {
+  const ua = navigator.userAgent || ''
+  return /FBAN|FBAV|Instagram|Messenger|Twitter|Line\/|MicroMessenger|WebView|wv\b/.test(ua)
+    || (ua.includes('iPhone') && !ua.includes('Safari'))
+    || (ua.includes('Android') && ua.includes('wv'))
+}
+
 export function LoginPage() {
   const { status, loading, signInWithGoogle } = useAuth()
   const [signingIn, setSigningIn] = useState(false)
   const [error, setError] = useState(null)
+  const webView = isWebView()
 
   if (loading) return <LoadingSpinner fullPage />
   if (status !== 'unauthenticated') return <Navigate to="/" replace />
@@ -32,6 +40,23 @@ export function LoginPage() {
 
         <span className="ornament">✦ ✦ ✦</span>
 
+        {webView && (
+          <div style={{
+            background: 'rgba(234,179,8,0.12)',
+            border: '1px solid rgba(234,179,8,0.4)',
+            borderRadius: 'var(--radius)',
+            padding: 'var(--space-3) var(--space-4)',
+            marginBottom: 'var(--space-4)',
+            fontSize: 'var(--text-sm)',
+            color: '#ca8a04',
+            lineHeight: 1.5,
+          }}>
+            <strong>Åpne i nettleser for å logge inn</strong><br />
+            Google-innlogging fungerer ikke i apper som Messenger eller Instagram.
+            Kopier lenken og åpne den i Safari eller Chrome.
+          </div>
+        )}
+
         {error && (
           <div className="alert alert-error mb-4">{error}</div>
         )}
@@ -39,7 +64,7 @@ export function LoginPage() {
         <button
           className="btn-google"
           onClick={handleGoogle}
-          disabled={signingIn}
+          disabled={signingIn || webView}
         >
           {signingIn ? (
             <LoadingSpinner size="sm" />
