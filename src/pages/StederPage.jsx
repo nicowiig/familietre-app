@@ -164,14 +164,42 @@ export function StederPage() {
   }
 
   async function loadStats() {
-    const [{ count: addrCount }, { data: cityData }, { data: countryData }] = await Promise.all([
+    const [
+      { count: addrCount },
+      { data: addrCityData },
+      { data: addrCountryData },
+      { data: factCityData },
+      { data: factCountryData },
+    ] = await Promise.all([
       supabase.from('addresses').select('id', { count: 'exact', head: true }),
       supabase.from('addresses').select('city').not('city', 'is', null),
       supabase.from('addresses').select('country_code').not('country_code', 'is', null),
+      supabase.from('person_facts').select('place_city').in('fact_type', ['BIRT','DEAT','RESI']).not('place_city', 'is', null),
+      supabase.from('person_facts').select('place_country').in('fact_type', ['BIRT','DEAT','RESI']).not('place_country', 'is', null),
     ])
-    const uniqueCities    = new Set((cityData    || []).map(r => r.city)).size
-    const uniqueCountries = new Set((countryData || []).map(r => r.country_code)).size
-    setStats({ addresses: addrCount, cities: uniqueCities, countries: uniqueCountries })
+
+    // Slå sammen byer og land fra begge kilder
+    const allCities = new Set([
+      ...(addrCityData    || []).map(r => r.city?.trim().toLowerCase()).filter(Boolean),
+      ...(factCityData    || []).map(r => r.place_city?.trim().toLowerCase()).filter(Boolean),
+    ])
+    const allCountries = new Set([
+      ...(addrCountryData || []).map(r => r.country_code?.trim().toLowerCase()).filter(Boolean),
+      ...(factCountryData || []).map(r => {
+        // Normaliser land til kode for deduplisering
+        const c = r.place_country?.trim().toLowerCase()
+        if (!c) return null
+        if (c.includes('norge') || c === 'norway' || c === 'no') return 'no'
+        if (c.includes('danmark') || c === 'denmark' || c === 'dk') return 'dk'
+        if (c.includes('sverige') || c === 'sweden' || c === 'se') return 'se'
+        if (c.includes('tyskland') || c === 'germany' || c === 'de') return 'de'
+        if (c.includes('england') || c === 'gb' || c === 'uk') return 'gb'
+        if (c === 'usa' || c === 'us') return 'us'
+        return c
+      }).filter(Boolean),
+    ])
+
+    setStats({ addresses: addrCount, cities: allCities.size, countries: allCountries.size })
   }
 
   async function loadMapAddresses() {
@@ -361,9 +389,9 @@ export function StederPage() {
 
             {/* ── Hurtigtall ── */}
             <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap', marginBottom: 'var(--space-10)' }}>
-              <StatCard value={stats.addresses} label="Registrerte adresser" />
-              <StatCard value={stats.cities}    label="Unike byer" />
-              <StatCard value={stats.countries} label="Land" />
+              <StatCard value={stats.addresses} label="Normaliserte adresser" />
+              <StatCard value={stats.cities}    label="Unike byer i arkivet" />
+              <StatCard value={stats.countries} label="Land representert" />
             </div>
 
             {/* ── Interaktivt kart ── */}
