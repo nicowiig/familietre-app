@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { to: '/',          label: 'Hjem' },
   { to: '/grener',    label: 'Slektsgrener' },
   { to: '/tre',       label: 'Familietre' },
+  { to: '/steder',    label: 'Steder' },
   { to: '/hva-er-nytt', label: 'Hva er nytt?' },
 ]
 
@@ -153,14 +154,6 @@ export function Layout({ children }) {
                 {l.label}
               </NavLink>
             ))}
-            {isAdmin && (
-              <NavLink
-                to="/admin"
-                className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}
-              >
-                Admin
-              </NavLink>
-            )}
           </div>
 
           {/* Søkefelt med live-forslag */}

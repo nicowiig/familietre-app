@@ -12,6 +12,8 @@ import { BranchDetailPage } from './pages/BranchDetailPage'
 import { AdminPage }       from './pages/AdminPage'
 import { ChangelogPage }   from './pages/ChangelogPage'
 import { PlacePage }       from './pages/PlacePage'
+import { StederPage }      from './pages/StederPage'
+import { DatakvalitetPage } from './pages/DatakvalitetPage'
 
 export default function App() {
   return (
@@ -46,6 +48,12 @@ export default function App() {
           } />
           <Route path="/place/:articleId" element={
             <ProtectedRoute><PlacePage /></ProtectedRoute>
+          } />
+          <Route path="/steder" element={
+            <ProtectedRoute><StederPage /></ProtectedRoute>
+          } />
+          <Route path="/datakvalitet" element={
+            <ProtectedRoute><DatakvalitetPage /></ProtectedRoute>
           } />
           <Route path="/admin" element={
             <ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>
