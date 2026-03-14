@@ -28,9 +28,8 @@ export function AdminPage() {
         {/* Faner */}
         <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-8)', borderBottom: '1px solid var(--color-border)', paddingBottom: 0 }}>
           {[
-            { id: 'tilganger',    label: 'Tilgangsforespørsler' },
-            { id: 'brukerkobling', label: 'Brukerkobling' },
-            { id: 'rettelser',   label: 'Innsendte rettelser' },
+            { id: 'tilganger',    label: 'Tilganger' },
+            { id: 'rettelser',    label: 'Innsendte rettelser' },
             { id: 'datakvalitet', label: 'Datakvalitet' },
           ].map(t => (
             <button
@@ -49,8 +48,7 @@ export function AdminPage() {
           ))}
         </div>
 
-        {tab === 'tilganger'    && <AccessRequestsTab />}
-        {tab === 'brukerkobling' && <UserLinkingTab />}
+        {tab === 'tilganger'    && <AccessTab />}
         {tab === 'datakvalitet' && <DataQualityTab />}
         {tab === 'rettelser' && (
           <div className="text-muted text-center" style={{ padding: 'var(--space-10)' }}>
@@ -62,19 +60,30 @@ export function AdminPage() {
   )
 }
 
-function AccessRequestsTab() {
-  const [requests,    setRequests]    = useState([])
+// ─────────────────────────────────────────────────────────────
+// Kombinert tilgangs- og koblingsfane
+// ─────────────────────────────────────────────────────────────
+
+const STATUS_LABELS = {
+  pending:  'Venter',
+  approved: 'Godkjent',
+  rejected: 'Avvist',
+}
+
+function AccessTab() {
+  const [rows,        setRows]        = useState([])
   const [personNames, setPersonNames] = useState({})
-  const [loading, setLoading]         = useState(true)
+  const [loading,     setLoading]     = useState(true)
 
   async function load() {
+    setLoading(true)
     const { data } = await supabase
       .from('familietre_tilganger')
       .select('*')
       .order('requested_at', { ascending: false })
-    const reqs = data || []
+    const all = data || []
 
-    const personIds = [...new Set(reqs.filter(r => r.person_id).map(r => r.person_id))]
+    const personIds = [...new Set(all.filter(r => r.person_id).map(r => r.person_id))]
     const nameMap = {}
     if (personIds.length) {
       const { data: names } = await supabase
@@ -86,19 +95,34 @@ function AccessRequestsTab() {
         nameMap[n.person_id] = [n.given_name, n.middle_name, n.surname].filter(Boolean).join(' ')
       })
     }
-
-    setRequests(reqs)
+    setRows(all)
     setPersonNames(nameMap)
     setLoading(false)
   }
 
   useEffect(() => { load() }, [])
 
-  async function handle(id, status) {
+  async function handleApprove(id) {
     await supabase
       .from('familietre_tilganger')
-      .update({ status, handled_at: new Date().toISOString() })
+      .update({ status: 'approved', handled_at: new Date().toISOString() })
       .eq('id', id)
+    load()
+  }
+
+  async function handleReject(id) {
+    await supabase
+      .from('familietre_tilganger')
+      .update({ status: 'rejected', handled_at: new Date().toISOString() })
+      .eq('id', id)
+    load()
+  }
+
+  async function handleLink(userId, personId) {
+    await supabase
+      .from('familietre_tilganger')
+      .update({ person_id: personId })
+      .eq('user_id', userId)
     load()
   }
 
@@ -110,219 +134,135 @@ function AccessRequestsTab() {
     load()
   }
 
-  if (loading) return <LoadingSpinner text="Laster forespørsler…" />
+  if (loading) return <LoadingSpinner text="Laster…" />
 
-  if (requests.length === 0) return (
-    <p className="text-muted text-center" style={{ padding: 'var(--space-10)' }}>
-      Ingen forespørsler.
-    </p>
+  // Sorter: pending → approved+ukoblet → approved+koblet → rejected
+  const sorted = [...rows].sort((a, b) => {
+    const rank = r => {
+      if (r.status === 'pending')                  return 0
+      if (r.status === 'approved' && !r.person_id) return 1
+      if (r.status === 'approved' && r.person_id)  return 2
+      return 3
+    }
+    return rank(a) - rank(b)
+  })
+
+  if (sorted.length === 0) return (
+    <p className="text-muted text-center" style={{ padding: 'var(--space-10)' }}>Ingen forespørsler.</p>
   )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-      {requests.map(r => (
-        <div key={r.id} className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-4)' }}>
-            <div>
-              <div style={{ fontWeight: 600 }}>{r.display_name || r.email}</div>
-              <div className="text-sm text-muted">{r.email}</div>
-              {r.message && <p className="text-sm mt-2" style={{ fontStyle: 'italic' }}>«{r.message}»</p>}
-              <div className="text-xs text-muted mt-2">
-                Sendt: {r.requested_at ? new Date(r.requested_at).toLocaleString('nb-NO') : '—'}
-              </div>
-              {r.status === 'approved' && r.person_id && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
-                  <Link
-                    to={`/person/${r.person_id}`}
-                    style={{ color: 'var(--color-accent)', fontSize: 'var(--text-sm)' }}
-                  >
-                    → {personNames[r.person_id] || r.person_id}
-                  </Link>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ color: 'var(--color-error)' }}
-                    onClick={() => handleUnlink(r.id)}
-                  >
-                    Koble fra
-                  </button>
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', alignItems: 'flex-end', flexShrink: 0 }}>
-              <span className={`badge badge-${r.status}`}>{STATUS_LABELS[r.status] || r.status}</span>
-              {r.status === 'pending' && (
-                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => handle(r.id, 'approved')}
-                  >
-                    Godkjenn
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ color: 'var(--color-error)' }}
-                    onClick={() => handle(r.id, 'rejected')}
-                  >
-                    Avvis
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+      {sorted.map(r => (
+        <AccessCard
+          key={r.id}
+          row={r}
+          linkedPersonName={personNames[r.person_id]}
+          onApprove={() => handleApprove(r.id)}
+          onReject={() => handleReject(r.id)}
+          onLink={personId => handleLink(r.user_id, personId)}
+          onUnlink={() => handleUnlink(r.id)}
+        />
       ))}
     </div>
   )
 }
 
-const STATUS_LABELS = {
-  pending:  'Venter',
-  approved: 'Godkjent',
-  rejected: 'Avvist',
-}
-
-/* ===== Brukerkobling ===== */
-function UserLinkingTab() {
-  const [users,   setUsers]   = useState([])
-  const [loading, setLoading] = useState(true)
-
-  async function load() {
-    const { data } = await supabase
-      .from('familietre_tilganger')
-      .select('id, user_id, email, display_name, status, person_id, is_admin')
-      .eq('status', 'approved')
-      .order('display_name')
-    setUsers(data || [])
-    setLoading(false)
-  }
-
-  useEffect(() => { load() }, [])
-
-  async function link(userId, personId) {
-    const { error } = await supabase
-      .from('familietre_tilganger')
-      .update({ person_id: personId })
-      .eq('user_id', userId)
-    if (error) throw error
-    load()
-  }
-
-  async function unlink(userId) {
-    const { error } = await supabase
-      .from('familietre_tilganger')
-      .update({ person_id: null })
-      .eq('user_id', userId)
-    if (error) throw error
-    load()
-  }
-
-  if (loading) return <LoadingSpinner text="Laster brukere…" />
-
-  const linked   = users.filter(u => u.person_id)
-  const unlinked = users.filter(u => !u.person_id)
+function AccessCard({ row, linkedPersonName, onApprove, onReject, onLink, onUnlink }) {
+  const showLinking = row.status === 'approved'
 
   return (
-    <div>
-      <p className="text-sm text-muted" style={{ marginBottom: 'var(--space-6)' }}>
-        Koble innloggede brukere til en person i slektstreet. Koblingen gjør at «Min profil»-lenken dukker opp i brukermenyen.
-      </p>
-
-      {unlinked.length > 0 && (
-        <div style={{ marginBottom: 'var(--space-8)' }}>
-          <h3 style={{ fontFamily: 'var(--font-heading)', marginBottom: 'var(--space-4)', fontSize: 'var(--text-lg)' }}>
-            Ikke koblet ({unlinked.length})
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-            {unlinked.map(u => (
-              <UserLinkCard key={u.user_id} user={u} onLink={pid => link(u.user_id, pid)} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {linked.length > 0 && (
+    <div className="card">
+      {/* ── Øverste rad: navn + status + handlingsknapper ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-4)', marginBottom: showLinking ? 'var(--space-4)' : 0 }}>
         <div>
-          <h3 style={{ fontFamily: 'var(--font-heading)', marginBottom: 'var(--space-4)', fontSize: 'var(--text-lg)' }}>
-            Koblet ({linked.length})
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            {linked.map(u => (
-              <div key={u.user_id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-4)' }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>{u.display_name || u.email}</div>
-                  <div className="text-sm text-muted">{u.email}</div>
-                  <Link to={`/person/${u.person_id}`} className="text-sm" style={{ color: 'var(--color-accent)' }}>
-                    → {u.person_id}
-                  </Link>
-                </div>
-                <button
-                  className="btn btn-ghost btn-sm"
-                  style={{ color: 'var(--color-error)', flexShrink: 0 }}
-                  onClick={() => unlink(u.user_id)}
-                >
-                  Koble fra
-                </button>
-              </div>
-            ))}
+          <div style={{ fontWeight: 600 }}>{row.display_name || row.email}</div>
+          <div className="text-sm text-muted">{row.email}</div>
+          {row.message && (
+            <p className="text-sm mt-2" style={{ fontStyle: 'italic' }}>«{row.message}»</p>
+          )}
+          <div className="text-xs text-muted mt-2">
+            Sendt: {row.requested_at ? new Date(row.requested_at).toLocaleString('nb-NO') : '—'}
           </div>
         </div>
-      )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', alignItems: 'flex-end', flexShrink: 0 }}>
+          <span className={`badge badge-${row.status}`}>{STATUS_LABELS[row.status] || row.status}</span>
+          {row.status === 'pending' && (
+            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+              <button className="btn btn-primary btn-sm" onClick={onApprove}>Godkjenn</button>
+              <button className="btn btn-ghost btn-sm" style={{ color: 'var(--color-error)' }} onClick={onReject}>Avvis</button>
+            </div>
+          )}
+        </div>
+      </div>
 
-      {users.length === 0 && (
-        <p className="text-muted text-center" style={{ padding: 'var(--space-10)' }}>Ingen godkjente brukere.</p>
+      {/* ── Koblingsseksjon (kun for godkjente) ── */}
+      {showLinking && (
+        <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)' }}>
+          {row.person_id ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <span className="text-sm text-muted">Koblet til:</span>
+                <Link to={`/person/${row.person_id}`} style={{ color: 'var(--color-accent)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+                  {linkedPersonName || row.person_id}
+                </Link>
+              </div>
+              <button className="btn btn-ghost btn-sm" style={{ color: 'var(--color-error)' }} onClick={onUnlink}>
+                Koble fra
+              </button>
+            </div>
+          ) : (
+            <PersonLinkSearch user={row} onLink={onLink} />
+          )}
+        </div>
       )}
     </div>
   )
 }
 
-function UserLinkCard({ user, onLink }) {
+// ─────────────────────────────────────────────────────────────
+// Person-søk og forslagsmotor
+// ─────────────────────────────────────────────────────────────
+
+function PersonLinkSearch({ user, onLink }) {
   const [suggestions, setSuggestions] = useState(null)
   const [search,      setSearch]      = useState('')
   const [results,     setResults]     = useState([])
   const [saving,      setSaving]      = useState(false)
-  const [expanded,    setExpanded]    = useState(false)
-  const [linkError,   setLinkError]   = useState(null)
   const [linkedName,  setLinkedName]  = useState(null)
+  const [linkError,   setLinkError]   = useState(null)
+
+  useEffect(() => { loadSuggestions() }, [])
 
   async function buildSuggestions(nameRows) {
     if (!nameRows.length) return []
     const ids = [...new Set(nameRows.map(r => r.person_id))]
-
     const [factsRes, rolesRes, personsRes] = await Promise.all([
-      supabase.from('person_facts').select('person_id, fact_type, date_year')
-        .in('person_id', ids),
+      supabase.from('person_facts').select('person_id, fact_type, date_year').in('person_id', ids),
       supabase.from('person_roles').select('person_id, value, role_type, date_from, date_to')
-        .in('person_id', ids)
-        .in('role_type', ['occupation', 'position', 'OCCU', 'TITL', 'title']),
+        .in('person_id', ids).in('role_type', ['occupation', 'position', 'OCCU', 'TITL', 'title']),
       supabase.from('persons').select('person_id, is_living').in('person_id', ids),
     ])
-
     const factsMap = {}
     ;(factsRes.data || []).forEach(f => {
-      const normType = f.fact_type.toUpperCase()
-      if (normType !== 'BIRT' && normType !== 'DEAT') return
+      const t = f.fact_type.toUpperCase()
+      if (t !== 'BIRT' && t !== 'DEAT') return
       if (!factsMap[f.person_id]) factsMap[f.person_id] = {}
-      if (normType === 'BIRT') factsMap[f.person_id].birth = f.date_year
-      if (normType === 'DEAT') factsMap[f.person_id].death = f.date_year
+      if (t === 'BIRT') factsMap[f.person_id].birth = f.date_year
+      if (t === 'DEAT') factsMap[f.person_id].death = f.date_year
     })
-
     const rolesMap = {}
     ;(rolesRes.data || []).forEach(r => {
-      const duration = (r.date_to || 9999) - (r.date_from || 0)
-      if (!rolesMap[r.person_id] || duration > rolesMap[r.person_id].duration) {
-        rolesMap[r.person_id] = { title: r.value, duration }
-      }
+      const dur = (r.date_to || 9999) - (r.date_from || 0)
+      if (!rolesMap[r.person_id] || dur > rolesMap[r.person_id].duration)
+        rolesMap[r.person_id] = { title: r.value, duration: dur }
     })
-
-    const livingSet = new Set(
-      (personsRes.data || []).filter(p => p.is_living).map(p => p.person_id)
-    )
-
+    const livingSet = new Set((personsRes.data || []).filter(p => p.is_living).map(p => p.person_id))
     return nameRows.map(r => ({
       ...r,
-      birth:  factsMap[r.person_id]?.birth  ?? null,
-      death:  factsMap[r.person_id]?.death  ?? null,
-      title:  rolesMap[r.person_id]?.title  || null,
+      birth:    factsMap[r.person_id]?.birth ?? null,
+      death:    factsMap[r.person_id]?.death ?? null,
+      title:    rolesMap[r.person_id]?.title || null,
       isLiving: livingSet.has(r.person_id),
       hasDeath: factsMap[r.person_id]?.death != null,
     }))
@@ -330,57 +270,35 @@ function UserLinkCard({ user, onLink }) {
 
   function scoreAndSort(enriched, scoreMap) {
     return enriched
-      .map(r => ({
-        ...r,
-        // Navnescore + livsbonus: +2 levende, -2 avdød (dødsdato registrert)
-        finalScore: (scoreMap[r.person_id] || 0) + (r.hasDeath ? -2 : r.isLiving ? 2 : 0),
-      }))
-      .sort((a, b) => {
-        if (b.finalScore !== a.finalScore) return b.finalScore - a.finalScore
-        return (b.birth || 0) - (a.birth || 0)
-      })
+      .map(r => ({ ...r, finalScore: (scoreMap[r.person_id] || 0) + (r.hasDeath ? -2 : r.isLiving ? 2 : 0) }))
+      .sort((a, b) => b.finalScore !== a.finalScore ? b.finalScore - a.finalScore : (b.birth || 0) - (a.birth || 0))
       .slice(0, 6)
   }
 
   async function loadSuggestions() {
     if (suggestions !== null) return
-    const tokens = (user.display_name || user.email.split('@')[0])
-      .split(/[\s._-]+/).filter(t => t.length > 1)
-
+    const tokens = (user.display_name || user.email.split('@')[0]).split(/[\s._-]+/).filter(t => t.length > 1)
     if (!tokens.length) { setSuggestions([]); return }
-
     async function fetchToken(t) {
-      const { data } = await supabase
-        .from('person_names')
+      const { data } = await supabase.from('person_names')
         .select('person_id, given_name, surname, middle_name')
         .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%,middle_name.ilike.%${t}%`)
         .eq('is_preferred', true).limit(50)
       return data || []
     }
-
     const sets = await Promise.all(tokens.map(fetchToken))
     const allRows = sets.flat()
-
     const scoreMap = {}
-    // Fornavn teller +2, mellomnavn og etternavn +1
     tokens.forEach((t, ti) => {
       ;(sets[ti] || []).forEach(r => {
         if (!scoreMap[r.person_id]) scoreMap[r.person_id] = 0
-        const tLower = t.toLowerCase()
-        const points = (r.given_name || '').toLowerCase().includes(tLower) ? 2 : 1
-        scoreMap[r.person_id] += points
+        const tl = t.toLowerCase()
+        scoreMap[r.person_id] += (r.given_name || '').toLowerCase().includes(tl) ? 2 : 1
       })
     })
-
-    // Ta de 30 med høyest navnescore som kandidater
-    const uniqueRows = Object.entries(scoreMap)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 30)
+    const uniqueRows = Object.entries(scoreMap).sort((a, b) => b[1] - a[1]).slice(0, 30)
       .map(([pid]) => allRows.find(r => r.person_id === pid))
-
-    const enriched = await buildSuggestions(uniqueRows)
-    setSuggestions(scoreAndSort(enriched, scoreMap))
-    setExpanded(true)
+    setSuggestions(scoreAndSort(await buildSuggestions(uniqueRows), scoreMap))
   }
 
   async function handleSearch(e) {
@@ -389,8 +307,7 @@ function UserLinkCard({ user, onLink }) {
     if (val.trim().length < 2) { setResults([]); return }
     const tokens = val.trim().split(/\s+/)
     async function ft(t) {
-      const { data } = await supabase
-        .from('person_names')
+      const { data } = await supabase.from('person_names')
         .select('person_id, given_name, surname, middle_name')
         .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%,middle_name.ilike.%${t}%`)
         .eq('is_preferred', true).limit(30)
@@ -404,8 +321,7 @@ function UserLinkCard({ user, onLink }) {
       .slice(0, 30)
     const scoreMap = {}
     matched.forEach(r => { scoreMap[r.person_id] = tokens.length })
-    const enriched = await buildSuggestions(matched)
-    setResults(scoreAndSort(enriched, scoreMap))
+    setResults(scoreAndSort(await buildSuggestions(matched), scoreMap))
   }
 
   async function doLink(personId, personName) {
@@ -415,113 +331,85 @@ function UserLinkCard({ user, onLink }) {
       await onLink(personId)
       setLinkedName(personName)
     } catch (err) {
-      setLinkError(err.message || 'Koblingen feilet. Sjekk Supabase RLS-policy.')
+      setLinkError(err.message || 'Koblingen feilet.')
     }
     setSaving(false)
   }
 
+  if (linkedName) return (
+    <p className="text-sm" style={{ color: 'var(--color-success, #22c55e)' }}>✓ Koblet til {linkedName}</p>
+  )
+
   const displayList = search.trim().length >= 2 ? results : (suggestions || [])
 
   return (
-    <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-3)' }}>
-        <div>
-          <div style={{ fontWeight: 600 }}>{user.display_name || user.email}</div>
-          <div className="text-sm text-muted">{user.email}</div>
-          {linkedName && (
-            <div className="text-sm" style={{ color: 'var(--color-success, #22c55e)', marginTop: 'var(--space-1)' }}>
-              ✓ Koblet til {linkedName}
-            </div>
-          )}
-          {linkError && (
-            <div className="text-sm" style={{ color: 'var(--color-error)', marginTop: 'var(--space-1)' }}>
-              ⚠ {linkError}
-            </div>
-          )}
-        </div>
-        <button
-          className="btn btn-secondary btn-sm"
-          onClick={loadSuggestions}
-          disabled={expanded}
-        >
-          {suggestions === null ? 'Finn forslag' : 'Forslag lastet'}
-        </button>
-      </div>
-
-      {expanded && (
-        <div>
-          <input
-            type="search"
-            placeholder="Søk manuelt etter navn i treet…"
-            value={search}
-            onChange={handleSearch}
-            style={{
-              width: '100%', padding: 'var(--space-2) var(--space-3)',
-              background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius)', color: 'var(--color-text)',
-              fontSize: 'var(--text-sm)', marginBottom: 'var(--space-3)', boxSizing: 'border-box',
-            }}
-          />
-
-          {displayList.length === 0 && (
-            <p className="text-sm text-muted">Ingen treff — prøv å søke manuelt.</p>
-          )}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            {displayList.map(s => {
-              const fullName = [s.given_name, s.middle_name, s.surname].filter(Boolean).join(' ')
-              const lifespan = s.birth ? (s.death ? `${s.birth}–${s.death}` : `f. ${s.birth}`) : null
-              return (
-                <div
-                  key={s.person_id}
-                  style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: 'var(--space-2) var(--space-3)',
-                    background: 'var(--color-bg-elevated)',
-                    borderRadius: 'var(--radius)',
-                    border: '1px solid var(--color-border-light)',
-                    gap: 'var(--space-3)',
-                  }}
-                >
-                  <div>
-                    <Link to={`/person/${s.person_id}`} target="_blank" style={{ fontWeight: 600, color: 'var(--color-accent)', fontSize: 'var(--text-sm)' }}>
-                      {fullName}
-                    </Link>
-                    {lifespan && <span className="text-xs text-muted" style={{ marginLeft: 'var(--space-2)' }}>{lifespan}</span>}
-                    {s.title && <div className="text-xs text-muted">{s.title}</div>}
-                  </div>
-                  <button
-                    className="btn btn-primary btn-sm"
-                    style={{ flexShrink: 0 }}
-                    disabled={saving}
-                    onClick={() => doLink(s.person_id, fullName)}
-                  >
-                    Koble
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+    <div>
+      <p className="text-sm text-muted" style={{ marginBottom: 'var(--space-3)' }}>Koble til person i slektstreet:</p>
+      {linkError && (
+        <p className="text-sm" style={{ color: 'var(--color-error)', marginBottom: 'var(--space-2)' }}>⚠ {linkError}</p>
       )}
+      <input
+        type="search"
+        placeholder="Søk etter navn…"
+        value={search}
+        onChange={handleSearch}
+        style={{
+          width: '100%', padding: 'var(--space-2) var(--space-3)',
+          background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius)', color: 'var(--color-text)',
+          fontSize: 'var(--text-sm)', marginBottom: 'var(--space-3)', boxSizing: 'border-box',
+        }}
+      />
+      {suggestions === null && <p className="text-sm text-muted">Laster forslag…</p>}
+      {displayList.length === 0 && suggestions !== null && (
+        <p className="text-sm text-muted">Ingen treff — prøv å søke.</p>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        {displayList.map(s => {
+          const fullName = [s.given_name, s.middle_name, s.surname].filter(Boolean).join(' ')
+          const lifespan = s.birth ? (s.death ? `${s.birth}–${s.death}` : `f. ${s.birth}`) : null
+          return (
+            <div key={s.person_id} style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: 'var(--space-2) var(--space-3)',
+              background: 'var(--color-bg-elevated)',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--color-border-light)',
+              gap: 'var(--space-3)',
+            }}>
+              <div>
+                <Link to={`/person/${s.person_id}`} target="_blank"
+                  style={{ fontWeight: 600, color: 'var(--color-accent)', fontSize: 'var(--text-sm)' }}>
+                  {fullName}
+                </Link>
+                {lifespan && <span className="text-xs text-muted" style={{ marginLeft: 'var(--space-2)' }}>{lifespan}</span>}
+                {s.title && <div className="text-xs text-muted">{s.title}</div>}
+              </div>
+              <button className="btn btn-primary btn-sm" style={{ flexShrink: 0 }}
+                disabled={saving} onClick={() => doLink(s.person_id, fullName)}>
+                Koble
+              </button>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
 
+
+/* ===== Datakvalitet ===== */
 function DataQualityTab() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      const [
-        personsRes, withBioRes, withPhotoRes
-      ] = await Promise.all([
+      const [personsRes, withBioRes, withPhotoRes] = await Promise.all([
         supabase.from('persons').select('person_id', { count: 'exact', head: true }).eq('is_deleted', false),
         supabase.from('person_biography').select('person_id', { count: 'exact', head: true }).eq('is_approved', true),
         supabase.from('person_photos').select('person_id', { count: 'exact', head: true }).eq('is_primary', true),
       ])
-
       setStats({
         total:     personsRes.count || 0,
         withBio:   withBioRes.count || 0,
