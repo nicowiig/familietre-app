@@ -16,6 +16,10 @@ export function LoginPage() {
   const [error, setError] = useState(null)
   const webView = isWebView()
 
+  // Les OAuth-feil fra URL-hash (f.eks. etter Google blokkerer WebView)
+  const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'))
+  const oauthError = hashParams.get('error_description') || hashParams.get('error')
+
   if (loading) return <LoadingSpinner fullPage />
   if (status !== 'unauthenticated') return <Navigate to="/" replace />
 
@@ -40,7 +44,7 @@ export function LoginPage() {
 
         <span className="ornament">✦ ✦ ✦</span>
 
-        {webView && (
+        {(webView || oauthError?.includes('disallowed_useragent')) && (
           <div style={{
             background: 'rgba(234,179,8,0.12)',
             border: '1px solid rgba(234,179,8,0.4)',
@@ -64,7 +68,7 @@ export function LoginPage() {
         <button
           className="btn-google"
           onClick={handleGoogle}
-          disabled={signingIn || webView}
+          disabled={signingIn || webView || oauthError?.includes('disallowed_useragent')}
         >
           {signingIn ? (
             <LoadingSpinner size="sm" />
