@@ -10,15 +10,31 @@ function isWebView() {
     || (ua.includes('Android') && ua.includes('wv'))
 }
 
+function tryOpenInBrowser(url) {
+  // Android: intent-URL åpner standard nettleser direkte
+  const isAndroid = /Android/.test(navigator.userAgent)
+  if (isAndroid) {
+    const intentUrl = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;action=android.intent.action.VIEW;end`
+    window.location.href = intentUrl
+    return true
+  }
+  // iOS: ingen pålitelig metode — fall tilbake til kopier-UI
+  return false
+}
+
 export function LoginPage() {
   const { status, loading, signInWithGoogle } = useAuth()
-  const [signingIn, setSigningIn] = useState(false)
-  const [error, setError] = useState(null)
+  const [signingIn, setSigningIn]   = useState(false)
+  const [error, setError]           = useState(null)
+  const [copied, setCopied]         = useState(false)
   const webView = isWebView()
 
   // Les OAuth-feil fra URL-hash (f.eks. etter Google blokkerer WebView)
   const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'))
   const oauthError = hashParams.get('error_description') || hashParams.get('error')
+  const showWebViewWarning = webView || oauthError?.includes('disallowed_useragent')
+
+  const appUrl = window.location.origin + '/familietre-app/'
 
   if (loading) return <LoadingSpinner fullPage />
   if (status !== 'unauthenticated') return <Navigate to="/" replace />
@@ -34,6 +50,17 @@ export function LoginPage() {
     }
   }
 
+  function handleOpenInBrowser() {
+    const opened = tryOpenInBrowser(appUrl)
+    if (!opened) {
+      // iOS: kopier til utklippstavle og gi bekreftelse
+      navigator.clipboard?.writeText(appUrl).then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 3000)
+      })
+    }
+  }
+
   return (
     <div className="login-page">
       <div className="login-card">
@@ -44,39 +71,61 @@ export function LoginPage() {
 
         <span className="ornament">✦ ✦ ✦</span>
 
-        {(webView || oauthError?.includes('disallowed_useragent')) && (
+        {showWebViewWarning ? (
           <div style={{
-            background: 'rgba(234,179,8,0.12)',
+            background: 'rgba(234,179,8,0.10)',
             border: '1px solid rgba(234,179,8,0.4)',
             borderRadius: 'var(--radius)',
-            padding: 'var(--space-3) var(--space-4)',
+            padding: 'var(--space-4)',
             marginBottom: 'var(--space-4)',
             fontSize: 'var(--text-sm)',
-            color: '#ca8a04',
-            lineHeight: 1.5,
+            lineHeight: 1.6,
           }}>
-            <strong>Åpne i nettleser for å logge inn</strong><br />
-            Google-innlogging fungerer ikke i apper som Messenger eller Instagram.
-            Kopier lenken og åpne den i Safari eller Chrome.
+            <p style={{ color: '#ca8a04', fontWeight: 600, marginBottom: 'var(--space-2)' }}>
+              Google-innlogging fungerer ikke her
+            </p>
+            <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>
+              Du ser ut til å bruke en innebygd nettleser (f.eks. Messenger eller Instagram).
+              Åpne lenken i Safari eller Chrome for å logge inn.
+            </p>
+            <button
+              onClick={handleOpenInBrowser}
+              style={{
+                width: '100%',
+                padding: 'var(--space-2) var(--space-3)',
+                background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(234,179,8,0.15)',
+                border: copied ? '1px solid rgba(34,197,94,0.5)' : '1px solid rgba(234,179,8,0.5)',
+                borderRadius: 'var(--radius-sm)',
+                color: copied ? '#16a34a' : '#92400e',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              {copied ? '✓ Lenke kopiert — lim inn i Safari/Chrome' : '📋 Kopier lenke og åpne i nettleser'}
+            </button>
           </div>
-        )}
+        ) : (
+          <>
+            {error && (
+              <div className="alert alert-error mb-4">{error}</div>
+            )}
 
-        {error && (
-          <div className="alert alert-error mb-4">{error}</div>
+            <button
+              className="btn-google"
+              onClick={handleGoogle}
+              disabled={signingIn}
+            >
+              {signingIn ? (
+                <LoadingSpinner size="sm" />
+              ) : (
+                <GoogleIcon />
+              )}
+              {signingIn ? 'Logger inn…' : 'Logg inn med Google'}
+            </button>
+          </>
         )}
-
-        <button
-          className="btn-google"
-          onClick={handleGoogle}
-          disabled={signingIn || webView || oauthError?.includes('disallowed_useragent')}
-        >
-          {signingIn ? (
-            <LoadingSpinner size="sm" />
-          ) : (
-            <GoogleIcon />
-          )}
-          {signingIn ? 'Logger inn…' : 'Logg inn med Google'}
-        </button>
 
         <p style={{
           marginTop: 'var(--space-6)',
