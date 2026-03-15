@@ -935,7 +935,7 @@ label {
 }
 
 .nav-mobile-menu {
-  display: none;
+  display: flex;
   flex-direction: column;
   background: var(--color-bg-nav);
   border-bottom: 1px solid rgba(255,255,255,0.08);
