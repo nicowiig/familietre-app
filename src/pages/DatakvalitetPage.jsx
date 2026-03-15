@@ -506,13 +506,14 @@ function TabDuplicates() {
         groups[key].push({ id: n.person_id, name: [n.given_name, n.middle_name, n.surname].filter(Boolean).join(' ') })
       })
 
-      // Kun grupper med 2+
+      // Kun grupper med 2+ — og filtrer bort same-ID-par
       const rawPairs = []
       Object.values(groups).forEach(group => {
         if (group.length < 2) return
         for (let i = 0; i < group.length; i++) {
           for (let j = i + 1; j < group.length; j++) {
-            rawPairs.push([group[i].id, group[j].id, group[i].name, group[j].name])
+            if (group[i].id !== group[j].id)
+              rawPairs.push([group[i].id, group[j].id, group[i].name, group[j].name])
           }
         }
       })
