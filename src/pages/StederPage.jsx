@@ -14,15 +14,12 @@ import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl })
 
-// Parse Postgres point "(lng,lat)" → [lat, lng]
-function parsePoint(pt) {
-  if (!pt) return null
-  const m = String(pt).match(/\(([^,]+),([^)]+)\)/)
-  if (!m) return null
-  const lng = parseFloat(m[1])
-  const lat = parseFloat(m[2])
-  if (isNaN(lat) || isNaN(lng)) return null
-  return [lat, lng]
+// Bygg [lat, lng] fra coordinates_lat / coordinates_lng
+function parseCoords(lat, lng) {
+  const la = parseFloat(lat)
+  const lo = parseFloat(lng)
+  if (isNaN(la) || isNaN(lo)) return null
+  return [la, lo]
 }
 
 const ARTICLE_TYPE_LABEL = {
@@ -205,8 +202,8 @@ export function StederPage() {
   async function loadMapAddresses() {
     const { data } = await supabase
       .from('addresses')
-      .select('id, display_name, building_name, street_name, house_number, city, country, coordinates')
-      .not('coordinates', 'is', null)
+      .select('id, display_name, building_name, street_name, house_number, city, country, coordinates_lat, coordinates_lng')
+      .not('coordinates_lat', 'is', null)
     if (!data) return
 
     // Hent tilknyttede place_articles for lenker
@@ -220,7 +217,7 @@ export function StederPage() {
 
     const parsed = data.map(a => ({
       ...a,
-      latlng: parsePoint(a.coordinates),
+      latlng: parseCoords(a.coordinates_lat, a.coordinates_lng),
       article: articleMap[a.id] || null,
     })).filter(a => a.latlng)
     setMapAddrs(parsed)
