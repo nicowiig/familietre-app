@@ -389,9 +389,75 @@ function normalizeName(str) {
   return (str || '').toLowerCase().trim().replace(/[.\-]/g, '')
 }
 
+const DISMISSED_KEY = 'dismissed_duplicate_pairs'
+
+function dismissedSet() {
+  try { return new Set(JSON.parse(localStorage.getItem(DISMISSED_KEY) || '[]')) }
+  catch { return new Set() }
+}
+function dismissPair(idA, idB) {
+  const s = dismissedSet()
+  s.add(`${idA}|${idB}`)
+  s.add(`${idB}|${idA}`)
+  localStorage.setItem(DISMISSED_KEY, JSON.stringify([...s]))
+}
+function isPairDismissed(idA, idB, dismissed) {
+  return dismissed.has(`${idA}|${idB}`) || dismissed.has(`${idB}|${idA}`)
+}
+
+const CAREER_TYPES = new Set(['occupation', 'position', 'military', 'OCCU', 'TITL', 'title', 'Military Service'])
+
+function MiniProfile({ person, photoUrl }) {
+  const lifespan = [
+    person.birthYear ? `f. ${person.birthYear}` : null,
+    person.deathYear ? `d. ${person.deathYear}` : null,
+  ].filter(Boolean).join(' · ')
+
+  return (
+    <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start', flex: 1, minWidth: 0 }}>
+      {/* Miniatyrbilde */}
+      <div style={{
+        width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+        overflow: 'hidden', background: 'var(--color-border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {photoUrl
+          ? <img src={photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <svg viewBox="0 0 44 44" width="44" height="44" fill="none">
+              <circle cx="22" cy="17" r="8" fill="var(--color-text-muted)" opacity="0.3" />
+              <ellipse cx="22" cy="38" rx="14" ry="9" fill="var(--color-text-muted)" opacity="0.2" />
+            </svg>
+        }
+      </div>
+      {/* Info */}
+      <div style={{ minWidth: 0 }}>
+        <Link
+          to={`/person/${person.id}`}
+          style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-text)', textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}
+        >
+          {person.name}
+        </Link>
+        {lifespan && (
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2 }}>{lifespan}</div>
+        )}
+        {person.occupation && (
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 1 }}>
+            {person.occupation}{person.employer ? ` · ${person.employer}` : ''}
+          </div>
+        )}
+        {person.city && (
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 1 }}>{person.city}</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function TabDuplicates() {
   const [loading,    setLoading]    = useState(true)
-  const [dupePairs,  setDupePairs]  = useState([])
+  const [allPairs,   setAllPairs]   = useState([])   // [{a, b}] med beriket data
+  const [photoUrls,  setPhotoUrls]  = useState({})   // person_id → signedUrl
+  const [dismissed,  setDismissed]  = useState(() => dismissedSet())
 
   useEffect(() => { load() }, [])
 
@@ -400,81 +466,176 @@ function TabDuplicates() {
     try {
       const [
         { data: allNames },
-        { data: birthFacts },
+        { data: allFacts },
       ] = await Promise.all([
         supabase.from('person_names').select('person_id, given_name, surname').eq('is_preferred', true),
-        supabase.from('person_facts').select('person_id, date_year').eq('fact_type', 'BIRT'),
+        supabase.from('person_facts').select('person_id, fact_type, date_year, place_city').in('fact_type', ['BIRT', 'DEAT']),
       ])
 
-      const birthMap = {}
-      ;(birthFacts || []).forEach(f => { birthMap[f.person_id] = f.date_year })
+      // Bygg maps for fødsel/død
+      const birthMap = {}, deathMap = {}
+      ;(allFacts || []).forEach(f => {
+        if (f.fact_type === 'BIRT') birthMap[f.person_id] = { year: f.date_year, city: f.place_city }
+        if (f.fact_type === 'DEAT') deathMap[f.person_id] = { year: f.date_year }
+      })
 
       // Grupper etter normalisert nøkkel
       const groups = {}
       ;(allNames || []).forEach(n => {
-        const key = [normalizeName(n.given_name), normalizeName(n.surname), birthMap[n.person_id] || ''].join('|')
+        const key = [normalizeName(n.given_name), normalizeName(n.surname), birthMap[n.person_id]?.year || ''].join('|')
         if (!groups[key]) groups[key] = []
-        groups[key].push({ id: n.person_id, name: [n.given_name, n.surname].filter(Boolean).join(' '), year: birthMap[n.person_id] })
+        groups[key].push({ id: n.person_id, name: [n.given_name, n.surname].filter(Boolean).join(' ') })
       })
 
-      // Kun grupper med 2+ personer
-      const pairs = []
+      // Kun grupper med 2+
+      const rawPairs = []
       Object.values(groups).forEach(group => {
         if (group.length < 2) return
         for (let i = 0; i < group.length; i++) {
           for (let j = i + 1; j < group.length; j++) {
-            pairs.push([group[i], group[j]])
+            rawPairs.push([group[i].id, group[j].id, group[i].name, group[j].name])
           }
         }
       })
 
-      setDupePairs(pairs)
+      if (rawPairs.length === 0) { setAllPairs([]); setLoading(false); return }
+
+      // Hent beriket data for alle involverte person-IDer
+      const allIds = [...new Set(rawPairs.flatMap(([a, b]) => [a, b]))]
+
+      const [
+        { data: roles },
+        { data: addrPeriods },
+        { data: photos },
+      ] = await Promise.all([
+        supabase.from('person_roles')
+          .select('person_id, role_type, value, employer')
+          .in('person_id', allIds)
+          .in('role_type', ['OCCU', 'TITL', 'occupation', 'title', 'position']),
+        supabase.from('address_periods')
+          .select('entity_id, date_from, addresses(city)')
+          .eq('entity_type', 'person')
+          .in('entity_id', allIds)
+          .order('date_from', { ascending: false }),
+        supabase.from('person_photos')
+          .select('person_id, drive_url')
+          .in('person_id', allIds)
+          .eq('is_primary', true),
+      ])
+
+      // Bygg oppslags-maps
+      const roleMap = {}
+      ;(roles || []).forEach(r => {
+        if (!roleMap[r.person_id] && r.value) roleMap[r.person_id] = { occupation: r.value, employer: r.employer }
+      })
+
+      const cityMap = {}
+      ;(addrPeriods || []).forEach(ap => {
+        if (!cityMap[ap.entity_id] && ap.addresses?.city) cityMap[ap.entity_id] = ap.addresses.city
+      })
+
+      const photoPathMap = {}
+      ;(photos || []).forEach(p => { photoPathMap[p.person_id] = p.drive_url })
+
+      // Hent signerte bilde-URLer
+      const paths = Object.values(photoPathMap).filter(Boolean)
+      if (paths.length > 0) {
+        const { data: signed } = await supabase.storage.from('person-photos').createSignedUrls(paths, 3600)
+        const urlMap = {}
+        ;(signed || []).forEach(s => { urlMap[s.path] = s.signedUrl })
+        const resolved = {}
+        Object.entries(photoPathMap).forEach(([pid, path]) => { resolved[pid] = urlMap[path] || null })
+        setPhotoUrls(resolved)
+      }
+
+      // Bygg endelig par-liste med beriket data
+      const enriched = rawPairs.map(([aId, bId, aName, bName]) => ({
+        a: {
+          id: aId, name: aName,
+          birthYear: birthMap[aId]?.year, deathYear: deathMap[aId]?.year,
+          occupation: roleMap[aId]?.occupation, employer: roleMap[aId]?.employer,
+          city: cityMap[aId],
+        },
+        b: {
+          id: bId, name: bName,
+          birthYear: birthMap[bId]?.year, deathYear: deathMap[bId]?.year,
+          occupation: roleMap[bId]?.occupation, employer: roleMap[bId]?.employer,
+          city: cityMap[bId],
+        },
+      }))
+
+      setAllPairs(enriched)
     } finally {
       setLoading(false)
     }
   }
 
+  function handleDismiss(idA, idB) {
+    dismissPair(idA, idB)
+    setDismissed(dismissedSet())
+  }
+
   if (loading) return <LoadingSpinner />
+
+  const visiblePairs = allPairs.filter(({ a, b }) => !isPairDismissed(a.id, b.id, dismissed))
+  const dismissedCount = allPairs.length - visiblePairs.length
 
   return (
     <div>
       <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)' }}>
-        {dupePairs.length} mulige duplikatpar funnet (samme navn + fødselsår).
+        {visiblePairs.length} mulige duplikatpar (samme navn + fødselsår).
+        {dismissedCount > 0 && <span style={{ marginLeft: 8 }}>· {dismissedCount} avvist og skjult.</span>}
       </p>
-      {dupePairs.length === 0 ? (
+      {visiblePairs.length === 0 ? (
         <div className="card" style={{ padding: 'var(--space-5)', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-          Ingen mulige duplikater funnet 🎉
+          Ingen mulige duplikater å behandle 🎉
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-          {dupePairs.slice(0, 100).map(([a, b], i) => (
-            <div key={i} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-3) var(--space-4)', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text)' }}>
-                <span style={{ fontWeight: 500 }}>{a.name}</span>
-                {a.year && <span style={{ color: 'var(--color-text-muted)', marginLeft: 6 }}>f. {a.year}</span>}
-                <span style={{ color: 'var(--color-text-muted)', margin: '0 8px' }}>vs.</span>
-                <span style={{ fontWeight: 500 }}>{b.name}</span>
-                {b.year && <span style={{ color: 'var(--color-text-muted)', marginLeft: 6 }}>f. {b.year}</span>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          {visiblePairs.slice(0, 100).map(({ a, b }) => (
+            <div key={`${a.id}|${b.id}`} className="card" style={{ padding: 'var(--space-4)' }}>
+              {/* To mini-profiler side om side */}
+              <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-start', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
+                <MiniProfile person={a} photoUrl={photoUrls[a.id]} />
+                <div style={{ display: 'flex', alignItems: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)', paddingTop: 12, flexShrink: 0 }}>vs.</div>
+                <MiniProfile person={b} photoUrl={photoUrls[b.id]} />
               </div>
-              <Link
-                to={`/duplikat/${a.id}/${b.id}`}
-                style={{
-                  fontSize: 'var(--text-xs)',
-                  color: 'var(--color-accent)',
-                  textDecoration: 'underline',
-                  textDecorationColor: 'var(--color-border)',
-                  textUnderlineOffset: 3,
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Slå sammen →
-              </Link>
+              {/* Knapper */}
+              <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-3)' }}>
+                <Link
+                  to={`/duplikat/${a.id}/${b.id}`}
+                  style={{
+                    padding: '4px 12px',
+                    background: 'var(--color-accent)',
+                    color: '#fff',
+                    borderRadius: 5,
+                    fontSize: 'var(--text-xs)',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                  }}
+                >
+                  Slå sammen →
+                </Link>
+                <button
+                  onClick={() => handleDismiss(a.id, b.id)}
+                  style={{
+                    padding: '4px 12px',
+                    background: 'transparent',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 5,
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--color-text-muted)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Ikke duplikat ✕
+                </button>
+              </div>
             </div>
           ))}
-          {dupePairs.length > 100 && (
+          {visiblePairs.length > 100 && (
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', textAlign: 'center', marginTop: 'var(--space-2)' }}>
-              Viser de første 100 av {dupePairs.length} par.
+              Viser de første 100 av {visiblePairs.length} par.
             </p>
           )}
         </div>
