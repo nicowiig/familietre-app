@@ -497,9 +497,10 @@ function TabDuplicates() {
         if (t === 'DEAT' || t === 'DEATH') deathMap[f.person_id] = { year: f.date_year, month: f.date_month, day: f.date_day, city: f.place_city }
       })
 
-      // Grupper etter normalisert nøkkel
+      // Grupper etter normalisert nøkkel — hopp over navnløse
       const groups = {}
       ;(allNames || []).forEach(n => {
+        if (!n.given_name && !n.surname) return   // skip navnløse
         const key = [normalizeName(n.given_name), normalizeName(n.surname), birthMap[n.person_id]?.year || ''].join('|')
         if (!groups[key]) groups[key] = []
         groups[key].push({ id: n.person_id, name: [n.given_name, n.middle_name, n.surname].filter(Boolean).join(' ') })

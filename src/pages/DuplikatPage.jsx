@@ -10,7 +10,7 @@ function buildDigitalarkivetUrl(name, birthYear) {
   if (name.given_name) params.set('fornavn', name.given_name)
   if (name.surname)    params.set('etternavn', name.surname)
   if (birthYear)       params.set('foedselsaar', String(birthYear))
-  return `https://www.digitalarkivet.no/search/persons?${params.toString()}`
+  return `https://www.digitalarkivet.no/search/persons/advanced?${params.toString()}`
 }
 
 async function loadPerson(id) {

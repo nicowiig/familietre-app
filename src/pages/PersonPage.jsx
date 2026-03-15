@@ -393,7 +393,7 @@ function DigitalarkivetLink({ name, birthYear }) {
   if (name.given_name) params.set('fornavn', name.given_name)
   if (name.surname)    params.set('etternavn', name.surname)
   if (birthYear)       params.set('foedselsaar', String(birthYear))
-  const url = `https://www.digitalarkivet.no/search/persons?${params.toString()}`
+  const url = `https://www.digitalarkivet.no/search/persons/advanced?${params.toString()}`
   return (
     <div className="profile-section">
       <h2 className="profile-section-header">Arkivsøk</h2>
