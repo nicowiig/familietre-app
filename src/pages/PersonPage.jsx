@@ -368,7 +368,7 @@ export function PersonPage() {
               deathYear={deathYear}
             />
             {sources.length > 0 && <SourcesSection sources={sources} />}
-            <DigitalarkivetLink name={preferred} birthYear={facts.find(f => f.fact_type === 'BIRT')?.date_year} />
+            <DigitalarkivetLink name={preferred} birthYear={facts.find(f => normFact(f.fact_type) === 'BIRT')?.date_year} />
           </div>
 
           {/* Høyre: familie */}
