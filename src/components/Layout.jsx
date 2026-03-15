@@ -318,6 +318,22 @@ export function Layout({ children }) {
                     Min profil
                   </Link>
                 )}
+                <Link
+                  to="/datakvalitet"
+                  onClick={() => setUserOpen(false)}
+                  style={{
+                    display: 'block',
+                    padding: 'var(--space-3) var(--space-4)',
+                    color: 'var(--color-text-nav-muted)',
+                    textDecoration: 'none',
+                    fontSize: 'var(--text-sm)',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-nav-muted)'}
+                >
+                  Datakvalitet
+                </Link>
                 {isAdmin && (
                   <Link
                     to="/admin"

@@ -160,7 +160,7 @@ function TabCoordinates() {
       const { data } = await supabase
         .from('addresses')
         .select('id, display_name, building_name, street_name, house_number, house_letter, city, country')
-        .is('coordinates', null)
+        .is('coordinates_lat', null)
         .order('city')
       setAddresses(data || [])
     } finally {
