@@ -16,6 +16,7 @@ export function Layout({ children }) {
   const [navSearch, setNavSearch]       = useState('')
   const [menuOpen,  setMenuOpen]        = useState(false)
   const [userOpen,  setUserOpen]        = useState(false)
+  const [mobileOpen, setMobileOpen]     = useState(false)
   const [suggestions, setSuggestions]   = useState([])
   const [sugOpen,   setSugOpen]         = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
@@ -155,6 +156,15 @@ export function Layout({ children }) {
               </NavLink>
             ))}
           </div>
+
+          {/* Hamburger — kun på mobil */}
+          <button
+            className="nav-hamburger"
+            onClick={() => setMobileOpen(o => !o)}
+            aria-label="Meny"
+          >
+            {mobileOpen ? '✕' : '☰'}
+          </button>
 
           {/* Søkefelt med live-forslag */}
           <div ref={suggestRef} style={{ position: 'relative' }}>
@@ -356,6 +366,28 @@ export function Layout({ children }) {
           </div>
         </div>
       </nav>
+
+      {/* Mobil dropdown-meny */}
+      {mobileOpen && (
+        <div className="nav-mobile-menu">
+          {NAV_LINKS.map(l => (
+            <NavLink
+              key={l.to}
+              to={l.to}
+              end={l.to === '/'}
+              className={({ isActive }) => 'nav-mobile-link' + (isActive ? ' active' : '')}
+              onClick={() => setMobileOpen(false)}
+            >
+              {l.label}
+            </NavLink>
+          ))}
+          {isAdmin && (
+            <NavLink to="/admin" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
+              Admin
+            </NavLink>
+          )}
+        </div>
+      )}
 
       <main>
         {children}

@@ -922,8 +922,45 @@ label {
 }
 
 /* ===== Responsiv navigasjon ===== */
+.nav-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--color-text-nav);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: var(--space-2) var(--space-3);
+  margin-left: auto;
+  line-height: 1;
+}
+
+.nav-mobile-menu {
+  display: none;
+  flex-direction: column;
+  background: var(--color-bg-nav);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  position: sticky;
+  top: var(--nav-height);
+  z-index: 99;
+}
+
+.nav-mobile-link {
+  color: var(--color-text-nav-muted);
+  text-decoration: none;
+  padding: var(--space-4) var(--space-6);
+  font-size: var(--text-base);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.15s;
+}
+.nav-mobile-link:hover,
+.nav-mobile-link.active {
+  color: var(--color-text-nav);
+  background: var(--color-bg-nav-hover);
+}
+
 @media (max-width: 768px) {
   .nav-links { display: none; }
+  .nav-hamburger { display: block; }
   .nav-search { max-width: 180px; }
 
   .profile-hero {
