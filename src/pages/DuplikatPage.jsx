@@ -313,7 +313,7 @@ export function DuplikatPage() {
             >
               {merging ? 'Slår sammen…' : 'Slå sammen →'}
             </button>
-            <Link to="/datakvalitet" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Avbryt</Link>
+            <Link to="/datakvalitet?tab=duplicates" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Avbryt</Link>
           </div>
           {error && <p style={{ color: 'var(--color-error)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-3)' }}>Feil: {error}</p>}
         </div>

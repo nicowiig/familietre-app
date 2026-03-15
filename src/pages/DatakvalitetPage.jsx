@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
@@ -665,7 +665,14 @@ function TabDuplicates() {
 }
 
 export function DatakvalitetPage() {
-  const [activeTab, setActiveTab] = useState('persons')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeTab = TABS.some(t => t.id === searchParams.get('tab'))
+    ? searchParams.get('tab')
+    : 'persons'
+
+  function setActiveTab(id) {
+    setSearchParams({ tab: id }, { replace: true })
+  }
 
   return (
     <Layout>
