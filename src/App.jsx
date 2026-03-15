@@ -14,6 +14,7 @@ import { ChangelogPage }   from './pages/ChangelogPage'
 import { PlacePage }       from './pages/PlacePage'
 import { StederPage }      from './pages/StederPage'
 import { DatakvalitetPage } from './pages/DatakvalitetPage'
+import { DuplikatPage }     from './pages/DuplikatPage'
 
 export default function App() {
   return (
@@ -54,6 +55,9 @@ export default function App() {
           } />
           <Route path="/datakvalitet" element={
             <ProtectedRoute><DatakvalitetPage /></ProtectedRoute>
+          } />
+          <Route path="/duplikat/:id1/:id2" element={
+            <ProtectedRoute><DuplikatPage /></ProtectedRoute>
           } />
           <Route path="/admin" element={
             <ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>

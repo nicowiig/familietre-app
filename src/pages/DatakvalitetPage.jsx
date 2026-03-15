@@ -8,6 +8,8 @@ const TABS = [
   { id: 'persons',     label: 'Ufullstendige personer' },
   { id: 'coords',      label: 'Steder uten koordinater' },
   { id: 'unnormalized', label: 'Ikke-normaliserte steder' },
+  { id: 'nofamily',   label: 'Mangler familierelasjon' },
+  { id: 'duplicates', label: 'Mulige duplikater' },
 ]
 
 function FilterChip({ label, count, active, onClick }) {
@@ -298,6 +300,189 @@ function TabUnnormalized() {
   )
 }
 
+function TabNoFamily() {
+  const [loading,  setLoading]  = useState(true)
+  const [isolated, setIsolated] = useState([])
+
+  useEffect(() => { load() }, [])
+
+  async function load() {
+    setLoading(true)
+    try {
+      const [
+        { data: allPersons },
+        { data: families },
+        { data: children },
+        { data: allNames },
+      ] = await Promise.all([
+        supabase.from('persons').select('person_id').eq('is_deleted', false),
+        supabase.from('families').select('husband_id, wife_id'),
+        supabase.from('family_children').select('child_id'),
+        supabase.from('person_names').select('person_id, given_name, middle_name, surname').eq('is_preferred', true),
+      ])
+
+      const spouseSet = new Set([
+        ...(families || []).map(f => f.husband_id).filter(Boolean),
+        ...(families || []).map(f => f.wife_id).filter(Boolean),
+      ])
+      const childSet = new Set((children || []).map(c => c.child_id).filter(Boolean))
+
+      const nameMap = {}
+      ;(allNames || []).forEach(n => {
+        nameMap[n.person_id] = [n.given_name, n.middle_name, n.surname].filter(Boolean).join(' ')
+      })
+
+      const result = (allPersons || [])
+        .filter(p => !spouseSet.has(p.person_id) && !childSet.has(p.person_id))
+        .map(p => ({ id: p.person_id, name: nameMap[p.person_id] || p.person_id }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'nb'))
+
+      setIsolated(result)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) return <LoadingSpinner />
+
+  return (
+    <div>
+      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)' }}>
+        {isolated.length} person{isolated.length !== 1 ? 'er' : ''} er ikke koblet til noen familie (verken som ektefelle, forelder eller barn).
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        {isolated.slice(0, 200).map(p => (
+          <Link
+            key={p.id}
+            to={`/person/${p.id}`}
+            className="card"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: 'var(--space-3) var(--space-4)',
+              textDecoration: 'none',
+              color: 'var(--color-text)',
+              fontSize: 'var(--text-sm)',
+            }}
+          >
+            <span>{p.name}</span>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-accent)' }}>Se profil →</span>
+          </Link>
+        ))}
+        {isolated.length > 200 && (
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', textAlign: 'center', marginTop: 'var(--space-2)' }}>
+            Viser de første 200 av {isolated.length} treff.
+          </p>
+        )}
+        {isolated.length === 0 && (
+          <div className="card" style={{ padding: 'var(--space-5)', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+            Alle personer er koblet til minst én familie 🎉
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function normalizeName(str) {
+  return (str || '').toLowerCase().trim().replace(/[.\-]/g, '')
+}
+
+function TabDuplicates() {
+  const [loading,    setLoading]    = useState(true)
+  const [dupePairs,  setDupePairs]  = useState([])
+
+  useEffect(() => { load() }, [])
+
+  async function load() {
+    setLoading(true)
+    try {
+      const [
+        { data: allNames },
+        { data: birthFacts },
+      ] = await Promise.all([
+        supabase.from('person_names').select('person_id, given_name, surname').eq('is_preferred', true),
+        supabase.from('person_facts').select('person_id, date_year').eq('fact_type', 'BIRT'),
+      ])
+
+      const birthMap = {}
+      ;(birthFacts || []).forEach(f => { birthMap[f.person_id] = f.date_year })
+
+      // Grupper etter normalisert nøkkel
+      const groups = {}
+      ;(allNames || []).forEach(n => {
+        const key = [normalizeName(n.given_name), normalizeName(n.surname), birthMap[n.person_id] || ''].join('|')
+        if (!groups[key]) groups[key] = []
+        groups[key].push({ id: n.person_id, name: [n.given_name, n.surname].filter(Boolean).join(' '), year: birthMap[n.person_id] })
+      })
+
+      // Kun grupper med 2+ personer
+      const pairs = []
+      Object.values(groups).forEach(group => {
+        if (group.length < 2) return
+        for (let i = 0; i < group.length; i++) {
+          for (let j = i + 1; j < group.length; j++) {
+            pairs.push([group[i], group[j]])
+          }
+        }
+      })
+
+      setDupePairs(pairs)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) return <LoadingSpinner />
+
+  return (
+    <div>
+      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)' }}>
+        {dupePairs.length} mulige duplikatpar funnet (samme navn + fødselsår).
+      </p>
+      {dupePairs.length === 0 ? (
+        <div className="card" style={{ padding: 'var(--space-5)', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+          Ingen mulige duplikater funnet 🎉
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          {dupePairs.slice(0, 100).map(([a, b], i) => (
+            <div key={i} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-3) var(--space-4)', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text)' }}>
+                <span style={{ fontWeight: 500 }}>{a.name}</span>
+                {a.year && <span style={{ color: 'var(--color-text-muted)', marginLeft: 6 }}>f. {a.year}</span>}
+                <span style={{ color: 'var(--color-text-muted)', margin: '0 8px' }}>vs.</span>
+                <span style={{ fontWeight: 500 }}>{b.name}</span>
+                {b.year && <span style={{ color: 'var(--color-text-muted)', marginLeft: 6 }}>f. {b.year}</span>}
+              </div>
+              <Link
+                to={`/duplikat/${a.id}/${b.id}`}
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  color: 'var(--color-accent)',
+                  textDecoration: 'underline',
+                  textDecorationColor: 'var(--color-border)',
+                  textUnderlineOffset: 3,
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Slå sammen →
+              </Link>
+            </div>
+          ))}
+          {dupePairs.length > 100 && (
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', textAlign: 'center', marginTop: 'var(--space-2)' }}>
+              Viser de første 100 av {dupePairs.length} par.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function DatakvalitetPage() {
   const [activeTab, setActiveTab] = useState('persons')
 
@@ -341,6 +526,8 @@ export function DatakvalitetPage() {
         {activeTab === 'persons'      && <TabPersons />}
         {activeTab === 'coords'       && <TabCoordinates />}
         {activeTab === 'unnormalized' && <TabUnnormalized />}
+        {activeTab === 'nofamily'     && <TabNoFamily />}
+        {activeTab === 'duplicates'   && <TabDuplicates />}
       </div>
     </Layout>
   )

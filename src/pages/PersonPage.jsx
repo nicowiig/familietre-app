@@ -368,6 +368,7 @@ export function PersonPage() {
               deathYear={deathYear}
             />
             {sources.length > 0 && <SourcesSection sources={sources} />}
+            <DigitalarkivetLink name={preferred} birthYear={facts.find(f => f.fact_type === 'BIRT')?.date_year} />
           </div>
 
           {/* Høyre: familie */}
@@ -382,6 +383,38 @@ export function PersonPage() {
         </div>
       </div>
     </Layout>
+  )
+}
+
+/* ===== Digitalarkivet-lenke ===== */
+function DigitalarkivetLink({ name, birthYear }) {
+  if (!name) return null
+  const params = new URLSearchParams()
+  if (name.given_name) params.set('fornavn', name.given_name)
+  if (name.surname)    params.set('etternavn', name.surname)
+  if (birthYear)       params.set('foedselsaar', String(birthYear))
+  const url = `https://www.digitalarkivet.no/search/persons?${params.toString()}`
+  return (
+    <div className="profile-section">
+      <h2 className="profile-section-header">Arkivsøk</h2>
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 'var(--text-sm)',
+          color: 'var(--color-accent)',
+          textDecoration: 'underline',
+          textDecorationColor: 'var(--color-border)',
+          textUnderlineOffset: 3,
+        }}
+      >
+        Søk i Digitalarkivet →
+      </a>
+    </div>
   )
 }
 
