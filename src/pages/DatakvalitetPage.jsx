@@ -407,11 +407,20 @@ function isPairDismissed(idA, idB, dismissed) {
 
 const CAREER_TYPES = new Set(['occupation', 'position', 'military', 'OCCU', 'TITL', 'title', 'Military Service'])
 
+const NO_MONTHS = ['januar','februar','mars','april','mai','juni','juli','august','september','oktober','november','desember']
+
+function formatFactDate({ day, month, year, city } = {}) {
+  if (!year && !city) return null
+  const parts = []
+  if (day && month) parts.push(`${day}. ${NO_MONTHS[month - 1]}`)
+  if (year) parts.push(year)
+  const dateStr = parts.join(' ')
+  return [dateStr, city].filter(Boolean).join(' · ')
+}
+
 function MiniProfile({ person, photoUrl }) {
-  const lifespan = [
-    person.birthYear ? `f. ${person.birthYear}` : null,
-    person.deathYear ? `d. ${person.deathYear}` : null,
-  ].filter(Boolean).join(' · ')
+  const birthStr = formatFactDate(person.birth)
+  const deathStr = formatFactDate(person.death)
 
   return (
     <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start', flex: 1, minWidth: 0 }}>
@@ -437,15 +446,22 @@ function MiniProfile({ person, photoUrl }) {
         >
           {person.name}
         </Link>
-        {lifespan && (
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2 }}>{lifespan}</div>
+        {birthStr && (
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2 }}>
+            <span style={{ color: 'var(--color-text-muted)', fontWeight: 500 }}>f.</span> {birthStr}
+          </div>
+        )}
+        {deathStr && (
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 1 }}>
+            <span style={{ color: 'var(--color-text-muted)', fontWeight: 500 }}>d.</span> {deathStr}
+          </div>
         )}
         {person.occupation && (
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 1 }}>
             {person.occupation}{person.employer ? ` · ${person.employer}` : ''}
           </div>
         )}
-        {person.city && (
+        {person.city && !person.birth?.city && !person.death?.city && (
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 1 }}>{person.city}</div>
         )}
       </div>
@@ -468,15 +484,15 @@ function TabDuplicates() {
         { data: allNames },
         { data: allFacts },
       ] = await Promise.all([
-        supabase.from('person_names').select('person_id, given_name, surname').eq('is_preferred', true),
-        supabase.from('person_facts').select('person_id, fact_type, date_year, place_city').in('fact_type', ['BIRT', 'DEAT']),
+        supabase.from('person_names').select('person_id, given_name, middle_name, surname').eq('is_preferred', true),
+        supabase.from('person_facts').select('person_id, fact_type, date_year, date_month, date_day, place_city').in('fact_type', ['BIRT', 'DEAT']),
       ])
 
       // Bygg maps for fødsel/død
       const birthMap = {}, deathMap = {}
       ;(allFacts || []).forEach(f => {
-        if (f.fact_type === 'BIRT') birthMap[f.person_id] = { year: f.date_year, city: f.place_city }
-        if (f.fact_type === 'DEAT') deathMap[f.person_id] = { year: f.date_year }
+        if (f.fact_type === 'BIRT') birthMap[f.person_id] = { year: f.date_year, month: f.date_month, day: f.date_day, city: f.place_city }
+        if (f.fact_type === 'DEAT') deathMap[f.person_id] = { year: f.date_year, month: f.date_month, day: f.date_day, city: f.place_city }
       })
 
       // Grupper etter normalisert nøkkel
@@ -484,7 +500,7 @@ function TabDuplicates() {
       ;(allNames || []).forEach(n => {
         const key = [normalizeName(n.given_name), normalizeName(n.surname), birthMap[n.person_id]?.year || ''].join('|')
         if (!groups[key]) groups[key] = []
-        groups[key].push({ id: n.person_id, name: [n.given_name, n.surname].filter(Boolean).join(' ') })
+        groups[key].push({ id: n.person_id, name: [n.given_name, n.middle_name, n.surname].filter(Boolean).join(' ') })
       })
 
       // Kun grupper med 2+
@@ -552,13 +568,13 @@ function TabDuplicates() {
       const enriched = rawPairs.map(([aId, bId, aName, bName]) => ({
         a: {
           id: aId, name: aName,
-          birthYear: birthMap[aId]?.year, deathYear: deathMap[aId]?.year,
+          birth: birthMap[aId], death: deathMap[aId],
           occupation: roleMap[aId]?.occupation, employer: roleMap[aId]?.employer,
           city: cityMap[aId],
         },
         b: {
           id: bId, name: bName,
-          birthYear: birthMap[bId]?.year, deathYear: deathMap[bId]?.year,
+          birth: birthMap[bId], death: deathMap[bId],
           occupation: roleMap[bId]?.occupation, employer: roleMap[bId]?.employer,
           city: cityMap[bId],
         },
