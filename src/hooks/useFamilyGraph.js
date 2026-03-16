@@ -25,9 +25,9 @@ async function loadGraph() {
 
   try {
     const [familiesRes, childrenRes, personsRes] = await Promise.all([
-      supabase.from('families').select('family_id, husband_id, wife_id'),
-      supabase.from('family_children').select('family_id, child_id'),
-      supabase.from('persons').select('person_id, sex'),
+      supabase.from('families').select('family_id, husband_id, wife_id').limit(10000),
+      supabase.from('family_children').select('family_id, child_id').limit(10000),
+      supabase.from('persons').select('person_id, sex').limit(10000),
     ])
 
     if (familiesRes.error) throw familiesRes.error
