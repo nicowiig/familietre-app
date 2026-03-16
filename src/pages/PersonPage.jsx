@@ -11,6 +11,8 @@ import {
 import {
   getPreferredName, formatName, getBirthName, getNickname, getSilhouetteType,
 } from '../lib/persons'
+import { useFamilyGraph } from '../hooks/useFamilyGraph'
+import { findKinship } from '../lib/kinship'
 
 export function PersonPage() {
   const { id } = useParams()
@@ -605,25 +607,49 @@ function PhotosSection({ photos, fullName }) {
 }
 
 /* ===== Relasjonsmerke ===== */
+const BADGE_STYLES = {
+  ancestor:    { background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' },
+  descendant:  { background: '#d1fae5', color: '#065f46', border: '1px solid #6ee7b7' },
+  sibling:     { background: '#ede9fe', color: '#4c1d95', border: '1px solid #c4b5fd' },
+  collateral:  { background: '#e0f2fe', color: '#0c4a6e', border: '1px solid #7dd3fc' },
+}
+
+const TYPE_ICONS = {
+  ancestor: '↑',
+  descendant: '↓',
+  sibling: '↔',
+  collateral: '↗',
+}
+
 function RelationBadge({ personId, myPersonId }) {
-  const [relation, setRelation] = useState(null)
+  const { graph, loading } = useFamilyGraph()
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from('branch_user_relations')
-        .select('relation_text, path_description')
-        .eq('user_person_id', myPersonId)
-        .limit(1)
-    }
-  }, [personId, myPersonId])
+  if (loading || !graph) return null
 
-  if (!relation) return null
+  const k = findKinship(myPersonId, personId, graph.parentMap, graph.sexMap)
+  if (!k) return null
+
+  const style = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.35em',
+    fontSize: 'var(--text-sm, 0.85rem)',
+    fontWeight: 500,
+    padding: '0.2em 0.65em',
+    borderRadius: '999px',
+    marginBottom: 'var(--space-2, 0.5rem)',
+    ...BADGE_STYLES[k.type],
+  }
+
+  let suffix = ''
+  if (k.type === 'ancestor' && k.genMe >= 5) suffix = ` · ${k.genMe} ledd opp`
+  else if (k.type === 'descendant' && k.genThem >= 4) suffix = ` · ${k.genThem} ledd ned`
+  else if (k.type === 'collateral') suffix = ` · ${k.genMe + k.genThem} ledd`
 
   return (
-    <div className="profile-relation-badge">
-      <span>⟳</span>
-      {relation}
+    <div style={style}>
+      <span aria-hidden="true">{TYPE_ICONS[k.type]}</span>
+      Din {k.label}{suffix}
     </div>
   )
 }
