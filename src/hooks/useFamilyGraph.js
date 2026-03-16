@@ -6,7 +6,7 @@
  */
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
-import { buildParentMap } from '../lib/kinship'
+import { buildParentMap, buildSpouseMap } from '../lib/kinship'
 
 // Modul-nivå cache — overlever re-renders og komponent-unmounting
 let _cache = null        // { parentMap: Map, sexMap: Map }
@@ -42,20 +42,28 @@ async function loadGraph() {
   _loading = true
 
   try {
-    const [families, familyChildren, persons] = await Promise.all([
+    const [families, familyChildren, persons, names] = await Promise.all([
       fetchAll('families', 'family_id, husband_id, wife_id'),
       fetchAll('family_children', 'family_id, child_id'),
       fetchAll('persons', 'person_id, sex'),
+      fetchAll('person_names', 'person_id, given_name, is_preferred'),
     ])
 
     const parentMap = buildParentMap(families, familyChildren)
+    const spouseMap = buildSpouseMap(families)
 
     const sexMap = new Map()
     for (const p of persons) {
       if (p.sex) sexMap.set(p.person_id, p.sex)
     }
 
-    _cache = { parentMap, sexMap }
+    // Fornavn (kun preferred) — brukes til "Marlenes far" etc.
+    const nameMap = new Map()
+    for (const n of names) {
+      if (n.is_preferred && n.given_name) nameMap.set(n.person_id, n.given_name)
+    }
+
+    _cache = { parentMap, spouseMap, sexMap, nameMap }
   } catch (err) {
     console.error('[useFamilyGraph] Kunne ikke laste familiegraf:', err)
     _loading = false

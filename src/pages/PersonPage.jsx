@@ -12,7 +12,7 @@ import {
   getPreferredName, formatName, getBirthName, getNickname, getSilhouetteType,
 } from '../lib/persons'
 import { useFamilyGraph } from '../hooks/useFamilyGraph'
-import { findKinship } from '../lib/kinship'
+import { findKinship, findSpouseKinship } from '../lib/kinship'
 
 export function PersonPage() {
   const { id } = useParams()
@@ -608,10 +608,13 @@ function PhotosSection({ photos, fullName }) {
 
 /* ===== Relasjonsmerke ===== */
 const BADGE_STYLES = {
-  ancestor:    { background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' },
-  descendant:  { background: '#d1fae5', color: '#065f46', border: '1px solid #6ee7b7' },
-  sibling:     { background: '#ede9fe', color: '#4c1d95', border: '1px solid #c4b5fd' },
-  collateral:  { background: '#e0f2fe', color: '#0c4a6e', border: '1px solid #7dd3fc' },
+  ancestor:        { background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' },
+  descendant:      { background: '#d1fae5', color: '#065f46', border: '1px solid #6ee7b7' },
+  sibling:         { background: '#ede9fe', color: '#4c1d95', border: '1px solid #c4b5fd' },
+  collateral:      { background: '#e0f2fe', color: '#0c4a6e', border: '1px solid #7dd3fc' },
+  spouse:          { background: '#fce7f3', color: '#9d174d', border: '1px solid #f9a8d4' },
+  'in-law':        { background: '#fff7ed', color: '#9a3412', border: '1px solid #fdba74' },
+  'spouse-relative': { background: '#f0fdf4', color: '#166534', border: '1px solid #86efac' },
 }
 
 const TYPE_ICONS = {
@@ -619,6 +622,9 @@ const TYPE_ICONS = {
   descendant: '↓',
   sibling: '↔',
   collateral: '↗',
+  spouse: '♥',
+  'in-law': '♥',
+  'spouse-relative': '♥',
 }
 
 function RelationBadge({ personId, myPersonId }) {
@@ -626,7 +632,10 @@ function RelationBadge({ personId, myPersonId }) {
 
   if (loading || !graph) return null
 
+  // Prøv blodslektskap først, deretter ektefelle/svigerfamilie
   const k = findKinship(myPersonId, personId, graph.parentMap, graph.sexMap)
+      ?? findSpouseKinship(myPersonId, personId, graph.parentMap, graph.spouseMap, graph.sexMap, graph.nameMap)
+
   if (!k) return null
 
   const style = {
@@ -638,18 +647,33 @@ function RelationBadge({ personId, myPersonId }) {
     padding: '0.2em 0.65em',
     borderRadius: '999px',
     marginBottom: 'var(--space-2, 0.5rem)',
-    ...BADGE_STYLES[k.type],
+    ...(BADGE_STYLES[k.type] ?? BADGE_STYLES.collateral),
   }
 
-  let suffix = ''
-  if (k.type === 'ancestor') suffix = ` · ${k.genMe} ledd opp`
-  else if (k.type === 'descendant') suffix = ` · ${k.genThem} ledd ned`
-  else if (k.type === 'collateral') suffix = ` · ${k.genMe + k.genThem} ledd`
+  let text
+  if (k.type === 'spouse-relative') {
+    // "Marlenes far · 1 ledd opp"
+    let suffix = ''
+    if (k.genMe > 0 && k.genThem === 0) suffix = ` · ${k.genMe} ledd opp`
+    else if (k.genMe === 0 && k.genThem > 0) suffix = ` · ${k.genThem} ledd ned`
+    else if (k.genMe > 0 && k.genThem > 0) suffix = ` · ${k.genMe + k.genThem} ledd`
+    text = `${k.via}s ${k.label}${suffix}`
+  } else if (k.type === 'in-law') {
+    text = `Din ${k.label}`
+  } else if (k.type === 'spouse') {
+    text = `Din ${k.label}`
+  } else {
+    let suffix = ''
+    if (k.type === 'ancestor') suffix = ` · ${k.genMe} ledd opp`
+    else if (k.type === 'descendant') suffix = ` · ${k.genThem} ledd ned`
+    else if (k.type === 'collateral') suffix = ` · ${k.genMe + k.genThem} ledd`
+    text = `Din ${k.label}${suffix}`
+  }
 
   return (
     <div style={style}>
       <span aria-hidden="true">{TYPE_ICONS[k.type]}</span>
-      Din {k.label}{suffix}
+      {text}
     </div>
   )
 }

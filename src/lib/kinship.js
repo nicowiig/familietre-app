@@ -105,6 +105,61 @@ export function findKinship(myId, theirId, parentMap, sexMap) {
 }
 
 /**
+ * Bygger et Map: personId → [spouseId, ...] fra families-tabellen.
+ */
+export function buildSpouseMap(families) {
+  const spouseMap = new Map()
+  for (const f of families) {
+    if (!f.husband_id || !f.wife_id) continue
+    if (!spouseMap.has(f.husband_id)) spouseMap.set(f.husband_id, [])
+    if (!spouseMap.has(f.wife_id)) spouseMap.set(f.wife_id, [])
+    spouseMap.get(f.husband_id).push(f.wife_id)
+    spouseMap.get(f.wife_id).push(f.husband_id)
+  }
+  return spouseMap
+}
+
+/**
+ * Finner ektefelle/svigerfamilie-relasjon mellom myId og theirId.
+ * Returnerer { label, type, via? } eller null.
+ *
+ * type: 'spouse' | 'in-law' | 'spouse-relative'
+ * via: fornavn på ektefellen relasjonen går gjennom (for 'in-law' og 'spouse-relative')
+ */
+export function findSpouseKinship(myId, theirId, parentMap, spouseMap, sexMap, nameMap) {
+  if (!myId || !theirId || myId === theirId) return null
+
+  const mySpouses = spouseMap?.get(myId) ?? []
+
+  // Direkte ektefelle
+  if (mySpouses.includes(theirId)) {
+    const sex = sexMap?.get(theirId)
+    const label = sex === 'F' ? 'kone' : sex === 'M' ? 'mann' : 'ektefelle'
+    return { label, type: 'spouse' }
+  }
+
+  for (const spouseId of mySpouses) {
+    const spouseName = nameMap?.get(spouseId) ?? 'Ektefellen'
+
+    // Forelder til ektefelle → svigerfar/svigermor
+    const spouseParents = parentMap.get(spouseId) ?? []
+    if (spouseParents.includes(theirId)) {
+      const sex = sexMap?.get(theirId)
+      const label = sex === 'F' ? 'svigermor' : sex === 'M' ? 'svigerfar' : 'svigerforelder'
+      return { label, type: 'in-law', via: spouseName }
+    }
+
+    // Blodsslektning til ektefelle (K05) — f.eks. "Marlenes bror"
+    const k = findKinship(spouseId, theirId, parentMap, sexMap)
+    if (k) {
+      return { label: k.label, type: 'spouse-relative', via: spouseName, genMe: k.genMe, genThem: k.genThem }
+    }
+  }
+
+  return null
+}
+
+/**
  * Returnerer norsk slektsbetegnelse basert på generasjonsavstand.
  *
  * genMe  = antall ledd oppover fra meg til felles ane
