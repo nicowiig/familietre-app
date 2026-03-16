@@ -642,8 +642,8 @@ function RelationBadge({ personId, myPersonId }) {
   }
 
   let suffix = ''
-  if (k.type === 'ancestor' && k.genMe >= 5) suffix = ` · ${k.genMe} ledd opp`
-  else if (k.type === 'descendant' && k.genThem >= 4) suffix = ` · ${k.genThem} ledd ned`
+  if (k.type === 'ancestor') suffix = ` · ${k.genMe} ledd opp`
+  else if (k.type === 'descendant') suffix = ` · ${k.genThem} ledd ned`
   else if (k.type === 'collateral') suffix = ` · ${k.genMe + k.genThem} ledd`
 
   return (
