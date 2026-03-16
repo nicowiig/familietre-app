@@ -1610,6 +1610,9 @@ const ADDR_TYPE_LABELS = {
   workplace:       'Arbeidsplass',
   summer_home:     'Sommerhus',
   census_record:   'Folketelling',
+  birth_place:     'Fødested',
+  baptism_place:   'Dåpssted',
+  death_place:     'Dødssted',
   other:           'Annet',
   RESI:            'Bosted',
 }
