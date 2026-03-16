@@ -63,8 +63,8 @@ export function getAncestors(startId, parentMap, maxGen = 12) {
 export function findKinship(myId, theirId, parentMap, sexMap) {
   if (!myId || !theirId || myId === theirId) return null
 
-  const ancestorsOfMe = getAncestors(myId, parentMap, 12)
-  const ancestorsOfThem = getAncestors(theirId, parentMap, 12)
+  const ancestorsOfMe = getAncestors(myId, parentMap, 25)
+  const ancestorsOfThem = getAncestors(theirId, parentMap, 25)
 
   // Er theirId en direkte ane av meg?
   if (ancestorsOfMe.has(theirId)) {
