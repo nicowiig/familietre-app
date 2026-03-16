@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { Layout } from '../components/Layout'
@@ -12,7 +12,7 @@ import {
   getPreferredName, formatName, getBirthName, getNickname, getSilhouetteType,
 } from '../lib/persons'
 import { useFamilyGraph } from '../hooks/useFamilyGraph'
-import { findKinship, findSpouseKinship } from '../lib/kinship'
+import { findKinship, findSpouseKinship, getAncestors } from '../lib/kinship'
 
 export function PersonPage() {
   const { id } = useParams()
@@ -1829,13 +1829,21 @@ function SourceItem({ source }) {
 
 /* ===== Familie ===== */
 function FamilySection({ person, families, parentFamilies }) {
+  const { personId: myPersonId } = useAuth()
+  const { graph } = useFamilyGraph()
+
+  const myAncestors = useMemo(() => {
+    if (!myPersonId || !graph) return null
+    return getAncestors(myPersonId, graph.parentMap, 25)
+  }, [myPersonId, graph])
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       {parentFamilies.length > 0 && (
         <div className="card">
           <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-base)', marginBottom: 'var(--space-4)' }}>Foreldre</h4>
           {parentFamilies.map(fam => (
-            <ParentFamilyCard key={fam.family_id} family={fam} personId={person.person_id} />
+            <ParentFamilyCard key={fam.family_id} family={fam} personId={person.person_id} myAncestors={myAncestors} />
           ))}
         </div>
       )}
@@ -1846,13 +1854,14 @@ function FamilySection({ person, families, parentFamilies }) {
           family={fam}
           personId={person.person_id}
           sex={person.sex}
+          myAncestors={myAncestors}
         />
       ))}
     </div>
   )
 }
 
-function ParentFamilyCard({ family, personId }) {
+function ParentFamilyCard({ family, personId, myAncestors }) {
   const [fatherName, setFatherName] = useState(null)
   const [motherName, setMotherName] = useState(null)
   const [siblings,   setSiblings]   = useState([])
@@ -1898,16 +1907,16 @@ function ParentFamilyCard({ family, personId }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
       {family.husband_id && (
-        <RelativeLink id={family.husband_id} name={fatherName} label="Far" />
+        <RelativeLink id={family.husband_id} name={fatherName} label="Far" isAncestor={myAncestors?.has(family.husband_id)} />
       )}
       {family.wife_id && (
-        <RelativeLink id={family.wife_id} name={motherName} label="Mor" />
+        <RelativeLink id={family.wife_id} name={motherName} label="Mor" isAncestor={myAncestors?.has(family.wife_id)} />
       )}
       {siblings.length > 0 && (
         <>
           <div style={{ marginTop: 'var(--space-3)', marginBottom: 'var(--space-1)', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-text-light)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Søsken</div>
           {siblings.map(s => (
-            <RelativeLink key={s.id} id={s.id} name={s.name} />
+            <RelativeLink key={s.id} id={s.id} name={s.name} isAncestor={myAncestors?.has(s.id)} />
           ))}
         </>
       )}
@@ -1915,7 +1924,7 @@ function ParentFamilyCard({ family, personId }) {
   )
 }
 
-function SpouseFamilyCard({ family, personId, sex }) {
+function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
   const spouseId   = sex === 'M' ? family.wife_id : family.husband_id
   const [spouseName, setSpouseName] = useState(null)
   const [childNames, setChildNames] = useState({})
@@ -1949,7 +1958,7 @@ function SpouseFamilyCard({ family, personId, sex }) {
         {sex === 'M' ? 'Hustru' : 'Ektemann'}
       </h4>
       {spouseId ? (
-        <RelativeLink id={spouseId} name={spouseName} />
+        <RelativeLink id={spouseId} name={spouseName} isAncestor={myAncestors?.has(spouseId)} />
       ) : (
         <p className="text-sm text-muted">Ukjent ektefelle</p>
       )}
@@ -1973,6 +1982,7 @@ function SpouseFamilyCard({ family, personId, sex }) {
                 key={c.child_id}
                 id={c.child_id}
                 name={childNames[c.child_id]}
+                isAncestor={myAncestors?.has(c.child_id)}
               />
             ))}
           </div>
@@ -1982,7 +1992,7 @@ function SpouseFamilyCard({ family, personId, sex }) {
   )
 }
 
-function RelativeLink({ id, name, label }) {
+function RelativeLink({ id, name, label, isAncestor }) {
   const displayName = name ? formatName(name) : id
 
   return (
@@ -2002,6 +2012,19 @@ function RelativeLink({ id, name, label }) {
         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-light)', width: 28, flexShrink: 0, fontWeight: 600 }}>{label}</span>
       )}
       <span style={{ fontWeight: 600 }}>{displayName}</span>
+      {isAncestor && (
+        <span title="Din direkte anelinje" style={{
+          fontSize: '10px',
+          fontWeight: 700,
+          color: '#92610a',
+          background: '#fef3c7',
+          border: '1px solid #f59e0b',
+          borderRadius: 4,
+          padding: '1px 5px',
+          lineHeight: 1.4,
+          flexShrink: 0,
+        }}>↑ Ane</span>
+      )}
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-border)" strokeWidth="2" style={{ marginLeft: 'auto', flexShrink: 0 }}>
         <path d="m9 18 6-6-6-6"/>
       </svg>
