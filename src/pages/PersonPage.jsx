@@ -1613,6 +1613,7 @@ const ADDR_TYPE_LABELS = {
   birth_place:     'Fødested',
   baptism_place:   'Dåpssted',
   death_place:     'Dødssted',
+  burial_place:    'Gravsted',
   other:           'Annet',
   RESI:            'Bosted',
 }
