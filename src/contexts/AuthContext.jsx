@@ -16,6 +16,8 @@ export function AuthProvider({ children }) {
         .from('familietre_tilganger')
         .select('*')
         .eq('user_id', userId)
+        .order('is_admin', { ascending: false })
+        .limit(1)
         .maybeSingle()
       if (error) throw error
       setAccess(data)

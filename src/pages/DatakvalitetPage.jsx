@@ -389,20 +389,12 @@ function normalizeName(str) {
   return (str || '').toLowerCase().trim().replace(/[.\-]/g, '')
 }
 
-const DISMISSED_KEY = 'dismissed_duplicate_pairs'
-
-function dismissedSet() {
-  try { return new Set(JSON.parse(localStorage.getItem(DISMISSED_KEY) || '[]')) }
-  catch { return new Set() }
+function normPair(a, b) {
+  return a < b ? [a, b] : [b, a]
 }
-function dismissPair(idA, idB) {
-  const s = dismissedSet()
-  s.add(`${idA}|${idB}`)
-  s.add(`${idB}|${idA}`)
-  localStorage.setItem(DISMISSED_KEY, JSON.stringify([...s]))
-}
-function isPairDismissed(idA, idB, dismissed) {
-  return dismissed.has(`${idA}|${idB}`) || dismissed.has(`${idB}|${idA}`)
+function isPairDismissed(idA, idB, dismissedSet) {
+  const [a, b] = normPair(idA, idB)
+  return dismissedSet.has(`${a}|${b}`)
 }
 
 const CAREER_TYPES = new Set(['occupation', 'position', 'military', 'OCCU', 'TITL', 'title', 'Military Service'])
@@ -473,7 +465,7 @@ function TabDuplicates() {
   const [loading,    setLoading]    = useState(true)
   const [allPairs,   setAllPairs]   = useState([])   // [{a, b}] med beriket data
   const [photoUrls,  setPhotoUrls]  = useState({})   // person_id → signedUrl
-  const [dismissed,  setDismissed]  = useState(() => dismissedSet())
+  const [dismissed,  setDismissed]  = useState(new Set())
 
   useEffect(() => { load() }, [])
 
@@ -483,10 +475,17 @@ function TabDuplicates() {
       const [
         { data: allNames },
         { data: allFacts },
+        { data: ignoredRows },
       ] = await Promise.all([
         supabase.from('person_names').select('person_id, given_name, middle_name, surname').eq('is_preferred', true),
         supabase.from('person_facts').select('person_id, fact_type, date_year, date_month, date_day, place_city').in('fact_type', ['BIRT', 'DEAT', 'birth', 'death', 'BIRTH', 'DEATH']),
+        supabase.from('duplicate_ignores').select('person_id_a, person_id_b'),
       ])
+
+      // Bygg dismissed-sett fra DB
+      const dismissedSet = new Set()
+      ;(ignoredRows || []).forEach(r => { dismissedSet.add(`${r.person_id_a}|${r.person_id_b}`) })
+      setDismissed(dismissedSet)
 
       // Bygg maps for fødsel/død
       const birthMap = {}, deathMap = {}
@@ -590,14 +589,21 @@ function TabDuplicates() {
     }
   }
 
-  function handleDismiss(idA, idB) {
-    dismissPair(idA, idB)
-    setDismissed(dismissedSet())
+  async function handleDismiss(idA, idB) {
+    const [a, b] = normPair(idA, idB)
+    // Oppdater UI umiddelbart
+    setDismissed(prev => new Set([...prev, `${a}|${b}`]))
+    // Lagre i Supabase
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('duplicate_ignores').upsert(
+      { person_id_a: a, person_id_b: b, ignored_by: user?.id ?? null },
+      { onConflict: 'person_id_a,person_id_b', ignoreDuplicates: true }
+    )
   }
 
   if (loading) return <LoadingSpinner />
 
-  const visiblePairs = allPairs.filter(({ a, b }) => !isPairDismissed(a.id, b.id, dismissed))
+  const visiblePairs = allPairs.filter(({ a, b }) => !isPairDismissed(a.id, b.id, dismissed))  // dismissed er Set av normaliserte "a|b"-nøkler
   const dismissedCount = allPairs.length - visiblePairs.length
 
   return (
