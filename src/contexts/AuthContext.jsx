@@ -18,10 +18,10 @@ export function AuthProvider({ children }) {
         .eq('user_id', userId)
         .order('is_admin', { ascending: false })
         .limit(1)
-        .maybeSingle()
       if (error) throw error
-      setAccess(data)
-    } catch {
+      setAccess(data?.[0] ?? null)
+    } catch (err) {
+      console.error('fetchAccess error:', err)
       setAccess(null)
     } finally {
       setLoading(false)
