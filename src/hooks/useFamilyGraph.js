@@ -19,32 +19,45 @@ function notifyListeners() {
   for (const cb of cbs) cb()
 }
 
+/** Henter alle rader fra en tabell ved å paginere i bolker på 1000. */
+async function fetchAll(table, columns) {
+  const PAGE = 1000
+  let from = 0
+  let all = []
+  while (true) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(columns)
+      .range(from, from + PAGE - 1)
+    if (error) throw error
+    all = all.concat(data ?? [])
+    if (!data || data.length < PAGE) break
+    from += PAGE
+  }
+  return all
+}
+
 async function loadGraph() {
   if (_cache || _loading) return
   _loading = true
 
   try {
-    const [familiesRes, childrenRes, personsRes] = await Promise.all([
-      supabase.from('families').select('family_id, husband_id, wife_id').limit(10000),
-      supabase.from('family_children').select('family_id, child_id').limit(10000),
-      supabase.from('persons').select('person_id, sex').limit(10000),
+    const [families, familyChildren, persons] = await Promise.all([
+      fetchAll('families', 'family_id, husband_id, wife_id'),
+      fetchAll('family_children', 'family_id, child_id'),
+      fetchAll('persons', 'person_id, sex'),
     ])
 
-    if (familiesRes.error) throw familiesRes.error
-    if (childrenRes.error) throw childrenRes.error
-    if (personsRes.error) throw personsRes.error
-
-    const parentMap = buildParentMap(familiesRes.data ?? [], childrenRes.data ?? [])
+    const parentMap = buildParentMap(families, familyChildren)
 
     const sexMap = new Map()
-    for (const p of (personsRes.data ?? [])) {
+    for (const p of persons) {
       if (p.sex) sexMap.set(p.person_id, p.sex)
     }
 
     _cache = { parentMap, sexMap }
   } catch (err) {
     console.error('[useFamilyGraph] Kunne ikke laste familiegraf:', err)
-    // Ikke sett _cache — la komponenter prøve igjen ved neste mount
     _loading = false
     notifyListeners()
     return
@@ -65,7 +78,6 @@ export function useFamilyGraph() {
       return
     }
 
-    // Registrer listener som oppdaterer state når cache er klar
     let active = true
     _listeners.push(() => {
       if (active) {
