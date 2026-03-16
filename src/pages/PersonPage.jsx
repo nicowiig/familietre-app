@@ -2011,21 +2011,23 @@ function RelativeLink({ id, name, label, isAncestor }) {
       {label && (
         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-light)', width: 28, flexShrink: 0, fontWeight: 600 }}>{label}</span>
       )}
-      <span style={{ fontWeight: 600 }}>{displayName}</span>
-      {isAncestor && (
-        <span title="Din direkte anelinje" style={{
-          fontSize: '10px',
-          fontWeight: 700,
-          color: '#92610a',
-          background: '#fef3c7',
-          border: '1px solid #f59e0b',
-          borderRadius: 4,
-          padding: '1px 5px',
-          lineHeight: 1.4,
-          flexShrink: 0,
-        }}>↑ Ane</span>
-      )}
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-border)" strokeWidth="2" style={{ marginLeft: 'auto', flexShrink: 0 }}>
+      <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        <span style={{ fontWeight: 600 }}>{displayName}</span>
+        {isAncestor && (
+          <span title="Din direkte anelinje" style={{
+            fontSize: '10px',
+            fontWeight: 700,
+            color: '#92610a',
+            background: '#fef3c7',
+            border: '1px solid #f59e0b',
+            borderRadius: 4,
+            padding: '1px 5px',
+            lineHeight: 1.4,
+            flexShrink: 0,
+          }}>↑ Ane</span>
+        )}
+      </span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-border)" strokeWidth="2" style={{ flexShrink: 0 }}>
         <path d="m9 18 6-6-6-6"/>
       </svg>
     </Link>
