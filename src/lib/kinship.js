@@ -105,6 +105,20 @@ export function findKinship(myId, theirId, parentMap, sexMap) {
 }
 
 /**
+ * Bygger et Map: parentId → [childId, ...] (motsatt av parentMap).
+ */
+export function buildChildMap(parentMap) {
+  const childMap = new Map()
+  for (const [childId, parents] of parentMap) {
+    for (const parentId of parents) {
+      if (!childMap.has(parentId)) childMap.set(parentId, [])
+      childMap.get(parentId).push(childId)
+    }
+  }
+  return childMap
+}
+
+/**
  * Bygger et Map: personId → [spouseId, ...] fra families-tabellen.
  */
 export function buildSpouseMap(families) {
@@ -124,9 +138,9 @@ export function buildSpouseMap(families) {
  * Returnerer { label, type, via? } eller null.
  *
  * type: 'spouse' | 'in-law' | 'spouse-relative'
- * via: fornavn på ektefellen relasjonen går gjennom (for 'in-law' og 'spouse-relative')
+ * via: fornavn på ektefellen/barnet relasjonen går gjennom
  */
-export function findSpouseKinship(myId, theirId, parentMap, spouseMap, sexMap, nameMap) {
+export function findSpouseKinship(myId, theirId, parentMap, spouseMap, sexMap, nameMap, childMap) {
   if (!myId || !theirId || myId === theirId) return null
 
   const mySpouses = spouseMap?.get(myId) ?? []
@@ -138,6 +152,7 @@ export function findSpouseKinship(myId, theirId, parentMap, spouseMap, sexMap, n
     return { label, type: 'spouse' }
   }
 
+  // Via mine ektefeller: svigerfar/svigermor og ektefellens slektninger
   for (const spouseId of mySpouses) {
     const spouseName = nameMap?.get(spouseId) ?? 'Ektefellen'
 
@@ -149,10 +164,31 @@ export function findSpouseKinship(myId, theirId, parentMap, spouseMap, sexMap, n
       return { label, type: 'in-law', via: spouseName }
     }
 
-    // Blodsslektning til ektefelle (K05) — f.eks. "Marlenes bror"
+    // Blodsslektning til ektefelle — f.eks. "Marlenes bror"
     const k = findKinship(spouseId, theirId, parentMap, sexMap)
     if (k) {
       return { label: k.label, type: 'spouse-relative', via: spouseName, genMe: k.genMe, genThem: k.genThem }
+    }
+  }
+
+  // Via mine barn: svigersønn/svigerdatter og barnets slektninger
+  const myChildren = childMap?.get(myId) ?? []
+  for (const childId of myChildren) {
+    const childName = nameMap?.get(childId) ?? 'Barnet'
+
+    // Ektefelle til barn → svigersønn/svigerdatter
+    const childSpouses = spouseMap?.get(childId) ?? []
+    if (childSpouses.includes(theirId)) {
+      const sex = sexMap?.get(theirId)
+      const label = sex === 'F' ? 'svigerdatter' : sex === 'M' ? 'svigersønn' : 'svigerbarn'
+      return { label, type: 'in-law', via: childName }
+    }
+
+    // Blodsslektning til barn — f.eks. "Marlenes mann" (sett fra Jons side)
+    // NB: her er theirId en blodslektning til barnet mitt, ikke barnet selv
+    const k = findKinship(childId, theirId, parentMap, sexMap)
+    if (k) {
+      return { label: k.label, type: 'spouse-relative', via: childName, genMe: k.genMe, genThem: k.genThem }
     }
   }
 

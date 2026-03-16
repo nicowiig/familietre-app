@@ -634,7 +634,7 @@ function RelationBadge({ personId, myPersonId }) {
 
   // Prøv blodslektskap først, deretter ektefelle/svigerfamilie
   const k = findKinship(myPersonId, personId, graph.parentMap, graph.sexMap)
-      ?? findSpouseKinship(myPersonId, personId, graph.parentMap, graph.spouseMap, graph.sexMap, graph.nameMap)
+      ?? findSpouseKinship(myPersonId, personId, graph.parentMap, graph.spouseMap, graph.sexMap, graph.nameMap, graph.childMap)
 
   if (!k) return null
 

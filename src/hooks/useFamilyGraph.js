@@ -6,7 +6,7 @@
  */
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
-import { buildParentMap, buildSpouseMap } from '../lib/kinship'
+import { buildParentMap, buildSpouseMap, buildChildMap } from '../lib/kinship'
 
 // Modul-nivå cache — overlever re-renders og komponent-unmounting
 let _cache = null        // { parentMap: Map, sexMap: Map }
@@ -51,6 +51,7 @@ async function loadGraph() {
 
     const parentMap = buildParentMap(families, familyChildren)
     const spouseMap = buildSpouseMap(families)
+    const childMap = buildChildMap(parentMap)
 
     const sexMap = new Map()
     for (const p of persons) {
@@ -63,7 +64,7 @@ async function loadGraph() {
       if (n.is_preferred && n.given_name) nameMap.set(n.person_id, n.given_name)
     }
 
-    _cache = { parentMap, spouseMap, sexMap, nameMap }
+    _cache = { parentMap, spouseMap, childMap, sexMap, nameMap }
   } catch (err) {
     console.error('[useFamilyGraph] Kunne ikke laste familiegraf:', err)
     _loading = false
