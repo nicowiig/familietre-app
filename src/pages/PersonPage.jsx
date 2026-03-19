@@ -2283,7 +2283,7 @@ function AuditLogSection({ auditLog }) {
   // Vis displaynavn fra changed_by (email)
   function displayUser(changedBy) {
     if (!changedBy) return 'Ukjent'
-    if (changedBy === 'script') return 'Script'
+    if (changedBy === 'script') return 'Nicolay Wiig (script)'
     // Script-endringer
     if (changedBy.includes('(script)') || changedBy.includes('(import)')) {
       const base = changedBy.replace(/\s*\(script\)|\s*\(import\)/g, '').trim()
