@@ -1832,10 +1832,11 @@ function domainLabel(domain) {
 function SourcesSection({ sources }) {
   const [openGroups, setOpenGroups] = useState({})
 
-  // Grupper etter domene
+  // Grupper etter domene — sjekk både url og title (noen kilder har URL som tittel)
   const groups = {}
   for (const s of sources) {
-    const domain = extractDomain(s.url) || '__ingen_url__'
+    const titleUrl = s.title?.startsWith('http') ? s.title : null
+    const domain = extractDomain(s.url) || extractDomain(titleUrl) || '__ingen_url__'
     if (!groups[domain]) groups[domain] = []
     groups[domain].push(s)
   }
@@ -1858,8 +1859,10 @@ function SourcesSection({ sources }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         {sortedDomains.map(domain => {
           const items = groups[domain]
-          const label = domain === '__ingen_url__' ? 'Annet' : domainLabel(domain)
-          const isOpen = openGroups[domain] !== false  // åpen som standard
+          const label = domain === '__ingen_url__' ? 'Andre kilder' : domainLabel(domain)
+          const isOpen = domain === '__ingen_url__'
+            ? (openGroups[domain] === true)           // lukket som standard
+            : (openGroups[domain] !== false)          // åpen som standard
           const isCollapsible = items.length > 1
 
           return (
@@ -1916,6 +1919,8 @@ function SourceItem({ source }) {
         <div className="source-title">
           {source.url ? (
             <a href={source.url} target="_blank" rel="noreferrer">{source.title || source.url}</a>
+          ) : source.title?.startsWith('http') ? (
+            <a href={source.title} target="_blank" rel="noreferrer">{source.title}</a>
           ) : (
             source.title || 'Kilde uten tittel'
           )}
