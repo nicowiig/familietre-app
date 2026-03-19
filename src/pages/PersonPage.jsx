@@ -245,7 +245,7 @@ export function PersonPage() {
   const birthDisplay  = birthDateText || birth?.place_raw || birth?.place_city
 
   // Roller etter type
-  const CAREER_TYPES  = new Set(['occupation', 'position', 'military', 'OCCU', 'TITL', 'Military Service'])
+  const CAREER_TYPES  = new Set(['occupation', 'position', 'military', 'OCCU', 'TITL', 'Military Service', 'political', 'public_office'])
   const EDU_TYPES     = new Set(['education', 'exam'])
   const TITLE_TYPES   = new Set(['title', 'nobility'])
 
