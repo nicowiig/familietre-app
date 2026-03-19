@@ -25,6 +25,7 @@ export function PersonPage() {
   const [addresses,     setAddresses]     = useState([])
   const [biography,     setBiography]     = useState(null)
   const [roles,         setRoles]         = useState([])
+  const [workExp,       setWorkExp]       = useState([])
   const [photos,        setPhotos]        = useState([])
   const [media,         setMedia]         = useState([])
   const [sources,       setSources]       = useState([])
@@ -45,7 +46,7 @@ export function PersonPage() {
     setNotFound(false)
     try {
       const [
-        personRes, namesRes, factsRes, addrRes, bioRes, rolesRes, photosRes, sourcesRes, auditLogRes, mediaRes,
+        personRes, namesRes, factsRes, addrRes, bioRes, rolesRes, workExpRes, photosRes, sourcesRes, auditLogRes, mediaRes,
       ] = await Promise.all([
         supabase.from('persons').select('*').eq('person_id', personId).eq('is_deleted', false).maybeSingle(),
         supabase.from('person_names').select('*').eq('person_id', personId).order('is_preferred', { ascending: false }),
@@ -53,6 +54,7 @@ export function PersonPage() {
         supabase.from('address_periods').select('*, addresses(*, place_articles(id, title))').eq('entity_type', 'person').eq('entity_id', personId).order('date_from'),
         supabase.from('person_biography').select('*').eq('person_id', personId).maybeSingle(),
         supabase.from('person_roles').select('*').eq('person_id', personId).order('date_from'),
+        supabase.from('person_work_experience').select('*').eq('person_id', personId).order('date_from'),
         supabase.from('person_photos').select('*').eq('person_id', personId).order('photo_order'),
         supabase.from('person_sources').select('*').eq('person_id', personId).order('found_date', { ascending: false }),
         supabase.from('person_audit_log').select('*').eq('person_id', personId).order('changed_at', { ascending: false }).limit(50),
@@ -93,6 +95,7 @@ export function PersonPage() {
       setAddresses(flatAddresses)
       setBiography(bioRes.data || null)
       setRoles(rolesRes.data || [])
+      setWorkExp(workExpRes.data || [])
       const rawPhotos = photosRes.data || []
       if (rawPhotos.length > 0) {
         const { data: signed } = await supabase.storage
@@ -368,6 +371,7 @@ export function PersonPage() {
               roles={[...careerRoles, ...eduRoles]}
             />
             {careerRoles.length > 0 && <KarriereSection roles={careerRoles} deathYear={deathYear} />}
+            {workExp.length > 0 && <WorkExperienceSection workExp={workExp} />}
             {eduRoles.length > 0 && <UtdannelseSection roles={eduRoles} facts={facts} />}
             {titleRoles.length > 0 && <TitlerSection roles={titleRoles} />}
             {otherRoles.length > 0 && <RolesSection roles={otherRoles} title="Andre roller" />}
@@ -1495,6 +1499,120 @@ function KarriereRoleEntry({ role, compact, deathYear }) {
       {role.reason && (
         <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)', fontStyle: 'italic' }}>
           {role.reason}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ===== Arbeidserfaring (person_work_experience) ===== */
+
+function WorkExpIcon() {
+  return (
+    <div style={{
+      width: 44, height: 44,
+      borderRadius: 'var(--radius)',
+      background: 'var(--color-bg-elevated)',
+      border: '1px solid var(--color-border)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexShrink: 0,
+      color: 'var(--color-text-muted)',
+    }}>
+      <BriefcaseIcon />
+    </div>
+  )
+}
+
+function WorkExperienceSection({ workExp }) {
+  // Grupper etter arbeidsgiver
+  const grouped = {}
+  workExp.forEach(w => {
+    const key = (w.employer || '').toLowerCase().trim() || `__noemployer_${w.id}`
+    if (!grouped[key]) grouped[key] = { employer: w.employer, place: w.place, entries: [] }
+    grouped[key].entries.push(w)
+  })
+
+  const groups = Object.values(grouped)
+
+  // Sorter grupper: nyeste øverst
+  groups.sort((a, b) => {
+    const latest = es => Math.max(...es.map(e => parseInt(e.date_to || e.date_from || '0') || 0))
+    return latest(b.entries) - latest(a.entries)
+  })
+
+  return (
+    <div className="profile-section">
+      <h2 className="profile-section-header">Arbeidserfaring</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+        {groups.map((g, i) => <WorkExpGroup key={i} group={g} />)}
+      </div>
+    </div>
+  )
+}
+
+function WorkExpGroup({ group }) {
+  const { employer, place, entries } = group
+  const hasMultiple = entries.length > 1
+
+  const fromNums = entries.map(e => parseInt(e.date_from) || 0).filter(Boolean)
+  const toNums   = entries.map(e => parseInt(e.date_to || e.date_from) || 0).filter(Boolean)
+  const minYear  = fromNums.length ? Math.min(...fromNums) : null
+  const maxYear  = toNums.length   ? Math.max(...toNums)   : null
+  const period   = minYear
+    ? (maxYear && maxYear !== minYear ? `${minYear}–${maxYear}` : String(minYear))
+    : null
+
+  const sorted = [...entries].sort((a, b) => (parseInt(a.date_from) || 0) - (parseInt(b.date_from) || 0))
+
+  return (
+    <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
+      <WorkExpIcon />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 700, fontSize: 'var(--text-base)' }}>
+          {employer || 'Ukjent arbeidsgiver'}
+        </div>
+        {(place || period) && (
+          <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-2)' }}>
+            {[place, period].filter(Boolean).join(' · ')}
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          {sorted.map((e, i) => (
+            <WorkExpEntry key={e.id || i} entry={e} compact={hasMultiple} />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function WorkExpEntry({ entry, compact }) {
+  const period = entry.date_from
+    ? (entry.date_to && entry.date_to !== entry.date_from
+        ? `${entry.date_from}–${entry.date_to}`
+        : entry.date_from)
+    : null
+
+  return (
+    <div style={compact ? { paddingLeft: 'var(--space-2)', borderLeft: '2px solid var(--color-border)' } : {}}>
+      {entry.title && (
+        <div style={{ fontWeight: compact ? 500 : 600, fontSize: 'var(--text-sm)' }}>
+          {entry.title}
+        </div>
+      )}
+      {compact && period && (
+        <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
+          {period}
+        </div>
+      )}
+      {!compact && entry.place && (
+        <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
+          {entry.place}
+        </div>
+      )}
+      {entry.notes && (
+        <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', fontStyle: 'italic', marginTop: 'var(--space-1)' }}>
+          {entry.notes}
         </div>
       )}
     </div>
