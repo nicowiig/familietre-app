@@ -7,10 +7,12 @@ export function AuthProvider({ children }) {
   const [session, setSession]       = useState(undefined)  // undefined = laster
   const [access, setAccess]         = useState(undefined)  // undefined = ikke sjekket ennå
   const [loadingAccess, setLoading] = useState(false)
+  const [fetchError, setFetchError] = useState(false)      // vedvarende DB-feil etter retries
 
-  // Hent tilgangsrad fra databasen
-  async function fetchAccess(userId) {
+  // Hent tilgangsrad fra databasen — retry 3 ganger ved forbigående feil
+  async function fetchAccess(userId, attempt = 1) {
     setLoading(true)
+    setFetchError(false)
     try {
       const { data, error } = await supabase
         .from('familietre_tilganger')
@@ -21,8 +23,15 @@ export function AuthProvider({ children }) {
       if (error) throw error
       setAccess(data?.[0] ?? null)
     } catch (err) {
-      console.error('fetchAccess error:', err)
-      setAccess(null)
+      console.error(`fetchAccess error (forsøk ${attempt}):`, err)
+      if (attempt < 3) {
+        // Vent og prøv igjen — cold-start eller forbigående nettverksfeil
+        setTimeout(() => fetchAccess(userId, attempt + 1), 1000 * attempt)
+      } else {
+        // Alle forsøk feilet — vis feilmelding, IKKE redirect til /tilgang
+        setFetchError(true)
+        // access forblir undefined → status forblir 'checking_access'
+      }
     } finally {
       setLoading(false)
     }
@@ -107,6 +116,7 @@ export function AuthProvider({ children }) {
     access,
     status,
     loading,
+    fetchError,
     isAdmin:      status === 'admin',
     isApproved:   status === 'approved' || status === 'admin',
     user:         session?.user ?? null,

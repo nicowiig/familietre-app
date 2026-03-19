@@ -4,7 +4,7 @@ import { LoadingSpinner } from './LoadingSpinner'
 import { Layout } from './Layout'
 
 export function ProtectedRoute({ children, requireAdmin = false }) {
-  const { status, loading } = useAuth()
+  const { status, loading, fetchError, refreshAccess } = useAuth()
   const location = useLocation()
 
   // Bare vis full spinner mens vi venter på selve sesjonen (veldig kort)
@@ -33,8 +33,26 @@ export function ProtectedRoute({ children, requireAdmin = false }) {
           display: 'flex', alignItems: 'center', gap: 8, zIndex: 9999,
           boxShadow: 'var(--shadow-md)',
         }}>
-          <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
-          Verifiserer tilgang…
+          {fetchError ? (
+            <>
+              Tilkoblingsfeil
+              <button
+                onClick={refreshAccess}
+                style={{
+                  background: 'transparent', border: '1px solid currentColor',
+                  color: 'inherit', cursor: 'pointer', borderRadius: 4,
+                  padding: '2px 8px', fontSize: 'inherit',
+                }}
+              >
+                Prøv igjen
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
+              Verifiserer tilgang…
+            </>
+          )}
         </div>
       </>
     )
