@@ -149,7 +149,8 @@ function splitParents(parents, infoMap) {
   return { left, right }
 }
 
-/** Elbow-sti fra øvre nodes bunn-senter → nedre nodes topp-senter. */
+/** Elbow-sti fra øvre nodes bunn-senter → nedre nodes topp-senter.
+ *  For noder på samme nivå: horisontal linje (ektefelle). */
 function elbowPath(nodeMap, fromId, toId) {
   const from = nodeMap.get(fromId)
   const to   = nodeMap.get(toId)
@@ -163,7 +164,14 @@ function elbowPath(nodeMap, fromId, toId) {
   const lx  = lower.x + NODE_W / 2
   const ly  = lower.y
   const gap = ly - uy
-  if (gap < 2) return ''
+
+  // Samme Y-nivå: horisontal linje mellom nodene
+  if (gap < NODE_H) {
+    const left  = from.x <= to.x ? from : to
+    const right = from.x <= to.x ? to   : from
+    const cy = left.y + NODE_H / 2
+    return `M ${left.x + NODE_W} ${cy} H ${right.x}`
+  }
 
   const midY = uy + gap / 2
   return `M ${ux} ${uy} V ${midY} H ${lx} V ${ly}`
@@ -171,15 +179,26 @@ function elbowPath(nodeMap, fromId, toId) {
 
 // ─── TreeNode ────────────────────────────────────────────
 
-function TreeNode({ node, focusPersonId, myPersonId, onNavigate }) {
-  const isFocus = node.id === focusPersonId
-  const isMe    = node.id === myPersonId
+function TreeNode({ node, focusPersonId, myPersonId, onNavigate, onOpenProfile }) {
+  const isFocus   = node.id === focusPersonId
+  const isMe      = node.id === myPersonId
+  const isSpouse  = node.nodeType === 'spouse'
+  const isSibling = node.nodeType === 'sibling'
 
   const name  = [node.givenName, node.surname].filter(Boolean).join(' ') || 'Ukjent'
   let   years = ''
   if (node.birthYear && node.deathYear) years = `${node.birthYear} – ${node.deathYear}`
   else if (node.birthYear) years = `f. ${node.birthYear}`
   else if (node.deathYear) years = `d. ${node.deathYear}`
+
+  let borderStyle = '1px solid var(--color-border)'
+  if (isFocus)   borderStyle = '2px solid var(--color-accent)'
+  if (isSpouse)  borderStyle = '1.5px dashed var(--color-accent)'
+  if (isSibling) borderStyle = '1px dashed var(--color-border)'
+
+  let bgColor = 'var(--color-bg, #f7f3ec)'
+  if (isMe)     bgColor = 'rgba(122, 58, 26, 0.09)'
+  if (isSibling) bgColor = 'rgba(0,0,0,0.02)'
 
   return (
     <foreignObject
@@ -194,23 +213,21 @@ function TreeNode({ node, focusPersonId, myPersonId, onNavigate }) {
         onPointerDown={e => e.stopPropagation()}
         onClick={() => onNavigate(node.id)}
         style={{
+          position:        'relative',
           width:           NODE_W + 'px',
           height:          NODE_H + 'px',
           boxSizing:       'border-box',
-          border:          isFocus
-            ? '2px solid var(--color-accent)'
-            : '1px solid var(--color-border)',
+          border:          borderStyle,
           borderRadius:    '6px',
-          backgroundColor: isMe
-            ? 'rgba(122, 58, 26, 0.09)'
-            : 'var(--color-bg, #f7f3ec)',
+          backgroundColor: bgColor,
           cursor:          'pointer',
-          padding:         '8px 10px',
+          padding:         '8px 24px 8px 10px',
           overflow:        'hidden',
           display:         'flex',
           flexDirection:   'column',
           justifyContent:  'center',
           userSelect:      'none',
+          opacity:         isSibling ? 0.75 : 1,
           boxShadow:       isFocus ? '0 0 0 1px var(--color-accent)' : 'none',
         }}
       >
@@ -236,6 +253,24 @@ function TreeNode({ node, focusPersonId, myPersonId, onNavigate }) {
             {years}
           </div>
         )}
+        {/* Profil-ikon: åpner personside */}
+        <div
+          title="Åpne profil"
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); onOpenProfile(node.id) }}
+          style={{
+            position:   'absolute',
+            top:        '4px',
+            right:      '5px',
+            fontSize:   '11px',
+            opacity:    0.35,
+            lineHeight: 1,
+            padding:    '2px',
+            cursor:     'pointer',
+          }}
+        >
+          ↗
+        </div>
       </div>
     </foreignObject>
   )
@@ -283,15 +318,67 @@ export function TreePage() {
     return m
   }, [nodes])
 
+  // ─── Søsken og ektefelle (kun aner/sandglass) ──────────
+  const { allNodes, allEdges } = useMemo(() => {
+    if (!graph || !nodes.length || mode === 'etterkommere') {
+      return { allNodes: nodes, allEdges: edges }
+    }
+    const focusNode = nodes.find(n => n.id === personId)
+    if (!focusNode) return { allNodes: nodes, allEdges: edges }
+
+    const existingIds = new Set(nodes.map(n => n.id))
+    const extraNodes  = []
+    const extraEdges  = []
+
+    // Søsken: foreldres barn unntatt fokusperson
+    const parents    = graph.parentMap.get(personId) ?? []
+    const siblingIds = []
+    const seenSib    = new Set([personId])
+    for (const parentId of parents) {
+      for (const sibId of (graph.childMap.get(parentId) ?? [])) {
+        if (!seenSib.has(sibId) && !existingIds.has(sibId)) {
+          seenSib.add(sibId)
+          siblingIds.push(sibId)
+        }
+      }
+    }
+    let sibX = focusNode.x - H_GAP
+    for (const sibId of [...siblingIds].reverse()) {
+      sibX -= NODE_W
+      const info = graph.infoMap.get(sibId) || {}
+      extraNodes.push({ id: sibId, x: sibX, y: focusNode.y, nodeType: 'sibling', isFocus: false, gen: 0, ...info })
+      sibX -= H_GAP
+    }
+
+    // Ektefelle(r): til høyre for fokusperson
+    const spouseIds = graph.spouseMap.get(personId) ?? []
+    let spX = focusNode.x + NODE_W + H_GAP
+    for (const spId of spouseIds) {
+      if (existingIds.has(spId)) continue
+      const info = graph.infoMap.get(spId) || {}
+      extraNodes.push({ id: spId, x: spX, y: focusNode.y, nodeType: 'spouse', isFocus: false, gen: 0, ...info })
+      extraEdges.push({ id: `sp-${personId}-${spId}`, fromId: personId, toId: spId, edgeType: 'spouse' })
+      spX += NODE_W + H_GAP
+    }
+
+    return { allNodes: [...nodes, ...extraNodes], allEdges: [...edges, ...extraEdges] }
+  }, [nodes, edges, graph, personId, mode])
+
+  const allNodeMap = useMemo(() => {
+    const m = new Map()
+    allNodes.forEach(n => m.set(n.id, n))
+    return m
+  }, [allNodes])
+
   // ─── Fit-to-screen ─────────────────────────────────────
   useEffect(() => {
-    if (!nodes.length || !containerRef.current) return
+    if (!allNodes.length || !containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
     const W = rect.width  || 800
     const H = rect.height || 500
 
-    const xs = nodes.map(n => n.x)
-    const ys = nodes.map(n => n.y)
+    const xs = allNodes.map(n => n.x)
+    const ys = allNodes.map(n => n.y)
     const minX  = Math.min(...xs)
     const minY  = Math.min(...ys)
     const treeW = Math.max(...xs) + NODE_W - minX
@@ -303,7 +390,7 @@ export function TreePage() {
       y: (H - treeH * s) / 2 - minY * s,
     })
     setScale(s)
-  }, [nodes, personId, mode, maxGen])
+  }, [allNodes])
 
   // ─── Pan/zoom-hendlere ─────────────────────────────────
   const handleWheel = useCallback((e) => {
@@ -353,16 +440,20 @@ export function TreePage() {
   }, [])
 
   const handleNodeNavigate = useCallback((id) => {
+    setSearchParams({ person: id, mode })
+  }, [mode, setSearchParams])
+
+  const handleOpenProfile = useCallback((id) => {
     navigate(`/person/${id}`)
   }, [navigate])
 
   function resetZoom() {
-    if (!nodes.length || !containerRef.current) return
+    if (!allNodes.length || !containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
     const W = rect.width  || 800
     const H = rect.height || 500
-    const xs = nodes.map(n => n.x)
-    const ys = nodes.map(n => n.y)
+    const xs = allNodes.map(n => n.x)
+    const ys = allNodes.map(n => n.y)
     const minX  = Math.min(...xs)
     const minY  = Math.min(...ys)
     const treeW = Math.max(...xs) + NODE_W - minX
@@ -516,7 +607,7 @@ export function TreePage() {
         onPointerUp={stopDrag}
         onPointerLeave={stopDrag}
       >
-        {nodes.length === 0 ? (
+        {allNodes.length === 0 ? (
           <div style={{
             display:        'flex',
             alignItems:     'center',
@@ -533,29 +624,33 @@ export function TreePage() {
           >
             <g transform={`translate(${pan.x},${pan.y}) scale(${scale})`}>
               {/* Kanter */}
-              {edges.map(e => {
-                const d = elbowPath(nodeMap, e.fromId, e.toId)
+              {allEdges.map(e => {
+                const d = elbowPath(allNodeMap, e.fromId, e.toId)
                 if (!d) return null
+                const isSpouseEdge = e.edgeType === 'spouse'
                 return (
                   <path
                     key={e.id}
                     d={d}
                     fill="none"
-                    stroke="var(--color-border)"
+                    stroke={isSpouseEdge ? 'var(--color-accent)' : 'var(--color-border)'}
                     strokeWidth={1.5}
+                    strokeDasharray={isSpouseEdge ? '4 3' : undefined}
+                    strokeOpacity={isSpouseEdge ? 0.5 : 1}
                     vectorEffect="non-scaling-stroke"
                   />
                 )
               })}
 
               {/* Noder */}
-              {nodes.map(n => (
+              {allNodes.map(n => (
                 <TreeNode
                   key={n.id}
                   node={n}
                   focusPersonId={personId}
                   myPersonId={myPersonId}
                   onNavigate={handleNodeNavigate}
+                  onOpenProfile={handleOpenProfile}
                 />
               ))}
             </g>
