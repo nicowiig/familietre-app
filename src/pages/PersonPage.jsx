@@ -26,6 +26,7 @@ export function PersonPage() {
   const [biography,     setBiography]     = useState(null)
   const [roles,         setRoles]         = useState([])
   const [photos,        setPhotos]        = useState([])
+  const [media,         setMedia]         = useState([])
   const [sources,       setSources]       = useState([])
   const [families,      setFamilies]      = useState([])
   const [children,      setChildren]      = useState([])
@@ -44,7 +45,7 @@ export function PersonPage() {
     setNotFound(false)
     try {
       const [
-        personRes, namesRes, factsRes, addrRes, bioRes, rolesRes, photosRes, sourcesRes, auditLogRes,
+        personRes, namesRes, factsRes, addrRes, bioRes, rolesRes, photosRes, sourcesRes, auditLogRes, mediaRes,
       ] = await Promise.all([
         supabase.from('persons').select('*').eq('person_id', personId).eq('is_deleted', false).maybeSingle(),
         supabase.from('person_names').select('*').eq('person_id', personId).order('is_preferred', { ascending: false }),
@@ -55,6 +56,7 @@ export function PersonPage() {
         supabase.from('person_photos').select('*').eq('person_id', personId).order('photo_order'),
         supabase.from('person_sources').select('*').eq('person_id', personId).order('found_date', { ascending: false }),
         supabase.from('person_audit_log').select('*').eq('person_id', personId).order('changed_at', { ascending: false }).limit(50),
+        supabase.from('person_media').select('*').eq('person_id', personId).order('display_order'),
       ])
 
       if (!personRes.data) { setNotFound(true); return }
@@ -103,6 +105,7 @@ export function PersonPage() {
         setPhotos([])
       }
       setSources(sourcesRes.data || [])
+      setMedia(mediaRes.data || [])
       setAuditLog(auditLogRes.data || [])
 
       // Hent familier der personen er ektefelle
@@ -351,7 +354,7 @@ export function PersonPage() {
 
           {/* Venstre: biografi + fakta + tidslinje + roller + adresser */}
           <div>
-            <BiographySection biography={biography} personId={id} />
+            <BiographySection biography={biography} personId={id} media={media} />
             <FactsSection
               facts={facts}
               birth={birth}
@@ -734,33 +737,166 @@ function renderBiographyParagraph(text, paraKey) {
   return <p key={paraKey}>{parts}</p>
 }
 
-function BiographySection({ biography, personId }) {
+const MEDIA_CATEGORY_LABELS = {
+  patent:        'Patenttegning',
+  document:      'Dokument',
+  map:           'Kart',
+  newspaper:     'Avisutklipp',
+  photo_related: 'Fotografi',
+  other:         'Illustrasjon',
+}
+
+function BiographySection({ biography, personId, media = [] }) {
   const [expanded, setExpanded] = useState(false)
+  const [lightbox, setLightbox] = useState(null)
   const text = biography?.biography_text
 
-  if (!text) return null
+  if (!text && media.length === 0) return null
 
-  const isLong = text.length > 600
-  const displayText = isLong && !expanded ? text.slice(0, 600) + '…' : text
+  const isLong = (text || '').length > 600
+  const displayText = isLong && !expanded ? text.slice(0, 600) + '…' : (text || '')
 
   return (
     <div className="profile-section">
       <h2 className="profile-section-header">Biografi</h2>
-      <div className="profile-biography">
-        {displayText.split('\n\n').map((para, i) => renderBiographyParagraph(para, i))}
-      </div>
-      {isLong && (
-        <button
-          className="btn btn-ghost btn-sm mt-4"
-          onClick={() => setExpanded(e => !e)}
-        >
-          {expanded ? 'Vis mindre' : 'Les mer'}
+      {text && (
+        <>
+          <div className="profile-biography">
+            {displayText.split('\n\n').map((para, i) => renderBiographyParagraph(para, i))}
+          </div>
+          {isLong && (
+            <button
+              className="btn btn-ghost btn-sm mt-4"
+              onClick={() => setExpanded(e => !e)}
+            >
+              {expanded ? 'Vis mindre' : 'Les mer'}
+            </button>
+          )}
+          {biography?.is_ai_generated && !biography?.is_approved && (
+            <p className="text-xs text-muted mt-3" style={{ fontStyle: 'italic' }}>
+              AI-forslag — ikke verifisert av administrator
+            </p>
+          )}
+        </>
+      )}
+
+      {media.length > 0 && (
+        <div style={{ marginTop: text ? 'var(--space-8)' : 0 }}>
+          <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, textTransform: 'uppercase',
+            letterSpacing: '0.06em', color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)' }}>
+            Illustrasjoner
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 'var(--space-4)' }}>
+            {media.map((item, i) => (
+              <div key={item.id} style={{ cursor: 'zoom-in' }} onClick={() => setLightbox(i)}>
+                <div style={{ position: 'relative', background: 'var(--color-surface-raised)', borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                  <img
+                    src={item.url}
+                    alt={item.caption || ''}
+                    style={{ width: '100%', aspectRatio: '3/4', objectFit: 'contain', display: 'block',
+                      background: '#fff', padding: 6 }}
+                  />
+                  {item.category && item.category !== 'other' && (
+                    <span style={{ position: 'absolute', top: 6, left: 6, fontSize: 10,
+                      background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: 4,
+                      padding: '2px 6px', fontWeight: 600, letterSpacing: '0.04em' }}>
+                      {MEDIA_CATEGORY_LABELS[item.category] ?? item.category}
+                    </span>
+                  )}
+                </div>
+                {(item.caption || item.date_text) && (
+                  <div style={{ marginTop: 6 }}>
+                    {item.date_text && (
+                      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 2 }}>
+                        {item.date_text}
+                      </div>
+                    )}
+                    {item.caption && (
+                      <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>
+                        {item.caption}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {lightbox !== null && (
+        <MediaLightbox items={media} initial={lightbox} onClose={() => setLightbox(null)} />
+      )}
+    </div>
+  )
+}
+
+function MediaLightbox({ items, initial, onClose }) {
+  const [idx, setIdx] = useState(initial)
+  const item = items[idx]
+
+  function prev() { setIdx(i => (i > 0 ? i - 1 : items.length - 1)) }
+  function next() { setIdx(i => (i < items.length - 1 ? i + 1 : 0)) }
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft') prev()
+      if (e.key === 'ArrowRight') next()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)',
+        zIndex: 1000, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center' }}
+      onClick={onClose}
+    >
+      {items.length > 1 && (
+        <button onClick={e => { e.stopPropagation(); prev() }}
+          style={{ position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)',
+            color: '#fff', background: 'none', border: 'none', fontSize: 36, cursor: 'pointer' }}>
+          ‹
         </button>
       )}
-      {biography?.is_ai_generated && !biography?.is_approved && (
-        <p className="text-xs text-muted mt-3" style={{ fontStyle: 'italic' }}>
-          AI-forslag — ikke verifisert av administrator
-        </p>
+      <img
+        src={item.url}
+        alt={item.caption || ''}
+        style={{ maxHeight: '80vh', maxWidth: '85vw', objectFit: 'contain', background: '#fff', padding: 12, borderRadius: 4 }}
+        onClick={e => e.stopPropagation()}
+      />
+      {(item.caption || item.date_text) && (
+        <div onClick={e => e.stopPropagation()}
+          style={{ marginTop: 16, maxWidth: 640, textAlign: 'center', color: '#e5e7eb', padding: '0 24px' }}>
+          {item.date_text && (
+            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>
+              {MEDIA_CATEGORY_LABELS[item.category] ?? 'Illustrasjon'} · {item.date_text}
+            </div>
+          )}
+          {item.caption && (
+            <div style={{ fontSize: 14, lineHeight: 1.5 }}>{item.caption}</div>
+          )}
+        </div>
+      )}
+      {items.length > 1 && (
+        <button onClick={e => { e.stopPropagation(); next() }}
+          style={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)',
+            color: '#fff', background: 'none', border: 'none', fontSize: 36, cursor: 'pointer' }}>
+          ›
+        </button>
+      )}
+      <button onClick={onClose}
+        style={{ position: 'absolute', top: 20, right: 24, color: '#fff',
+          background: 'none', border: 'none', fontSize: 24, cursor: 'pointer' }}>
+        ✕
+      </button>
+      {items.length > 1 && (
+        <div style={{ position: 'absolute', bottom: 20, color: '#9ca3af', fontSize: 13 }}>
+          {idx + 1} / {items.length}
+        </div>
       )}
     </div>
   )
