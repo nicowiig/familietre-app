@@ -277,7 +277,7 @@ export function PersonPage() {
               className="btn btn-secondary btn-sm"
               style={{ justifyContent: 'center' }}
             >
-              Vis i familietre
+              Vis {preferred?.given_name ?? fullName.split(' ')[0] ?? 'person'} i familietre
             </Link>
           </div>
 
