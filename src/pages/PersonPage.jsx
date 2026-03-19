@@ -1271,6 +1271,68 @@ function TimelineEventRow({ event }) {
 
 /* ===== Karriere (samlet seksjon) ===== */
 
+const ROLE_ABBREV = {
+  'h.r.adv': 'Høyesterettsadvokat', 'h.r.adv.': 'Høyesterettsadvokat',
+  'hr.adv': 'Høyesterettsadvokat', 'h.r.advokat': 'Høyesterettsadvokat',
+}
+function expandRoleValue(value) {
+  return ROLE_ABBREV[(value || '').toLowerCase().trim()] || value
+}
+
+const MONTH_NAMES_NO = ['jan.', 'feb.', 'mars', 'apr.', 'mai', 'jun.', 'jul.', 'aug.', 'sep.', 'okt.', 'nov.', 'des.']
+
+function parseRoleDate(val) {
+  if (!val) return null
+  const str = String(val)
+  const full = str.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (full) return { year: parseInt(full[1]), month: parseInt(full[2]), day: parseInt(full[3]) }
+  const mm = str.match(/^(\d{4})-(\d{2})$/)
+  if (mm) return { year: parseInt(mm[1]), month: parseInt(mm[2]) }
+  const yy = str.match(/^(\d{4})$/)
+  if (yy) return { year: parseInt(yy[1]), month: null }
+  return null
+}
+
+function formatRoleDate(parsed) {
+  if (!parsed) return null
+  if (parsed.month) return `${MONTH_NAMES_NO[parsed.month - 1]} ${parsed.year}`
+  return String(parsed.year)
+}
+
+function formatRolePeriod(from, to, deathYear) {
+  if (!from && !to) return null
+  const fromParsed = parseRoleDate(from)
+  const toParsed   = parseRoleDate(to)
+  const fromStr    = formatRoleDate(fromParsed)
+  const toStr      = toParsed ? formatRoleDate(toParsed) : (deathYear ? String(deathYear) : 'nå')
+  if (fromStr) return `${fromStr} – ${toStr}`
+  return `frem til ${toStr}`
+}
+
+function calcYears(from, to, deathYear) {
+  if (!from) return null
+  const fromParsed = parseRoleDate(from)
+  const toParsed   = parseRoleDate(to)
+  if (!fromParsed) return null
+  const now = new Date()
+  const fromMonths = fromParsed.year * 12 + (fromParsed.month || 1)
+  const toMonths   = toParsed
+    ? toParsed.year * 12 + (toParsed.month || 12)
+    : (deathYear ? deathYear * 12 + 12 : now.getFullYear() * 12 + (now.getMonth() + 1))
+  const totalMonths = toMonths - fromMonths
+  if (totalMonths <= 0) return null
+  const years  = Math.floor(totalMonths / 12)
+  const months = totalMonths % 12
+  if (years === 0) return months === 1 ? '1 mnd' : `${months} mnd`
+  if (months === 0) return years === 1 ? '1 år' : `${years} år`
+  return `${years} år ${months} mnd`
+}
+
+function roleDateSort(a, b) {
+  const toNum = v => { const p = parseRoleDate(v); return p ? p.year * 100 + (p.month || 0) : 0 }
+  return toNum(b.date_from) - toNum(a.date_from)
+}
+
 function BriefcaseIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
