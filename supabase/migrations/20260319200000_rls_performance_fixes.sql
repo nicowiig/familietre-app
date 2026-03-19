@@ -222,3 +222,23 @@ CREATE POLICY "person_media_update" ON person_media
     FOR UPDATE USING ((select auth.role()) = 'service_role');
 CREATE POLICY "person_media_delete" ON person_media
     FOR DELETE USING ((select auth.role()) = 'service_role');
+
+
+-- ════════════════════════════════════════════════════════════
+-- DEL 3: Indekser på fremmednøkler (unindexed_foreign_keys)
+-- ════════════════════════════════════════════════════════════
+CREATE INDEX IF NOT EXISTS idx_branch_user_relations_connecting_person_id ON branch_user_relations (connecting_person_id);
+CREATE INDEX IF NOT EXISTS idx_branch_user_relations_user_person_id       ON branch_user_relations (user_person_id);
+CREATE INDEX IF NOT EXISTS idx_duplicate_ignores_ignored_by               ON duplicate_ignores (ignored_by);
+CREATE INDEX IF NOT EXISTS idx_familietre_tilganger_person_id              ON familietre_tilganger (person_id);
+CREATE INDEX IF NOT EXISTS idx_person_addresses_person_id                  ON person_addresses (person_id);
+CREATE INDEX IF NOT EXISTS idx_person_biography_person_id                  ON person_biography (person_id);
+CREATE INDEX IF NOT EXISTS idx_person_languages_person_id                  ON person_languages (person_id);
+CREATE INDEX IF NOT EXISTS idx_person_media_source_id                      ON person_media (source_id);
+CREATE INDEX IF NOT EXISTS idx_person_quotes_person_id                     ON person_quotes (person_id);
+CREATE INDEX IF NOT EXISTS idx_person_religion_person_id                   ON person_religion (person_id);
+CREATE INDEX IF NOT EXISTS idx_person_roles_person_id                      ON person_roles (person_id);
+CREATE INDEX IF NOT EXISTS idx_person_sources_person_id                    ON person_sources (person_id);
+CREATE INDEX IF NOT EXISTS idx_person_work_experience_address_id           ON person_work_experience (address_id);
+CREATE INDEX IF NOT EXISTS idx_person_work_experience_address_period_id    ON person_work_experience (address_period_id);
+CREATE INDEX IF NOT EXISTS idx_place_article_sources_article_id            ON place_article_sources (article_id);
