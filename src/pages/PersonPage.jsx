@@ -2266,7 +2266,7 @@ function AuditLogSection({ auditLog }) {
   }
 
   // Lesbar etikett for table_name / field_name
-  const TABLE_LABELS = { person_facts: 'Hendelse', persons: 'Person', person_names: 'Navn', person_sources: 'Kilde', address_periods: 'Adresse' }
+  const TABLE_LABELS = { person_facts: 'Hendelse', persons: 'Person', person_names: 'Navn', person_sources: 'Kilde', address_periods: 'Adresse', person_biography: 'Biografi', person_roles: 'Rolle', person_work_experience: 'Arbeidserfaring' }
   const FIELD_LABELS = {
     fact_date: 'Dato', date_value: 'Dato', date_day: 'Dag', date_month: 'Måned', date_year: 'År',
     fact_type: 'Type', place_raw: 'Sted', place_city: 'By', notes: 'Notat', value: 'Verdi',
@@ -2283,6 +2283,7 @@ function AuditLogSection({ auditLog }) {
   // Vis displaynavn fra changed_by (email)
   function displayUser(changedBy) {
     if (!changedBy) return 'Ukjent'
+    if (changedBy === 'script') return 'Script'
     // Script-endringer
     if (changedBy.includes('(script)') || changedBy.includes('(import)')) {
       const base = changedBy.replace(/\s*\(script\)|\s*\(import\)/g, '').trim()
