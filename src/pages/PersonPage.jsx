@@ -1571,7 +1571,7 @@ function WorkExpGroup({ group }) {
         <div style={{ fontWeight: 700, fontSize: 'var(--text-base)' }}>
           {employer || 'Ukjent arbeidsgiver'}
         </div>
-        {(place || period) && (
+        {hasMultiple && (place || period) && (
           <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-2)' }}>
             {[place, period].filter(Boolean).join(' · ')}
           </div>
@@ -1587,11 +1587,18 @@ function WorkExpGroup({ group }) {
 }
 
 function WorkExpEntry({ entry, compact }) {
+  const [expanded, setExpanded] = useState(false)
+  const TRUNCATE = 120
+
   const period = entry.date_from
     ? (entry.date_to && entry.date_to !== entry.date_from
         ? `${entry.date_from}–${entry.date_to}`
         : entry.date_from)
     : null
+
+  const notesTruncated = entry.notes && entry.notes.length > TRUNCATE
+    ? entry.notes.slice(0, TRUNCATE).trimEnd() + '…'
+    : entry.notes
 
   return (
     <div style={compact ? { paddingLeft: 'var(--space-2)', borderLeft: '2px solid var(--color-border)' } : {}}>
@@ -1600,19 +1607,24 @@ function WorkExpEntry({ entry, compact }) {
           {entry.title}
         </div>
       )}
-      {compact && period && (
-        <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
-          {period}
-        </div>
-      )}
-      {!compact && entry.place && (
-        <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
-          {entry.place}
-        </div>
-      )}
+      <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
+        {[entry.place, period].filter(Boolean).join(' · ')}
+      </div>
       {entry.notes && (
         <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', fontStyle: 'italic', marginTop: 'var(--space-1)' }}>
-          {entry.notes}
+          {expanded ? entry.notes : notesTruncated}
+          {entry.notes.length > TRUNCATE && (
+            <button
+              onClick={() => setExpanded(e => !e)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--color-accent)', fontSize: 'var(--text-sm)',
+                fontStyle: 'normal', padding: '0 0 0 4px',
+              }}
+            >
+              {expanded ? 'Vis mindre' : 'Vis mer'}
+            </button>
+          )}
         </div>
       )}
     </div>
