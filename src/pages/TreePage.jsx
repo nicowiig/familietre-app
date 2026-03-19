@@ -190,7 +190,6 @@ function TreeNode({ node, focusPersonId, myPersonId, onNavigate }) {
       style={{ overflow: 'visible' }}
     >
       <div
-        xmlns="http://www.w3.org/1999/xhtml"
         title={name}
         onPointerDown={e => e.stopPropagation()}
         onClick={() => onNavigate(node.id)}
@@ -325,6 +324,14 @@ export function TreePage() {
       return next
     })
   }, [])
+
+  // Non-passive wheel-lytter for å støtte e.preventDefault() (scroll-zoom)
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [handleWheel])
 
   const startDrag = useCallback((e) => {
     if (e.button !== 0) return
@@ -504,7 +511,6 @@ export function TreePage() {
           position: 'relative',
           backgroundColor: 'var(--color-bg)',
         }}
-        onWheel={handleWheel}
         onPointerDown={startDrag}
         onPointerMove={onPointerMove}
         onPointerUp={stopDrag}
