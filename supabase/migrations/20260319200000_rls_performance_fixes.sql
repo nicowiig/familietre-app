@@ -74,11 +74,21 @@ CREATE POLICY "Innloggede kan slette egne ignorerte par"
     USING (ignored_by = (select auth.uid()) OR ignored_by IS NULL);
 
 -- ─── familietre_tilganger ────────────────────────────────────
-DROP POLICY IF EXISTS "tilganger_own_select"  ON familietre_tilganger;
-DROP POLICY IF EXISTS "tilganger_insert_own"  ON familietre_tilganger;
+-- Slår sammen tilganger_own_select + tilganger_admin_select_all til én policy.
+-- Vanlig bruker ser kun sin egen rad; admin ser alle.
+DROP POLICY IF EXISTS "tilganger_own_select"       ON familietre_tilganger;
+DROP POLICY IF EXISTS "tilganger_admin_select_all" ON familietre_tilganger;
+DROP POLICY IF EXISTS "tilganger_insert_own"       ON familietre_tilganger;
 
-CREATE POLICY "tilganger_own_select" ON familietre_tilganger
-    FOR SELECT USING (user_id = (select auth.uid()));
+CREATE POLICY "tilganger_select" ON familietre_tilganger
+    FOR SELECT USING (
+        user_id = (select auth.uid())
+        OR (
+            SELECT is_admin FROM familietre_tilganger
+            WHERE user_id = (select auth.uid())
+            LIMIT 1
+        ) = true
+    );
 CREATE POLICY "tilganger_insert_own" ON familietre_tilganger
     FOR INSERT WITH CHECK (user_id = (select auth.uid()));
 
