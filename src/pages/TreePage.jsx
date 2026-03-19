@@ -259,17 +259,20 @@ function TreeNode({ node, focusPersonId, myPersonId, onNavigate, onOpenProfile }
           onPointerDown={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); onOpenProfile(node.id) }}
           style={{
-            position:   'absolute',
-            top:        '4px',
-            right:      '5px',
-            fontSize:   '11px',
-            opacity:    0.35,
+            position: 'absolute',
+            top:      '5px',
+            right:    '5px',
+            opacity:  0.55,
             lineHeight: 1,
-            padding:    '2px',
-            cursor:     'pointer',
+            padding:  '2px',
+            cursor:   'pointer',
+            color:    'var(--color-text)',
           }}
         >
-          ↗
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
         </div>
       </div>
     </foreignObject>
@@ -527,6 +530,22 @@ export function TreePage() {
     navigate(`/person/${id}`)
   }, [navigate])
 
+  function applyZoom(factor) {
+    const el = containerRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const cx = rect.width  / 2
+    const cy = rect.height / 2
+    setScale(prev => {
+      const next = Math.min(3, Math.max(0.15, prev * factor))
+      setPan(p => ({
+        x: cx - (cx - p.x) * (next / prev),
+        y: cy - (cy - p.y) * (next / prev),
+      }))
+      return next
+    })
+  }
+
   function resetZoom() {
     if (!allNodes.length || !containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
@@ -663,13 +682,21 @@ export function TreePage() {
           <option value={5}>5 gen</option>
         </select>
 
-        <button
-          onClick={resetZoom}
-          className="btn btn-secondary btn-sm"
-          style={{ flexShrink: 0 }}
-        >
-          Reset zoom
+        <button onClick={resetZoom} className="btn btn-secondary btn-sm" style={{ flexShrink: 0 }}>
+          Tilpass
         </button>
+        <div style={{ display: 'flex', border: '1px solid var(--color-border)', borderRadius: '6px', overflow: 'hidden', flexShrink: 0 }}>
+          <button
+            onClick={() => applyZoom(1.25)}
+            style={{ padding: '4px 10px', fontSize: '16px', lineHeight: 1, border: 'none', borderRight: '1px solid var(--color-border)', cursor: 'pointer', background: 'transparent', color: 'var(--color-text)' }}
+            title="Zoom inn"
+          >+</button>
+          <button
+            onClick={() => applyZoom(0.8)}
+            style={{ padding: '4px 10px', fontSize: '16px', lineHeight: 1, border: 'none', cursor: 'pointer', background: 'transparent', color: 'var(--color-text)' }}
+            title="Zoom ut"
+          >−</button>
+        </div>
       </div>
 
       {/* SVG-lerret */}
