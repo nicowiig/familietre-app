@@ -165,8 +165,8 @@ function elbowPath(nodeMap, fromId, toId) {
   const ly  = lower.y
   const gap = ly - uy
 
-  // Samme Y-nivå: horisontal linje mellom nodene
-  if (gap < NODE_H) {
+  // Samme Y-nivå: horisontal linje mellom nodene (gap <= 0 betyr begge på samme y)
+  if (gap <= 0) {
     const left  = from.x <= to.x ? from : to
     const right = from.x <= to.x ? to   : from
     const cy = left.y + NODE_H / 2
