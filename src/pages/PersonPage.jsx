@@ -1524,6 +1524,25 @@ function WorkExpIcon() {
 }
 
 function WorkExperienceSection({ workExp }) {
+  // Hent navn for eventuelle person-ID-er nevnt i notater
+  const [nameMap, setNameMap] = useState({})
+  useEffect(() => {
+    const ids = new Set()
+    workExp.forEach(w => {
+      const matches = (w.notes || '').matchAll(/\bI\d{6}\b/g)
+      for (const m of matches) ids.add(m[0])
+    })
+    if (ids.size === 0) return
+    supabase.from('person_names')
+      .select('person_id, given_name, surname, is_preferred')
+      .in('person_id', [...ids])
+      .then(({ data }) => {
+        const map = {}
+        ;(data || []).forEach(n => { if (!map[n.person_id] || n.is_preferred) map[n.person_id] = n })
+        setNameMap(map)
+      })
+  }, [workExp])
+
   // Grupper etter arbeidsgiver
   const grouped = {}
   workExp.forEach(w => {
@@ -1544,13 +1563,13 @@ function WorkExperienceSection({ workExp }) {
     <div className="profile-section">
       <h2 className="profile-section-header">Arbeidserfaring</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-        {groups.map((g, i) => <WorkExpGroup key={i} group={g} />)}
+        {groups.map((g, i) => <WorkExpGroup key={i} group={g} nameMap={nameMap} />)}
       </div>
     </div>
   )
 }
 
-function WorkExpGroup({ group }) {
+function WorkExpGroup({ group, nameMap }) {
   const { employer, place, entries } = group
   const hasMultiple = entries.length > 1
 
@@ -1578,7 +1597,7 @@ function WorkExpGroup({ group }) {
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {sorted.map((e, i) => (
-            <WorkExpEntry key={e.id || i} entry={e} compact={hasMultiple} />
+            <WorkExpEntry key={e.id || i} entry={e} compact={hasMultiple} nameMap={nameMap} />
           ))}
         </div>
       </div>
@@ -1586,7 +1605,25 @@ function WorkExpGroup({ group }) {
   )
 }
 
-function WorkExpEntry({ entry, compact }) {
+// Erstatter person-ID-er (I500058) i tekst med klikkbare navn-lenker
+function renderWithPersonLinks(text, nameMap) {
+  if (!text) return null
+  const parts = text.split(/(\bI\d{6}\b)/)
+  return parts.map((part, i) => {
+    const n = /^I\d{6}$/.test(part) && nameMap[part]
+    if (n) {
+      const name = [n.given_name, n.surname].filter(Boolean).join(' ')
+      return (
+        <Link key={i} to={`/person/${part}`} style={{ color: 'var(--color-accent)', textDecoration: 'underline', fontStyle: 'normal' }}>
+          {name}
+        </Link>
+      )
+    }
+    return part
+  })
+}
+
+function WorkExpEntry({ entry, compact, nameMap = {} }) {
   const [expanded, setExpanded] = useState(false)
   const TRUNCATE = 120
 
@@ -1600,6 +1637,8 @@ function WorkExpEntry({ entry, compact }) {
     ? entry.notes.slice(0, TRUNCATE).trimEnd() + '…'
     : entry.notes
 
+  const notesContent = expanded ? entry.notes : notesTruncated
+
   return (
     <div style={compact ? { paddingLeft: 'var(--space-2)', borderLeft: '2px solid var(--color-border)' } : {}}>
       {entry.title && (
@@ -1612,7 +1651,7 @@ function WorkExpEntry({ entry, compact }) {
       </div>
       {entry.notes && (
         <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', fontStyle: 'italic', marginTop: 'var(--space-1)' }}>
-          {expanded ? entry.notes : notesTruncated}
+          {renderWithPersonLinks(notesContent, nameMap)}
           {entry.notes.length > TRUNCATE && (
             <button
               onClick={() => setExpanded(e => !e)}
