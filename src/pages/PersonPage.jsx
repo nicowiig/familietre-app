@@ -1344,18 +1344,19 @@ function BriefcaseIcon() {
 }
 
 // Normaliser person_roles til work-exp-format
+// employer = rolle-navn (vises som bold header), place = sted/org (vises som undertekst)
 function roleToEntry(r) {
   const ABBREV = { 'h.r.adv': 'Høyesterettsadvokat', 'h.r.adv.': 'Høyesterettsadvokat', 'hr.adv': 'Høyesterettsadvokat', 'h.r.advokat': 'Høyesterettsadvokat' }
-  const title = ABBREV[(r.value || '').toLowerCase().trim()] || r.value
+  const roleName = ABBREV[(r.value || '').toLowerCase().trim()] || r.value
   return {
-    id: `role_${r.id}`,
-    employer: r.place || null,
-    title,
-    place: r.place || null,
+    id:        `role_${r.id}`,
+    employer:  roleName,
+    title:     null,
+    place:     r.place || null,
     date_from: r.date_from,
-    date_to: r.date_to,
-    notes: r.reason || null,
-    _type: 'role',
+    date_to:   r.date_to,
+    notes:     r.reason || null,
+    _type:     'role',
   }
 }
 
