@@ -371,11 +371,17 @@ export function TreePage() {
     ;[...nodes, ...extraNodes].forEach(n => tempNodeMap.set(n.id, n))
 
     // ─── Par-koblinger for alle foreldrepar i aner/sandglass ─
-    // Erstatter individuelle elbow-kanter med klassisk genealogi-T
+    // Erstatter individuelle elbow-kanter med klassisk genealogi-T.
+    // I sandglass-modus inneholder edges BÅDE aner-kanter (toId.y < fromId.y)
+    // og desc-kanter (toId.y > fromId.y) — vi vil kun ha aner-kanter her.
     if (mode === 'aner' || mode === 'begge') {
       const byChild = new Map()
       for (const e of edges) {
         if (e.edgeType) continue
+        const toNode   = tempNodeMap.get(e.toId)
+        const fromNode = tempNodeMap.get(e.fromId)
+        // Kun aner-kanter: target (forelder) skal være OVER source (barn)
+        if (!toNode || !fromNode || toNode.y >= fromNode.y) continue
         if (!byChild.has(e.fromId)) byChild.set(e.fromId, [])
         byChild.get(e.fromId).push(e)
       }
