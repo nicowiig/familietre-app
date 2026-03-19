@@ -1860,9 +1860,7 @@ function SourcesSection({ sources }) {
         {sortedDomains.map(domain => {
           const items = groups[domain]
           const label = domain === '__ingen_url__' ? 'Andre kilder' : domainLabel(domain)
-          const isOpen = domain === '__ingen_url__'
-            ? (openGroups[domain] === true)           // lukket som standard
-            : (openGroups[domain] !== false)          // åpen som standard
+          const isOpen = openGroups[domain] === true    // alle lukket som standard
           const isCollapsible = items.length > 1
 
           return (
