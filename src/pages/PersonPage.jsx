@@ -1861,18 +1861,17 @@ function SourcesSection({ sources }) {
           const items = groups[domain]
           const label = domain === '__ingen_url__' ? 'Andre kilder' : domainLabel(domain)
           const isOpen = openGroups[domain] === true    // alle lukket som standard
-          const isCollapsible = items.length > 1
 
           return (
             <div key={domain} style={{ borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', overflow: 'hidden' }}>
               {/* Gruppe-header */}
               <button
-                onClick={() => isCollapsible && toggleGroup(domain)}
+                onClick={() => toggleGroup(domain)}
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: 'var(--space-3) var(--space-4)',
                   background: 'var(--color-bg-subtle)', border: 'none',
-                  cursor: isCollapsible ? 'pointer' : 'default',
+                  cursor: 'pointer',
                   textAlign: 'left',
                 }}
               >
@@ -1881,17 +1880,15 @@ function SourcesSection({ sources }) {
                   <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
                     {items.length} {items.length === 1 ? 'kilde' : 'kilder'}
                   </span>
-                  {isCollapsible && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                      style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s', flexShrink: 0 }}>
-                      <path d="m6 9 6 6 6-6"/>
-                    </svg>
-                  )}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s', flexShrink: 0 }}>
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
                 </span>
               </button>
 
               {/* Gruppe-innhold */}
-              {(!isCollapsible || isOpen) && (
+              {isOpen && (
                 <div className="sources-list" style={{ borderTop: '1px solid var(--color-border)' }}>
                   {items.map((s, i) => <SourceItem key={s.id || i} source={s} />)}
                 </div>
