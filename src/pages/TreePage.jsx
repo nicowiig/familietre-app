@@ -318,50 +318,99 @@ export function TreePage() {
     return m
   }, [nodes])
 
-  // ─── Søsken og ektefelle (kun aner/sandglass) ──────────
-  const { allNodes, allEdges } = useMemo(() => {
-    if (!graph || !nodes.length || mode === 'etterkommere') {
-      return { allNodes: nodes, allEdges: edges }
-    }
+  // ─── Søsken, ektefelle og familie-kobling ──────────────
+  const { allNodes, allEdges, familyConnector } = useMemo(() => {
+    if (!graph || !nodes.length) return { allNodes: nodes, allEdges: edges, familyConnector: null }
     const focusNode = nodes.find(n => n.id === personId)
-    if (!focusNode) return { allNodes: nodes, allEdges: edges }
+    if (!focusNode) return { allNodes: nodes, allEdges: edges, familyConnector: null }
 
     const existingIds = new Set(nodes.map(n => n.id))
     const extraNodes  = []
     const extraEdges  = []
 
-    // Søsken: foreldres barn unntatt fokusperson
-    const parents    = graph.parentMap.get(personId) ?? []
-    const siblingIds = []
-    const seenSib    = new Set([personId])
-    for (const parentId of parents) {
-      for (const sibId of (graph.childMap.get(parentId) ?? [])) {
-        if (!seenSib.has(sibId) && !existingIds.has(sibId)) {
-          seenSib.add(sibId)
-          siblingIds.push(sibId)
+    // Søsken: vises kun i aner-modus (til venstre for fokusperson)
+    if (mode === 'aner') {
+      const parents    = graph.parentMap.get(personId) ?? []
+      const siblingIds = []
+      const seenSib    = new Set([personId])
+      for (const parentId of parents) {
+        for (const sibId of (graph.childMap.get(parentId) ?? [])) {
+          if (!seenSib.has(sibId) && !existingIds.has(sibId)) {
+            seenSib.add(sibId)
+            siblingIds.push(sibId)
+          }
         }
       }
-    }
-    let sibX = focusNode.x - H_GAP
-    for (const sibId of [...siblingIds].reverse()) {
-      sibX -= NODE_W
-      const info = graph.infoMap.get(sibId) || {}
-      extraNodes.push({ id: sibId, x: sibX, y: focusNode.y, nodeType: 'sibling', isFocus: false, gen: 0, ...info })
-      sibX -= H_GAP
+      let sibX = focusNode.x - H_GAP
+      for (const sibId of [...siblingIds].reverse()) {
+        sibX -= NODE_W
+        const info = graph.infoMap.get(sibId) || {}
+        extraNodes.push({ id: sibId, x: sibX, y: focusNode.y, nodeType: 'sibling', isFocus: false, gen: 0, ...info })
+        sibX -= H_GAP
+      }
     }
 
-    // Ektefelle(r): til høyre for fokusperson
-    const spouseIds = graph.spouseMap.get(personId) ?? []
+    // Ektefelle(r): vis i alle modi til høyre for fokusperson
+    const spouseIds  = graph.spouseMap.get(personId) ?? []
+    const spouseNodes = []
     let spX = focusNode.x + NODE_W + H_GAP
     for (const spId of spouseIds) {
       if (existingIds.has(spId)) continue
       const info = graph.infoMap.get(spId) || {}
-      extraNodes.push({ id: spId, x: spX, y: focusNode.y, nodeType: 'spouse', isFocus: false, gen: 0, ...info })
+      const spNode = { id: spId, x: spX, y: focusNode.y, nodeType: 'spouse', isFocus: false, gen: 0, ...info }
+      extraNodes.push(spNode)
+      spouseNodes.push(spNode)
       extraEdges.push({ id: `sp-${personId}-${spId}`, fromId: personId, toId: spId, edgeType: 'spouse' })
       spX += NODE_W + H_GAP
     }
 
-    return { allNodes: [...nodes, ...extraNodes], allEdges: [...edges, ...extraEdges] }
+    // Familie-kobling: par → felles strek ned til barna
+    // Gjelder når det finnes ektefelle OG barna er synlige (etterkommere/begge)
+    let familyConnectorResult = null
+    if (spouseNodes.length > 0 && mode !== 'aner') {
+      // Finn kanter fra fokusperson til BARN (barn er UNDER fokus i SVG = større y)
+      const childEdges = edges.filter(e => {
+        if (e.fromId !== personId || e.edgeType) return false
+        const target = nodes.find(n => n.id === e.toId)
+        return target && target.y > focusNode.y
+      })
+      const childNodes = childEdges
+        .map(e => nodes.find(n => n.id === e.toId))
+        .filter(Boolean)
+        .sort((a, b) => a.x - b.x)
+
+      if (childNodes.length > 0) {
+        const spouse  = spouseNodes[0]
+        const midX    = (focusNode.x + NODE_W / 2 + spouse.x + NODE_W / 2) / 2
+        const coupleY = focusNode.y + NODE_H / 2
+        const childrenTopY = Math.min(...childNodes.map(n => n.y))
+        const junctionY = focusNode.y + NODE_H + (childrenTopY - focusNode.y - NODE_H) / 2
+
+        familyConnectorResult = {
+          midX,
+          coupleY,
+          junctionY,
+          children: childNodes.map(n => ({ cx: n.x + NODE_W / 2, y: n.y })),
+        }
+      }
+    }
+
+    // Fjern individuelle fokus→barn-kanter når familie-kobling tegnes
+    const childEdgeIds = familyConnectorResult
+      ? new Set(edges.filter(e => {
+          if (e.fromId !== personId || e.edgeType) return false
+          const t = nodes.find(n => n.id === e.toId)
+          return t && t.y > focusNode.y
+        }).map(e => e.id))
+      : new Set()
+
+    const filteredEdges = edges.filter(e => !childEdgeIds.has(e.id))
+
+    return {
+      allNodes: [...nodes, ...extraNodes],
+      allEdges: [...filteredEdges, ...extraEdges],
+      familyConnector: familyConnectorResult,
+    }
   }, [nodes, edges, graph, personId, mode])
 
   const allNodeMap = useMemo(() => {
@@ -641,6 +690,29 @@ export function TreePage() {
                   />
                 )
               })}
+
+              {/* Familie-kobling: par + felles strek ned til barna */}
+              {(() => {
+                if (!familyConnector) return null
+                const { midX, coupleY, junctionY, children } = familyConnector
+                const parts = [`M ${midX} ${coupleY} V ${junctionY}`]
+                if (children.length > 1) {
+                  parts.push(`M ${children[0].cx} ${junctionY} H ${children[children.length - 1].cx}`)
+                }
+                for (const { cx, y } of children) {
+                  parts.push(`M ${cx} ${junctionY} V ${y}`)
+                }
+                return (
+                  <path
+                    key="family-connector"
+                    d={parts.join(' ')}
+                    fill="none"
+                    stroke="var(--color-border)"
+                    strokeWidth={1.5}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                )
+              })()}
 
               {/* Noder */}
               {allNodes.map(n => (
