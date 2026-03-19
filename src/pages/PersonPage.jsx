@@ -370,7 +370,7 @@ export function PersonPage() {
               childBirths={childBirths}
               roles={[...careerRoles, ...eduRoles]}
             />
-            {(careerRoles.length > 0 || workExp.length > 0) && <CareerSection roles={careerRoles} workExp={workExp} />}
+            {(careerRoles.length > 0 || workExp.length > 0) && <CareerSection roles={careerRoles} workExp={workExp} deathYear={deathYear} />}
             {eduRoles.length > 0 && <UtdannelseSection roles={eduRoles} facts={facts} />}
             {titleRoles.length > 0 && <TitlerSection roles={titleRoles} />}
             {otherRoles.length > 0 && <RolesSection roles={otherRoles} title="Andre roller" />}
@@ -1295,6 +1295,8 @@ function parseRoleDate(val) {
 
 function formatRoleDate(parsed) {
   if (!parsed) return null
+  // Jan 1 og Des 31 er årsplassholdere — vis bare årstallet
+  if ((parsed.month === 1 && parsed.day === 1) || (parsed.month === 12 && parsed.day === 31)) return String(parsed.year)
   if (parsed.month) return `${MONTH_NAMES_NO[parsed.month - 1]} ${parsed.year}`
   return String(parsed.year)
 }
@@ -1378,7 +1380,7 @@ function WorkExpIcon() {
   )
 }
 
-function CareerSection({ roles = [], workExp = [] }) {
+function CareerSection({ roles = [], workExp = [], deathYear }) {
   // Hent navn for eventuelle person-ID-er nevnt i notater
   const [nameMap, setNameMap] = useState({})
   useEffect(() => {
@@ -1422,13 +1424,13 @@ function CareerSection({ roles = [], workExp = [] }) {
     <div className="profile-section">
       <h2 className="profile-section-header">Karriere</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-        {groups.map((g, i) => <WorkExpGroup key={i} group={g} nameMap={nameMap} />)}
+        {groups.map((g, i) => <WorkExpGroup key={i} group={g} nameMap={nameMap} deathYear={deathYear} />)}
       </div>
     </div>
   )
 }
 
-function WorkExpGroup({ group, nameMap }) {
+function WorkExpGroup({ group, nameMap, deathYear }) {
   const { employer, place, entries } = group
   const hasMultiple = entries.length > 1
 
@@ -1456,7 +1458,7 @@ function WorkExpGroup({ group, nameMap }) {
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {sorted.map((e, i) => (
-            <WorkExpEntry key={e.id || i} entry={e} compact={hasMultiple} nameMap={nameMap} />
+            <WorkExpEntry key={e.id || i} entry={e} compact={hasMultiple} nameMap={nameMap} deathYear={deathYear} />
           ))}
         </div>
       </div>
@@ -1482,14 +1484,14 @@ function renderWithPersonLinks(text, nameMap) {
   })
 }
 
-function WorkExpEntry({ entry, compact, nameMap = {} }) {
+function WorkExpEntry({ entry, compact, nameMap = {}, deathYear }) {
   const [expanded, setExpanded] = useState(false)
   const TRUNCATE = 120
 
   const fromYear = entry.date_from ? String(parseInt(entry.date_from) || entry.date_from) : null
   const toYear   = entry.date_to   ? String(parseInt(entry.date_to)   || entry.date_to)   : null
-  const period   = formatRolePeriod(entry.date_from, entry.date_to)
-  const duration = calcYears(entry.date_from, entry.date_to)
+  const period   = formatRolePeriod(entry.date_from, entry.date_to, deathYear)
+  const duration = calcYears(entry.date_from, entry.date_to, deathYear)
 
   const notesTruncated = entry.notes && entry.notes.length > TRUNCATE
     ? entry.notes.slice(0, TRUNCATE).trimEnd() + '…'
