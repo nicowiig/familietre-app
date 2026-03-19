@@ -370,8 +370,7 @@ export function PersonPage() {
               childBirths={childBirths}
               roles={[...careerRoles, ...eduRoles]}
             />
-            {careerRoles.length > 0 && <KarriereSection roles={careerRoles} deathYear={deathYear} />}
-            {workExp.length > 0 && <WorkExperienceSection workExp={workExp} />}
+            {(careerRoles.length > 0 || workExp.length > 0) && <CareerSection roles={careerRoles} workExp={workExp} />}
             {eduRoles.length > 0 && <UtdannelseSection roles={eduRoles} facts={facts} />}
             {titleRoles.length > 0 && <TitlerSection roles={titleRoles} />}
             {otherRoles.length > 0 && <RolesSection roles={otherRoles} title="Andre roller" />}
@@ -1270,92 +1269,8 @@ function TimelineEventRow({ event }) {
   )
 }
 
-/* ===== Karriere (LinkedIn-stil) ===== */
+/* ===== Karriere (samlet seksjon) ===== */
 
-const ROLE_ABBREV = {
-  'h.r.adv':      'høyesterettsadvokat',
-  'h.r.adv.':     'høyesterettsadvokat',
-  'hr.adv':       'høyesterettsadvokat',
-  'h.r.advokat':  'høyesterettsadvokat',
-}
-
-function expandRoleValue(value) {
-  return ROLE_ABBREV[(value || '').toLowerCase().trim()] || value
-}
-
-const MONTH_NAMES_NO = ['jan.', 'feb.', 'mars', 'apr.', 'mai', 'jun.', 'jul.', 'aug.', 'sep.', 'okt.', 'nov.', 'des.']
-
-function parseRoleDate(val) {
-  if (!val) return null
-  const str = String(val)
-  const full = str.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (full) return { year: parseInt(full[1]), month: parseInt(full[2]), day: parseInt(full[3]) }
-  const mm = str.match(/^(\d{4})-(\d{2})$/)
-  if (mm) return { year: parseInt(mm[1]), month: parseInt(mm[2]) }
-  const yy = str.match(/^(\d{4})$/)
-  if (yy) return { year: parseInt(yy[1]), month: null }
-  return null
-}
-
-function formatRoleDate(parsed) {
-  if (!parsed) return null
-  if (parsed.month) return `${MONTH_NAMES_NO[parsed.month - 1]} ${parsed.year}`
-  return String(parsed.year)
-}
-
-function formatRolePeriod(from, to, deathYear) {
-  if (!from && !to) return null
-  const fromParsed = parseRoleDate(from)
-  const toParsed = parseRoleDate(to)
-  const fromStr = formatRoleDate(fromParsed)
-  let toStr
-  if (toParsed) {
-    toStr = formatRoleDate(toParsed)
-  } else if (deathYear) {
-    toStr = String(deathYear)
-  } else {
-    toStr = 'nå'
-  }
-  if (fromStr) return `${fromStr} – ${toStr}`
-  return `frem til ${toStr}`
-}
-
-function calcYears(from, to, deathYear) {
-  if (!from) return null
-  const fromParsed = parseRoleDate(from)
-  const toParsed = parseRoleDate(to)
-  if (!fromParsed) return null
-  const now = new Date()
-  const fromMonths = fromParsed.year * 12 + (fromParsed.month || 1)
-  let toMonths
-  if (toParsed) {
-    toMonths = toParsed.year * 12 + (toParsed.month || 12)
-  } else if (deathYear) {
-    toMonths = deathYear * 12 + 12
-  } else {
-    toMonths = now.getFullYear() * 12 + (now.getMonth() + 1)
-  }
-  const totalMonths = toMonths - fromMonths
-  if (totalMonths <= 0) return null
-  const years = Math.floor(totalMonths / 12)
-  const months = totalMonths % 12
-  if (years === 0) return months === 1 ? '1 mnd' : `${months} mnd`
-  if (months === 0) return years === 1 ? '1 år' : `${years} år`
-  return `${years} år ${months} mnd`
-}
-
-// Sortering: nyeste øverst. Støtter 'YYYY', 'YYYY-MM'
-function roleDateSort(a, b) {
-  const toNum = v => {
-    if (!v) return 0
-    const p = parseRoleDate(v)
-    if (!p) return 0
-    return p.year * 100 + (p.month || 0)
-  }
-  return toNum(b.date_from) - toNum(a.date_from)
-}
-
-// Ikon: koffert (karriere)
 function BriefcaseIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -1366,146 +1281,23 @@ function BriefcaseIcon() {
   )
 }
 
-function RoleIcon() {
-  return (
-    <div style={{
-      width: 44, height: 44,
-      borderRadius: 'var(--radius)',
-      background: 'var(--color-bg-elevated)',
-      border: '1px solid var(--color-border)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexShrink: 0,
-      color: 'var(--color-text-muted)',
-    }}>
-      <BriefcaseIcon />
-    </div>
-  )
+// Normaliser person_roles til work-exp-format
+function roleToEntry(r) {
+  const ABBREV = { 'h.r.adv': 'Høyesterettsadvokat', 'h.r.adv.': 'Høyesterettsadvokat', 'hr.adv': 'Høyesterettsadvokat', 'h.r.advokat': 'Høyesterettsadvokat' }
+  const title = ABBREV[(r.value || '').toLowerCase().trim()] || r.value
+  return {
+    id: `role_${r.id}`,
+    employer: r.place || null,
+    title,
+    place: r.place || null,
+    date_from: r.date_from,
+    date_to: r.date_to,
+    notes: r.reason || null,
+    _type: 'role',
+  }
 }
 
-function KarriereSection({ roles, deathYear }) {
-  // Grupper etter arbeidsgiver (place), case-insensitivt
-  const grouped = {}
-  roles.forEach(r => {
-    const key = (r.place || '').toLowerCase().trim() || `__noplace_${r.id}`
-    if (!grouped[key]) grouped[key] = { place: r.place || null, roles: [] }
-    grouped[key].roles.push({ ...r, value: expandRoleValue(r.value) })
-  })
-
-  const groups = Object.values(grouped)
-
-  // Sorter grupper: nyeste rolle øverst
-  groups.sort((a, b) => {
-    const toNum = v => { const p = parseRoleDate(v); return p ? p.year * 100 + (p.month || 0) : 0 }
-    const aMax = Math.max(...a.roles.map(r => toNum(r.date_to) || toNum(r.date_from) || 0))
-    const bMax = Math.max(...b.roles.map(r => toNum(r.date_to) || toNum(r.date_from) || 0))
-    return bMax - aMax
-  })
-
-  // Sorter roller innen gruppe: nyeste øverst
-  groups.forEach(g => {
-    g.roles.sort(roleDateSort)
-  })
-
-  return (
-    <div className="profile-section">
-      <h2 className="profile-section-header">Karriere</h2>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-        {groups.map((g, i) => <KarriereGroup key={i} group={g} deathYear={deathYear} />)}
-      </div>
-    </div>
-  )
-}
-
-function KarriereGroup({ group, deathYear }) {
-  const { place, roles } = group
-
-  // Dedupliser: slå sammen roller med samme value (etter abbrev-ekspansjon)
-  const deduped = {}
-  roles.forEach(r => {
-    const key = (r.value || '').toLowerCase().trim()
-    if (!deduped[key]) {
-      deduped[key] = { ...r, _minFrom: r.date_from, _maxTo: r.date_to }
-    } else {
-      // Ta minste fra-år og største til-år
-      if (r.date_from && (!deduped[key]._minFrom || r.date_from < deduped[key]._minFrom)) {
-        deduped[key]._minFrom = r.date_from
-      }
-      if (r.date_to && (!deduped[key]._maxTo || r.date_to > deduped[key]._maxTo)) {
-        deduped[key]._maxTo = r.date_to
-      }
-      // Behold første ikke-tomme reason
-      if (!deduped[key].reason && r.reason) deduped[key].reason = r.reason
-    }
-  })
-  const dedupedRoles = Object.values(deduped)
-    .map(r => ({ ...r, date_from: r._minFrom, date_to: r._maxTo }))
-    .sort(roleDateSort)
-
-  const distinctValues = new Set(dedupedRoles.map(r => (r.value || '').toLowerCase().trim()))
-  const hasMultiple = distinctValues.size > 1
-
-  // Vis place-header kun hvis det er 2+ distinkte roller (ikke bare en by)
-  const showPlaceHeader = place && hasMultiple
-
-  // Samlet varighet kun for grupper med faktisk felles arbeidsgiver
-  const withYears = dedupedRoles.filter(r => r.date_from)
-  const minYear = withYears.length ? Math.min(...withYears.map(r => r.date_from)) : null
-  const maxYear = withYears.length ? Math.max(...withYears.map(r => r.date_to || deathYear || new Date().getFullYear())) : null
-  const totalDuration = hasMultiple ? calcYears(minYear, maxYear, deathYear) : null
-
-  return (
-    <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
-      <RoleIcon />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {showPlaceHeader && (
-          <div style={{ fontWeight: 700, fontSize: 'var(--text-base)', marginBottom: 'var(--space-1)' }}>
-            {place}
-          </div>
-        )}
-        {showPlaceHeader && totalDuration && (
-          <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-3)' }}>
-            {totalDuration}
-          </div>
-        )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: hasMultiple ? 'var(--space-3)' : 0 }}>
-          {dedupedRoles.map((r, i) => (
-            <KarriereRoleEntry key={r.id || i} role={r} compact={hasMultiple} deathYear={deathYear} />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function KarriereRoleEntry({ role, compact, deathYear }) {
-  const period = formatRolePeriod(role.date_from, role.date_to, deathYear)
-  const duration = calcYears(role.date_from, role.date_to, deathYear)
-
-  return (
-    <div style={{ paddingLeft: compact ? 'var(--space-2)' : 0, borderLeft: compact ? '2px solid var(--color-border)' : 'none' }}>
-      <div style={{ fontWeight: compact ? 500 : 600, fontSize: 'var(--text-sm)' }}>
-        {role.value || '—'}
-      </div>
-      {(period || duration) && (
-        <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
-          {[period, duration].filter(Boolean).join(' · ')}
-        </div>
-      )}
-      {!compact && role.place && (
-        <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
-          {role.place}
-        </div>
-      )}
-      {role.reason && (
-        <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)', fontStyle: 'italic' }}>
-          {role.reason}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ===== Arbeidserfaring (person_work_experience) ===== */
+/* ===== Karriere + Arbeidserfaring (samlet seksjon) ===== */
 
 function WorkExpIcon() {
   return (
@@ -1523,7 +1315,7 @@ function WorkExpIcon() {
   )
 }
 
-function WorkExperienceSection({ workExp }) {
+function CareerSection({ roles = [], workExp = [] }) {
   // Hent navn for eventuelle person-ID-er nevnt i notater
   const [nameMap, setNameMap] = useState({})
   useEffect(() => {
@@ -1543,12 +1335,16 @@ function WorkExperienceSection({ workExp }) {
       })
   }, [workExp])
 
-  // Grupper etter arbeidsgiver
+  // Normaliser roles til work-exp-format og slå sammen
+  const roleEntries = roles.map(roleToEntry)
+  const allEntries = [...roleEntries, ...workExp]
+
+  // Grupper etter employer
   const grouped = {}
-  workExp.forEach(w => {
-    const key = (w.employer || '').toLowerCase().trim() || `__noemployer_${w.id}`
-    if (!grouped[key]) grouped[key] = { employer: w.employer, place: w.place, entries: [] }
-    grouped[key].entries.push(w)
+  allEntries.forEach(e => {
+    const key = (e.employer || '').toLowerCase().trim() || `__solo_${e.id}`
+    if (!grouped[key]) grouped[key] = { employer: e.employer || null, place: e.place || null, entries: [] }
+    grouped[key].entries.push(e)
   })
 
   const groups = Object.values(grouped)
@@ -1561,7 +1357,7 @@ function WorkExperienceSection({ workExp }) {
 
   return (
     <div className="profile-section">
-      <h2 className="profile-section-header">Arbeidserfaring</h2>
+      <h2 className="profile-section-header">Karriere</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
         {groups.map((g, i) => <WorkExpGroup key={i} group={g} nameMap={nameMap} />)}
       </div>
@@ -1627,10 +1423,10 @@ function WorkExpEntry({ entry, compact, nameMap = {} }) {
   const [expanded, setExpanded] = useState(false)
   const TRUNCATE = 120
 
-  const period = entry.date_from
-    ? (entry.date_to && entry.date_to !== entry.date_from
-        ? `${entry.date_from}–${entry.date_to}`
-        : entry.date_from)
+  const fromYear = entry.date_from ? String(parseInt(entry.date_from) || entry.date_from) : null
+  const toYear   = entry.date_to   ? String(parseInt(entry.date_to)   || entry.date_to)   : null
+  const period   = fromYear
+    ? (toYear && toYear !== fromYear ? `${fromYear}–${toYear}` : fromYear)
     : null
 
   const notesTruncated = entry.notes && entry.notes.length > TRUNCATE
