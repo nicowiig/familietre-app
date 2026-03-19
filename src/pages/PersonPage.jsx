@@ -1120,7 +1120,7 @@ function TimelineEventRow({ event }) {
             </a>
           </span>
         )}
-        {note && (
+        {note && isContextualNote(note) && (
           <div style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', marginTop: 1 }}>
             {note}
           </div>
@@ -1819,6 +1819,7 @@ const DOMAIN_LABELS = {
   'marcus.uib.no':        'Marcus / UiB',
   'geni.com':             'Geni',
   'myheritage.com':       'MyHeritage',
+  'myheritage.no':        'MyHeritage',
   'ancestry.com':         'Ancestry',
   'familietre.no':        'Familietre',
   'media.digitalarkivet.no': 'Digitalarkivet',
@@ -1950,6 +1951,30 @@ function AuditLogSection({ auditLog }) {
     } catch { return ts }
   }
 
+  // Formater GEDCOM-datoer som "8 MAR 1894" → "8. mars 1894"
+  function fmtGedcomDate(str) {
+    if (!str) return str
+    const M = { JAN:'januar', FEB:'februar', MAR:'mars', APR:'april', MAY:'mai', JUN:'juni',
+                JUL:'juli', AUG:'august', SEP:'september', OCT:'oktober', NOV:'november', DEC:'desember' }
+    return str.replace(/(\d{1,2})\s+([A-Z]{3})\s+(\d{4})/g,
+      (_, d, m, y) => `${parseInt(d)}. ${M[m] || m} ${y}`)
+  }
+
+  // Lesbar etikett for table_name / field_name
+  const TABLE_LABELS = { person_facts: 'Hendelse', persons: 'Person', person_names: 'Navn', person_sources: 'Kilde', address_periods: 'Adresse' }
+  const FIELD_LABELS = {
+    fact_date: 'Dato', date_value: 'Dato', date_day: 'Dag', date_month: 'Måned', date_year: 'År',
+    fact_type: 'Type', place_raw: 'Sted', place_city: 'By', notes: 'Notat', value: 'Verdi',
+    birth_date: 'Fødselsdato', death_date: 'Dødsdato', burial_place: 'Gravsted',
+    display_name: 'Visningsnavn', sex: 'Kjønn', birth_year: 'Fødselsår',
+  }
+  function fmtField(table, field) {
+    if (!table && !field) return null
+    const tLabel = TABLE_LABELS[table] || table
+    const fLabel = field ? (FIELD_LABELS[field] || field) : null
+    return [tLabel, fLabel].filter(Boolean).join(' › ')
+  }
+
   // Vis displaynavn fra changed_by (email)
   function displayUser(changedBy) {
     if (!changedBy) return 'Ukjent'
@@ -2018,14 +2043,14 @@ function AuditLogSection({ auditLog }) {
                     </span>
                   </td>
                   <td style={{ padding: '6px 8px', color: 'var(--color-text-muted)' }}>
-                    {[row.table_name, row.field_name].filter(Boolean).join(' / ')}
+                    {fmtField(row.table_name, row.field_name)}
                   </td>
                   <td style={{ padding: '6px 8px', maxWidth: 300 }}>
                     {row.old_value && (
-                      <span style={{ textDecoration: 'line-through', color: 'var(--color-text-muted)', marginRight: 6 }}>{row.old_value}</span>
+                      <span style={{ textDecoration: 'line-through', color: 'var(--color-text-muted)', marginRight: 6 }}>{fmtGedcomDate(row.old_value)}</span>
                     )}
-                    {row.new_value && <span>{row.new_value}</span>}
-                    {row.note && <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', marginLeft: 6 }}>({row.note})</span>}
+                    {row.new_value && <span>{fmtGedcomDate(row.new_value)}</span>}
+                    {row.note && <div style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', marginTop: 2, fontSize: '0.9em' }}>({row.note})</div>}
                   </td>
                 </tr>
               ))}
