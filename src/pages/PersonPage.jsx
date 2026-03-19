@@ -31,6 +31,7 @@ export function PersonPage() {
   const [children,      setChildren]      = useState([])
   const [spouseNames,   setSpouseNames]   = useState({}) // family_id → formatted spouse name
   const [childBirths,   setChildBirths]   = useState([]) // [{name, sex, year, month, day, childId}]
+  const [auditLog,      setAuditLog]      = useState([])
   const [loading,       setLoading]       = useState(true)
   const [notFound,      setNotFound]      = useState(false)
 
@@ -43,7 +44,7 @@ export function PersonPage() {
     setNotFound(false)
     try {
       const [
-        personRes, namesRes, factsRes, addrRes, bioRes, rolesRes, photosRes, sourcesRes,
+        personRes, namesRes, factsRes, addrRes, bioRes, rolesRes, photosRes, sourcesRes, auditLogRes,
       ] = await Promise.all([
         supabase.from('persons').select('*').eq('person_id', personId).eq('is_deleted', false).maybeSingle(),
         supabase.from('person_names').select('*').eq('person_id', personId).order('is_preferred', { ascending: false }),
@@ -53,6 +54,7 @@ export function PersonPage() {
         supabase.from('person_roles').select('*').eq('person_id', personId).order('date_from'),
         supabase.from('person_photos').select('*').eq('person_id', personId).order('photo_order'),
         supabase.from('person_sources').select('*').eq('person_id', personId).order('found_date', { ascending: false }),
+        supabase.from('person_audit_log').select('*').eq('person_id', personId).order('changed_at', { ascending: false }).limit(50),
       ])
 
       if (!personRes.data) { setNotFound(true); return }
@@ -101,6 +103,7 @@ export function PersonPage() {
         setPhotos([])
       }
       setSources(sourcesRes.data || [])
+      setAuditLog(auditLogRes.data || [])
 
       // Hent familier der personen er ektefelle
       const [famAsSpouse, famAsChild] = await Promise.all([
@@ -371,6 +374,7 @@ export function PersonPage() {
             />
             {sources.length > 0 && <SourcesSection sources={sources} />}
             <DigitalarkivetLink name={preferred} birthYear={facts.find(f => normFact(f.fact_type) === 'BIRT')?.date_year} />
+            <AuditLogSection auditLog={auditLog} />
           </div>
 
           {/* Høyre: familie */}
@@ -839,7 +843,7 @@ function FactItem({ fact }) {
         {place && (
           <a href={mapsUrl(place)} target="_blank" rel="noreferrer">{place}</a>
         )}
-        {fact.notes && (
+        {fact.notes && isContextualNote(fact.notes) && (
           <span style={{ display: 'block', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', fontStyle: 'italic', marginTop: 2 }}>
             {fact.notes}
           </span>
@@ -1454,7 +1458,7 @@ function UtdannelseFactCard({ fact }) {
         {year && (
           <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>{year}</div>
         )}
-        {fact.notes && (
+        {fact.notes && isContextualNote(fact.notes) && (
           <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)', fontStyle: 'italic' }}>
             {fact.notes}
           </div>
@@ -1785,14 +1789,114 @@ function AddressItem({ addr, deathYear }) {
 }
 
 /* ===== Kilder ===== */
+/** Hjelpefunksjon: filtrer ut notes som er kildehenvisninger eller endringsnotater */
+function isContextualNote(note) {
+  if (!note) return false
+  const lower = note.trim().toLowerCase()
+  return !lower.startsWith('kilde:') && !lower.startsWith('gedcom') && !lower.startsWith('source:')
+}
+
+/** Trekk ut domene fra URL, f.eks. "digitalarkivet.no" */
+function extractDomain(url) {
+  if (!url) return null
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '')
+    return host
+  } catch {
+    return null
+  }
+}
+
+/** Visningsnavn per domene */
+const DOMAIN_LABELS = {
+  'digitalarkivet.no':    'Digitalarkivet',
+  'rhd.uit.no':           'Digitalarkivet',
+  'arkivverket.no':       'Arkivverket',
+  'nettgrav.no':          'Nettgrav',
+  'snl.no':               'Store norske leksikon',
+  'wikipedia.org':        'Wikipedia',
+  'nb.no':                'Nasjonalbiblioteket',
+  'marcus.uib.no':        'Marcus / UiB',
+  'geni.com':             'Geni',
+  'myheritage.com':       'MyHeritage',
+  'ancestry.com':         'Ancestry',
+  'familietre.no':        'Familietre',
+  'media.digitalarkivet.no': 'Digitalarkivet',
+}
+
+function domainLabel(domain) {
+  return DOMAIN_LABELS[domain] || domain || 'Andre kilder'
+}
+
 function SourcesSection({ sources }) {
+  const [openGroups, setOpenGroups] = useState({})
+
+  // Grupper etter domene
+  const groups = {}
+  for (const s of sources) {
+    const domain = extractDomain(s.url) || '__ingen_url__'
+    if (!groups[domain]) groups[domain] = []
+    groups[domain].push(s)
+  }
+
+  // Sorter: domenene med flest kilder først, "ingen url" sist
+  const sortedDomains = Object.keys(groups).sort((a, b) => {
+    if (a === '__ingen_url__') return 1
+    if (b === '__ingen_url__') return -1
+    return groups[b].length - groups[a].length
+  })
+
+  function toggleGroup(domain) {
+    setOpenGroups(prev => ({ ...prev, [domain]: !prev[domain] }))
+  }
+
+  // Vis gruppert: åpen som standard
   return (
     <div className="profile-section">
       <h2 className="profile-section-header">Kilder</h2>
-      <div className="sources-list">
-        {sources.map((s, i) => (
-          <SourceItem key={s.id || i} source={s} />
-        ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+        {sortedDomains.map(domain => {
+          const items = groups[domain]
+          const label = domain === '__ingen_url__' ? 'Annet' : domainLabel(domain)
+          const isOpen = openGroups[domain] !== false  // åpen som standard
+          const isCollapsible = items.length > 1
+
+          return (
+            <div key={domain} style={{ borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', overflow: 'hidden' }}>
+              {/* Gruppe-header */}
+              <button
+                onClick={() => isCollapsible && toggleGroup(domain)}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: 'var(--space-3) var(--space-4)',
+                  background: 'var(--color-bg-subtle)', border: 'none',
+                  cursor: isCollapsible ? 'pointer' : 'default',
+                  textAlign: 'left',
+                }}
+              >
+                <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{label}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                    {items.length} {items.length === 1 ? 'kilde' : 'kilder'}
+                  </span>
+                  {isCollapsible && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                      style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s', flexShrink: 0 }}>
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                  )}
+                </span>
+              </button>
+
+              {/* Gruppe-innhold */}
+              {(!isCollapsible || isOpen) && (
+                <div className="sources-list" style={{ borderTop: '1px solid var(--color-border)' }}>
+                  {items.map((s, i) => <SourceItem key={s.id || i} source={s} />)}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -1821,12 +1925,114 @@ function SourceItem({ source }) {
           {source.record_type && <span>{source.record_type}</span>}
           {source.found_date && <span> · Funnet: {source.found_date}</span>}
         </div>
-        {source.notes && (
+        {source.notes && isContextualNote(source.notes) && (
           <div style={{ marginTop: 4, fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
             {source.notes}
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+/* ===== Endringslogg ===== */
+
+function AuditLogSection({ auditLog }) {
+  const { isApproved } = useAuth()
+  const [open, setOpen] = useState(false)
+
+  if (!isApproved || !auditLog || auditLog.length === 0) return null
+
+  // Formater tidspunkt
+  function fmtDate(ts) {
+    try {
+      return new Date(ts).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    } catch { return ts }
+  }
+
+  // Vis displaynavn fra changed_by (email)
+  function displayUser(changedBy) {
+    if (!changedBy) return 'Ukjent'
+    // Script-endringer
+    if (changedBy.includes('(script)') || changedBy.includes('(import)')) {
+      const base = changedBy.replace(/\s*\(script\)|\s*\(import\)/g, '').trim()
+      return displayUser(base) + ' (script)'
+    }
+    // Kjente brukere
+    const NAMES = {
+      'nicowiig@gmail.com': 'Nicolay Wiig',
+      'tallberg.marlene@gmail.com': 'Marlene Tallberg Wiig',
+      'njwiig@gmail.com': 'njwiig',
+      'sjokoladekake54@gmail.com': 'Gustav Wiig',
+      'jontallbe@gmail.com': 'Jon Tallberg',
+      'mamsemoren@gmail.com': 'Anne Wiig',
+    }
+    return NAMES[changedBy] || changedBy
+  }
+
+  function changeTypeLabel(type) {
+    return { update: 'Oppdatert', insert: 'Lagt til', delete: 'Slettet', import: 'Importert', script: 'Script' }[type] || type
+  }
+
+  return (
+    <div className="profile-section">
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left',
+        }}
+      >
+        <h2 className="profile-section-header" style={{ margin: 0 }}>Endringslogg</h2>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>
+          {auditLog.length} endringer
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 'var(--space-4)', overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-xs)' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                {['Tidspunkt', 'Bruker', 'Type', 'Tabell / felt', 'Endring'].map(h => (
+                  <th key={h} style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--color-text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {auditLog.map(row => (
+                <tr key={row.id} style={{ borderBottom: '1px solid var(--color-border-light, #f0f0f0)' }}>
+                  <td style={{ padding: '6px 8px', whiteSpace: 'nowrap', color: 'var(--color-text-muted)' }}>{fmtDate(row.changed_at)}</td>
+                  <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{displayUser(row.changed_by)}</td>
+                  <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
+                    <span style={{
+                      background: row.change_type === 'update' ? '#e0f2fe' : row.change_type === 'insert' ? '#dcfce7' : '#fee2e2',
+                      color: row.change_type === 'update' ? '#0369a1' : row.change_type === 'insert' ? '#166534' : '#991b1b',
+                      borderRadius: 4, padding: '1px 6px', fontWeight: 600,
+                    }}>
+                      {changeTypeLabel(row.change_type)}
+                    </span>
+                  </td>
+                  <td style={{ padding: '6px 8px', color: 'var(--color-text-muted)' }}>
+                    {[row.table_name, row.field_name].filter(Boolean).join(' / ')}
+                  </td>
+                  <td style={{ padding: '6px 8px', maxWidth: 300 }}>
+                    {row.old_value && (
+                      <span style={{ textDecoration: 'line-through', color: 'var(--color-text-muted)', marginRight: 6 }}>{row.old_value}</span>
+                    )}
+                    {row.new_value && <span>{row.new_value}</span>}
+                    {row.note && <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', marginLeft: 6 }}>({row.note})</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
