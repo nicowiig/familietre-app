@@ -1487,9 +1487,8 @@ function WorkExpEntry({ entry, compact, nameMap = {} }) {
 
   const fromYear = entry.date_from ? String(parseInt(entry.date_from) || entry.date_from) : null
   const toYear   = entry.date_to   ? String(parseInt(entry.date_to)   || entry.date_to)   : null
-  const period   = fromYear
-    ? (toYear && toYear !== fromYear ? `${fromYear}–${toYear}` : fromYear)
-    : null
+  const period   = formatRolePeriod(entry.date_from, entry.date_to)
+  const duration = calcYears(entry.date_from, entry.date_to)
 
   const notesTruncated = entry.notes && entry.notes.length > TRUNCATE
     ? entry.notes.slice(0, TRUNCATE).trimEnd() + '…'
@@ -1505,7 +1504,7 @@ function WorkExpEntry({ entry, compact, nameMap = {} }) {
         </div>
       )}
       <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
-        {[entry.place, period].filter(Boolean).join(' · ')}
+        {[entry.place, period, duration].filter(Boolean).join(' · ')}
       </div>
       {entry.notes && (
         <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', fontStyle: 'italic', marginTop: 'var(--space-1)' }}>
