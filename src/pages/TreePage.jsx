@@ -318,15 +318,17 @@ export function TreePage() {
     return m
   }, [nodes])
 
-  // ─── Søsken, ektefelle og familie-kobling ──────────────
-  const { allNodes, allEdges, familyConnector } = useMemo(() => {
-    if (!graph || !nodes.length) return { allNodes: nodes, allEdges: edges, familyConnector: null }
+  // ─── Søsken, ektefelle og alle par-koblinger ───────────
+  const { allNodes, allEdges, familyConnector, parentCoupleConnectors } = useMemo(() => {
+    if (!graph || !nodes.length) return { allNodes: nodes, allEdges: edges, familyConnector: null, parentCoupleConnectors: [] }
     const focusNode = nodes.find(n => n.id === personId)
-    if (!focusNode) return { allNodes: nodes, allEdges: edges, familyConnector: null }
+    if (!focusNode) return { allNodes: nodes, allEdges: edges, familyConnector: null, parentCoupleConnectors: [] }
 
-    const existingIds = new Set(nodes.map(n => n.id))
-    const extraNodes  = []
-    const extraEdges  = []
+    const existingIds  = new Set(nodes.map(n => n.id))
+    const extraNodes   = []
+    const extraEdges   = []
+    const edgesToRemove = new Set()
+    const parentCoupleConnectors = []
 
     // Søsken: vises kun i aner-modus (til venstre for fokusperson)
     if (mode === 'aner') {
@@ -364,11 +366,43 @@ export function TreePage() {
       spX += NODE_W + H_GAP
     }
 
-    // Familie-kobling: par → felles strek ned til barna
-    // Gjelder når det finnes ektefelle OG barna er synlige (etterkommere/begge)
-    let familyConnectorResult = null
+    // Midlertidig nodekart for oppslagsbruk
+    const tempNodeMap = new Map()
+    ;[...nodes, ...extraNodes].forEach(n => tempNodeMap.set(n.id, n))
+
+    // ─── Par-koblinger for alle foreldrepar i aner/sandglass ─
+    // Erstatter individuelle elbow-kanter med klassisk genealogi-T
+    if (mode === 'aner' || mode === 'begge') {
+      const byChild = new Map()
+      for (const e of edges) {
+        if (e.edgeType) continue
+        if (!byChild.has(e.fromId)) byChild.set(e.fromId, [])
+        byChild.get(e.fromId).push(e)
+      }
+      for (const [childId, childEdges] of byChild) {
+        const parentNodes = childEdges.map(e => tempNodeMap.get(e.toId)).filter(Boolean)
+        if (parentNodes.length !== 2) continue
+        const child = tempNodeMap.get(childId)
+        if (!child) continue
+
+        const [p0, p1] = parentNodes
+        const left  = p0.x <= p1.x ? p0 : p1
+        const right = p0.x <= p1.x ? p1 : p0
+        const leftCx      = left.x  + NODE_W / 2
+        const rightCx     = right.x + NODE_W / 2
+        const midX        = (leftCx + rightCx) / 2
+        const parentBottomY = left.y + NODE_H
+        const childTopY   = child.y
+        const junctionY   = parentBottomY + (childTopY - parentBottomY) / 2
+
+        parentCoupleConnectors.push({ id: `couple-${childId}`, leftCx, rightCx, midX, parentBottomY, junctionY, childCx: child.x + NODE_W / 2, childTopY })
+        for (const e of childEdges) edgesToRemove.add(e.id)
+      }
+    }
+
+    // ─── Familie-kobling: fokusperson + ektefelle → barn ───
+    let familyConnector = null
     if (spouseNodes.length > 0 && mode !== 'aner') {
-      // Finn kanter fra fokusperson til BARN (barn er UNDER fokus i SVG = større y)
       const childEdges = edges.filter(e => {
         if (e.fromId !== personId || e.edgeType) return false
         const target = nodes.find(n => n.id === e.toId)
@@ -380,36 +414,27 @@ export function TreePage() {
         .sort((a, b) => a.x - b.x)
 
       if (childNodes.length > 0) {
-        const spouse  = spouseNodes[0]
-        const midX    = (focusNode.x + NODE_W / 2 + spouse.x + NODE_W / 2) / 2
-        const coupleY = focusNode.y + NODE_H / 2
+        const spouse   = spouseNodes[0]
+        const midX     = (focusNode.x + NODE_W / 2 + spouse.x + NODE_W / 2) / 2
+        const coupleY  = focusNode.y + NODE_H / 2
         const childrenTopY = Math.min(...childNodes.map(n => n.y))
         const junctionY = focusNode.y + NODE_H + (childrenTopY - focusNode.y - NODE_H) / 2
 
-        familyConnectorResult = {
-          midX,
-          coupleY,
-          junctionY,
+        familyConnector = {
+          midX, coupleY, junctionY,
           children: childNodes.map(n => ({ cx: n.x + NODE_W / 2, y: n.y })),
         }
+        for (const e of childEdges) edgesToRemove.add(e.id)
       }
     }
 
-    // Fjern individuelle fokus→barn-kanter når familie-kobling tegnes
-    const childEdgeIds = familyConnectorResult
-      ? new Set(edges.filter(e => {
-          if (e.fromId !== personId || e.edgeType) return false
-          const t = nodes.find(n => n.id === e.toId)
-          return t && t.y > focusNode.y
-        }).map(e => e.id))
-      : new Set()
-
-    const filteredEdges = edges.filter(e => !childEdgeIds.has(e.id))
+    const filteredEdges = [...edges, ...extraEdges].filter(e => !edgesToRemove.has(e.id))
 
     return {
       allNodes: [...nodes, ...extraNodes],
-      allEdges: [...filteredEdges, ...extraEdges],
-      familyConnector: familyConnectorResult,
+      allEdges: filteredEdges,
+      familyConnector,
+      parentCoupleConnectors,
     }
   }, [nodes, edges, graph, personId, mode])
 
@@ -691,7 +716,24 @@ export function TreePage() {
                 )
               })}
 
-              {/* Familie-kobling: par + felles strek ned til barna */}
+              {/* Par-koblinger for alle foreldrepar i aner/sandglass */}
+              {parentCoupleConnectors.map(({ id, leftCx, rightCx, midX, parentBottomY, junctionY, childCx, childTopY }) => (
+                <path
+                  key={id}
+                  d={[
+                    `M ${leftCx} ${parentBottomY} V ${junctionY}`,
+                    `M ${rightCx} ${parentBottomY} V ${junctionY}`,
+                    `M ${leftCx} ${junctionY} H ${rightCx}`,
+                    `M ${midX} ${junctionY} V ${childTopY}`,
+                  ].join(' ')}
+                  fill="none"
+                  stroke="var(--color-border)"
+                  strokeWidth={1.5}
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
+
+              {/* Familie-kobling: fokusperson + ektefelle → barn */}
               {(() => {
                 if (!familyConnector) return null
                 const { midX, coupleY, junctionY, children } = familyConnector
