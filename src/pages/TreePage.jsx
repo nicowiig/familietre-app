@@ -355,12 +355,22 @@ export function TreePage() {
       }
     }
 
-    // Ektefelle(r): vis i alle modi til høyre for fokusperson
+    // Ektefelle(r): vis til høyre for fokusperson.
+    // I etterkommere/begge: vis kun ektefeller som har felles barn med fokuspersonen
+    // (unngår at "nye partnere uten barn" flyter løst på samme rad).
     const spouseIds  = graph.spouseMap.get(personId) ?? []
     const spouseNodes = []
     let spX = focusNode.x + NODE_W + H_GAP
     for (const spId of spouseIds) {
       if (existingIds.has(spId)) continue
+      if (mode !== 'aner') {
+        const focusChildren = graph.childMap.get(personId) ?? []
+        const hasSharedChild = focusChildren.some(childId => {
+          const childParents = graph.parentMap.get(childId) ?? []
+          return childParents.includes(spId)
+        })
+        if (!hasSharedChild) continue
+      }
       const info = graph.infoMap.get(spId) || {}
       const spNode = { id: spId, x: spX, y: focusNode.y, nodeType: 'spouse', isFocus: false, gen: 0, ...info }
       extraNodes.push(spNode)
