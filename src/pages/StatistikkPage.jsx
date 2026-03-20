@@ -206,14 +206,18 @@ function TopBirthCities() {
 
   useEffect(() => {
     async function load() {
+      // Hent både place_city og place_raw — de fleste har kun place_raw
       const { data } = await supabase
         .from('person_facts')
-        .select('place_city')
+        .select('place_city, place_raw')
         .eq('fact_type', 'BIRT')
-        .not('place_city', 'is', null)
       if (!data) return
       const counts = {}
-      data.forEach(r => { if (r.place_city) counts[r.place_city] = (counts[r.place_city] || 0) + 1 })
+      data.forEach(r => {
+        // Bruk place_city hvis satt, ellers trekk ut første del av place_raw
+        const city = r.place_city || (r.place_raw ? r.place_raw.split(',')[0].trim() : null)
+        if (city) counts[city] = (counts[city] || 0) + 1
+      })
       const sorted = Object.entries(counts)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 12)
