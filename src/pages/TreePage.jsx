@@ -770,10 +770,13 @@ export function TreePage() {
               {(() => {
                 if (!familyConnector) return null
                 const { midX, coupleY, junctionY, children } = familyConnector
-                const parts = [`M ${midX} ${coupleY} V ${junctionY}`]
-                if (children.length > 1) {
-                  parts.push(`M ${children[0].cx} ${junctionY} H ${children[children.length - 1].cx}`)
-                }
+                const allCxs = [midX, ...children.map(c => c.cx)]
+                const barLeft  = Math.min(...allCxs)
+                const barRight = Math.max(...allCxs)
+                const parts = [
+                  `M ${midX} ${coupleY} V ${junctionY}`,
+                  `M ${barLeft} ${junctionY} H ${barRight}`,
+                ]
                 for (const { cx, y } of children) {
                   parts.push(`M ${cx} ${junctionY} V ${y}`)
                 }
