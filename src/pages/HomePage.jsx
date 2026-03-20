@@ -27,9 +27,16 @@ function formatArticleDate(iso) {
 
 function extractIngress(text, maxLen = 180) {
   if (!text) return ''
-  // Fjern markdown-koder
-  const plain = text.replace(/^#+\s.*/gm, '').replace(/\*\*|__|\*|_/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/<[^>]+>/g, '').trim()
-  const first = plain.split('\n').find(l => l.trim().length > 40) || plain
+  // Fjern markdown-koder og HTML
+  const plain = text
+    .replace(/^#+\s.*/gm, '')          // fjern overskrifter
+    .replace(/\*\*|__|\*|_/g, '')      // fjern bold/italic
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // lenker → tekst
+    .replace(/<[^>]+>/g, '')           // fjern HTML-tagger
+    .replace(/\n{2,}/g, '\n')          // komprimer tomme linjer
+    .trim()
+  // Finn første substansiell linje (>40 tegn)
+  const first = plain.split('\n').map(l => l.trim()).find(l => l.length > 40) || plain
   return first.length > maxLen ? first.slice(0, maxLen).replace(/\s\S+$/, '') + '…' : first
 }
 
@@ -50,10 +57,8 @@ export function HomePage() {
       <div className="page-container" style={{ paddingTop: 'var(--space-10)', paddingBottom: 'var(--space-16)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 'var(--space-10)', alignItems: 'start' }}>
 
-          {/* Venstre kolonne: statistikk + artikler */}
+          {/* Venstre kolonne: artikler */}
           <div>
-            <QuickStats />
-            <hr className="divider" style={{ margin: 'var(--space-6) 0' }} />
             <ArticlesFeed />
           </div>
 
@@ -178,6 +183,15 @@ function ArticlesFeed() {
       setLoading(false)
     }
     load()
+
+    // Realtime: oppdater feeden automatisk når nye artikler/biografier lagres
+    const channel = supabase
+      .channel('articles-feed')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'person_biography' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'place_articles' }, () => load())
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
   }, [])
 
   if (loading) return <div className="loading-center" style={{ padding: 'var(--space-12)' }}><div className="spinner" /></div>

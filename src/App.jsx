@@ -15,6 +15,7 @@ import { PlacePage }       from './pages/PlacePage'
 import { StederPage }      from './pages/StederPage'
 import { DatakvalitetPage } from './pages/DatakvalitetPage'
 import { DuplikatPage }     from './pages/DuplikatPage'
+import { StatistikkPage }   from './pages/StatistikkPage'
 
 export default function App() {
   return (
@@ -58,6 +59,9 @@ export default function App() {
           } />
           <Route path="/duplikat/:id1/:id2" element={
             <ProtectedRoute><DuplikatPage /></ProtectedRoute>
+          } />
+          <Route path="/statistikk" element={
+            <ProtectedRoute><StatistikkPage /></ProtectedRoute>
           } />
           <Route path="/admin" element={
             <ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>

@@ -4,10 +4,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../supabase'
 
 const NAV_LINKS = [
-  { to: '/',          label: 'Hjem' },
-  { to: '/grener',    label: 'Slektsgrener' },
-  { to: '/tre',       label: 'Familietre' },
-  { to: '/steder',    label: 'Steder' },
+  { to: '/',            label: 'Hjem' },
+  { to: '/grener',      label: 'Slektsgrener' },
+  { to: '/tre',         label: 'Familietre' },
+  { to: '/steder',      label: 'Steder' },
+  { to: '/statistikk',  label: 'Statistikk' },
   { to: '/hva-er-nytt', label: 'Hva er nytt?' },
 ]
 
