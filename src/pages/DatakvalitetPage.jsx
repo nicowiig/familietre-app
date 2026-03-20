@@ -63,7 +63,7 @@ function TabPersons() {
         { data: allNames },
       ] = await Promise.all([
         supabase.from('persons').select('person_id'),
-        supabase.from('person_facts').select('person_id').in('fact_type', ['BIRT', 'BIRTH', 'birth']),
+        supabase.from('person_facts').select('person_id').in('fact_type', ['BIRT']),
         supabase.from('person_biography').select('person_id'),
         supabase.from('person_photos').select('person_id').eq('is_primary', true),
         supabase.from('address_periods').select('entity_id').eq('entity_type', 'person'),
@@ -225,7 +225,7 @@ function TabUnnormalized() {
       const { data: rawFacts } = await supabase
         .from('person_facts')
         .select('id, person_id, fact_type, place_raw, place_city')
-        .in('fact_type', ['RESI', 'BIRT', 'DEAT', 'birth', 'death', 'BIRTH', 'DEATH'])
+        .in('fact_type', ['RESI', 'BIRT', 'DEAT'])
         .not('place_raw', 'is', null)
         .order('fact_type')
 
@@ -478,7 +478,7 @@ function TabDuplicates() {
         { data: ignoredRows },
       ] = await Promise.all([
         supabase.from('person_names').select('person_id, given_name, middle_name, surname').eq('is_preferred', true),
-        supabase.from('person_facts').select('person_id, fact_type, date_year, date_month, date_day, place_city').in('fact_type', ['BIRT', 'DEAT', 'birth', 'death', 'BIRTH', 'DEATH']),
+        supabase.from('person_facts').select('person_id, fact_type, date_year, date_month, date_day, place_city').in('fact_type', ['BIRT', 'DEAT']),
         supabase.from('duplicate_ignores').select('person_id_a, person_id_b'),
       ])
 
@@ -489,11 +489,9 @@ function TabDuplicates() {
 
       // Bygg maps for fødsel/død
       const birthMap = {}, deathMap = {}
-      const upType = t => (t || '').toUpperCase()
       ;(allFacts || []).forEach(f => {
-        const t = upType(f.fact_type)
-        if (t === 'BIRT' || t === 'BIRTH') birthMap[f.person_id] = { year: f.date_year, month: f.date_month, day: f.date_day, city: f.place_city }
-        if (t === 'DEAT' || t === 'DEATH') deathMap[f.person_id] = { year: f.date_year, month: f.date_month, day: f.date_day, city: f.place_city }
+        if (f.fact_type === 'BIRT') birthMap[f.person_id] = { year: f.date_year, month: f.date_month, day: f.date_day, city: f.place_city }
+        if (f.fact_type === 'DEAT') deathMap[f.person_id] = { year: f.date_year, month: f.date_month, day: f.date_day, city: f.place_city }
       })
 
       // Grupper etter normalisert nøkkel — hopp over navnløse

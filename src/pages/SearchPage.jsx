@@ -80,7 +80,7 @@ export function SearchPage() {
         supabase.from('person_facts')
           .select('person_id, fact_type, date_year, date_month, date_day, date_text, place_city, place_raw')
           .in('person_id', pageIds)
-          .in('fact_type', ['BIRT', 'DEAT', 'birth', 'death']),
+          .in('fact_type', ['BIRT', 'DEAT']),
       ])
 
       const persons  = personsRes.data || []
@@ -93,8 +93,8 @@ export function SearchPage() {
       // Bygg resultatobjekter
       const items = persons.map(p => {
         const personFacts  = factsMap[p.person_id] || []
-        const birth = personFacts.find(f => ['BIRT', 'birth'].includes(f.fact_type))
-        const death = personFacts.find(f => ['DEAT', 'death'].includes(f.fact_type))
+        const birth = personFacts.find(f => f.fact_type === 'BIRT')
+        const death = personFacts.find(f => f.fact_type === 'DEAT')
         const preferred = getPreferredName(idToNames[p.person_id])
         // Finn alle andre navn som matchet søket (for sub-visning)
         const matchedNames = idToNames[p.person_id] || []

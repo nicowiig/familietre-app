@@ -46,7 +46,7 @@ async function fetchBirthDeathFacts() {
     const { data, error } = await supabase
       .from('person_facts')
       .select('person_id, fact_type, date_year')
-      .in('fact_type', ['BIRT', 'BIRTH', 'birth', 'DEAT', 'DEATH', 'death'])
+      .in('fact_type', ['BIRT', 'DEAT'])
       .range(from, from + PAGE - 1)
     if (error) throw error
     all = all.concat(data ?? [])
@@ -114,10 +114,10 @@ async function loadGraph() {
     for (const f of bdFacts) {
       if (!infoMap.has(f.person_id)) continue
       const info = infoMap.get(f.person_id)
-      const type = (f.fact_type || '').toUpperCase()
-      if ((type === 'BIRT' || type === 'BIRTH') && f.date_year) {
+      const type = f.fact_type
+      if (type === 'BIRT' && f.date_year) {
         info.birthYear = f.date_year
-      } else if ((type === 'DEAT' || type === 'DEATH') && f.date_year) {
+      } else if (type === 'DEAT' && f.date_year) {
         info.deathYear = f.date_year
       }
     }

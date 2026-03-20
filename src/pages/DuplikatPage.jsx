@@ -26,7 +26,7 @@ async function loadPerson(id) {
   ] = await Promise.all([
     supabase.from('persons').select('person_id, sex, is_living').eq('person_id', id).maybeSingle(),
     supabase.from('person_names').select('*').eq('person_id', id).order('is_preferred', { ascending: false }),
-    supabase.from('person_facts').select('*').eq('person_id', id).in('fact_type', ['BIRT', 'DEAT', 'birth', 'death', 'BIRTH', 'DEATH']),
+    supabase.from('person_facts').select('*').eq('person_id', id).in('fact_type', ['BIRT', 'DEAT']),
     supabase.from('person_biography').select('*').eq('person_id', id).maybeSingle(),
     supabase.from('person_photos').select('id, person_id, drive_url, is_primary, photo_order').eq('person_id', id),
     supabase.from('person_roles').select('id, person_id').eq('person_id', id),
@@ -34,9 +34,8 @@ async function loadPerson(id) {
     supabase.from('person_sources').select('id, person_id').eq('person_id', id),
   ])
   const preferred = (names || []).find(n => n.is_preferred) || null
-  const upType = t => (t || '').toUpperCase()
-  const birth = (facts || []).find(f => upType(f.fact_type) === 'BIRT' || upType(f.fact_type) === 'BIRTH') || null
-  const death = (facts || []).find(f => upType(f.fact_type) === 'DEAT' || upType(f.fact_type) === 'DEATH') || null
+  const birth = (facts || []).find(f => f.fact_type === 'BIRT') || null
+  const death = (facts || []).find(f => f.fact_type === 'DEAT') || null
   const primaryPhoto = (photos || []).find(p => p.is_primary) || null
 
   return {
@@ -230,14 +229,14 @@ export function DuplikatPage() {
       // Oppdater BIRT/DEAT fakta om nødvendig
       if (selectedBirth) {
         const { date_year, date_month, date_day, place_raw, place_city } = selectedBirth
-        const existBirt = primary.allFacts.find(f => { const t = (f.fact_type||'').toUpperCase(); return t === 'BIRT' || t === 'BIRTH' })
+        const existBirt = primary.allFacts.find(f => f.fact_type === 'BIRT')
         if (existBirt) {
           await supabase.from('person_facts').update({ date_year, date_month, date_day, place_raw, place_city }).eq('id', existBirt.id)
         }
       }
       if (selectedDeath) {
         const { date_year, date_month, date_day, place_raw, place_city } = selectedDeath
-        const existDeat = primary.allFacts.find(f => { const t = (f.fact_type||'').toUpperCase(); return t === 'DEAT' || t === 'DEATH' })
+        const existDeat = primary.allFacts.find(f => f.fact_type === 'DEAT')
         if (existDeat) {
           await supabase.from('person_facts').update({ date_year, date_month, date_day, place_raw, place_city }).eq('id', existDeat.id)
         }

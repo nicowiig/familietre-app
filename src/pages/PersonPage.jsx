@@ -150,7 +150,7 @@ export function PersonPage() {
           ? supabase.from('person_facts')
               .select('person_id, date_year, date_month, date_day, place_city, place_raw')
               .in('person_id', allChildIds)
-              .in('fact_type', ['BIRT', 'BIRTH', 'birth'])
+              .in('fact_type', ['BIRT'])
           : { data: [] },
         allChildIds.length > 0
           ? supabase.from('persons')
@@ -908,7 +908,6 @@ function MediaLightbox({ items, initial, onClose }) {
 /* ===== Fakta (nøkkelfakta-rutenett: kun fødsel og død) ===== */
 
 const FACT_TYPE_NORMALIZE = {
-  'BIRTH': 'BIRT', 'DEATH': 'DEAT',
   'BAPTISM': 'BAPM', 'CHRISTENING': 'CHR',
   'BURIAL': 'BURI', 'MARRIAGE': 'MARR',
   'DIVORCE': 'DIV', 'CENSUS': 'CENS',
