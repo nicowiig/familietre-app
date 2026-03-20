@@ -355,28 +355,43 @@ export function TreePage() {
       }
     }
 
-    // Ektefelle(r): vis til høyre for fokusperson.
-    // I etterkommere/begge: vis kun ektefeller som har felles barn med fokuspersonen
-    // (unngår at "nye partnere uten barn" flyter løst på samme rad).
-    const spouseIds  = graph.spouseMap.get(personId) ?? []
-    const spouseNodes = []
-    let spX = focusNode.x + NODE_W + H_GAP
+    // Ektefelle(r):
+    // - Ektefeller med felles barn → HØYRE (deltar i familyConnector)
+    // - Ektefeller uten felles barn (ny partner, eks uten barn) → VENSTRE
+    // - I aner-modus: alle til høyre
+    const spouseIds   = graph.spouseMap.get(personId) ?? []
+    const spouseNodes = []   // kun de til høyre (brukes av familyConnector)
+    let spX    = focusNode.x + NODE_W + H_GAP
+    let leftSpX = focusNode.x - H_GAP - NODE_W
     for (const spId of spouseIds) {
       if (existingIds.has(spId)) continue
+      const info = graph.infoMap.get(spId) || {}
       if (mode !== 'aner') {
         const focusChildren = graph.childMap.get(personId) ?? []
         const hasSharedChild = focusChildren.some(childId => {
           const childParents = graph.parentMap.get(childId) ?? []
           return childParents.includes(spId)
         })
-        if (!hasSharedChild) continue
+        if (hasSharedChild) {
+          const spNode = { id: spId, x: spX, y: focusNode.y, nodeType: 'spouse', isFocus: false, gen: 0, ...info }
+          extraNodes.push(spNode)
+          spouseNodes.push(spNode)
+          extraEdges.push({ id: `sp-${personId}-${spId}`, fromId: personId, toId: spId, edgeType: 'spouse' })
+          spX += NODE_W + H_GAP
+        } else {
+          // Partner uten felles barn: vis til venstre uten familyConnector
+          const spNode = { id: spId, x: leftSpX, y: focusNode.y, nodeType: 'spouse', isFocus: false, gen: 0, ...info }
+          extraNodes.push(spNode)
+          extraEdges.push({ id: `sp-${personId}-${spId}`, fromId: personId, toId: spId, edgeType: 'spouse' })
+          leftSpX -= NODE_W + H_GAP
+        }
+      } else {
+        const spNode = { id: spId, x: spX, y: focusNode.y, nodeType: 'spouse', isFocus: false, gen: 0, ...info }
+        extraNodes.push(spNode)
+        spouseNodes.push(spNode)
+        extraEdges.push({ id: `sp-${personId}-${spId}`, fromId: personId, toId: spId, edgeType: 'spouse' })
+        spX += NODE_W + H_GAP
       }
-      const info = graph.infoMap.get(spId) || {}
-      const spNode = { id: spId, x: spX, y: focusNode.y, nodeType: 'spouse', isFocus: false, gen: 0, ...info }
-      extraNodes.push(spNode)
-      spouseNodes.push(spNode)
-      extraEdges.push({ id: `sp-${personId}-${spId}`, fromId: personId, toId: spId, edgeType: 'spouse' })
-      spX += NODE_W + H_GAP
     }
 
     // Midlertidig nodekart for oppslagsbruk
@@ -433,17 +448,21 @@ export function TreePage() {
         .sort((a, b) => a.x - b.x)
 
       if (childNodes.length > 0) {
-        const spouse   = spouseNodes[0]
-        const midX     = (focusNode.x + NODE_W / 2 + spouse.x + NODE_W / 2) / 2
-        const coupleY  = focusNode.y + NODE_H / 2
+        const spouse      = spouseNodes[0]
+        const focusCx     = focusNode.x + NODE_W / 2
+        const spouseCx    = spouse.x + NODE_W / 2
+        const midX        = (focusCx + spouseCx) / 2
+        const coupleBarY  = focusNode.y + NODE_H           // bunn av nodene
         const childrenTopY = Math.min(...childNodes.map(n => n.y))
-        const junctionY = focusNode.y + NODE_H + (childrenTopY - focusNode.y - NODE_H) / 2
+        const junctionY   = coupleBarY + (childrenTopY - coupleBarY) / 2
 
         familyConnector = {
-          midX, coupleY, junctionY,
+          focusCx, spouseCx, midX, coupleBarY, junctionY,
           children: childNodes.map(n => ({ cx: n.x + NODE_W / 2, y: n.y })),
         }
         for (const e of childEdges) edgesToRemove.add(e.id)
+        // Ektefelle-kanten erstattes av coupleBar i familyConnector
+        edgesToRemove.add(`sp-${personId}-${spouse.id}`)
       }
     }
 
@@ -779,17 +798,16 @@ export function TreePage() {
               {/* Familie-kobling: fokusperson + ektefelle → barn */}
               {(() => {
                 if (!familyConnector) return null
-                const { midX, coupleY, junctionY, children } = familyConnector
-                const allCxs = [midX, ...children.map(c => c.cx)]
-                const barLeft  = Math.min(...allCxs)
-                const barRight = Math.max(...allCxs)
+                const { focusCx, spouseCx, midX, coupleBarY, junctionY, children } = familyConnector
+                const allChildCxs = children.map(c => c.cx)
+                const barLeft  = Math.min(midX, ...allChildCxs)
+                const barRight = Math.max(midX, ...allChildCxs)
                 const parts = [
-                  `M ${midX} ${coupleY} V ${junctionY}`,
-                  `M ${barLeft} ${junctionY} H ${barRight}`,
+                  `M ${focusCx} ${coupleBarY} H ${spouseCx}`,        // Foreldrebar
+                  `M ${midX} ${coupleBarY} V ${junctionY}`,           // Loddrett ned til kryss
+                  `M ${barLeft} ${junctionY} H ${barRight}`,          // Barnebar
+                  ...children.map(({ cx, y }) => `M ${cx} ${junctionY} V ${y}`), // Loddrett til hvert barn
                 ]
-                for (const { cx, y } of children) {
-                  parts.push(`M ${cx} ${junctionY} V ${y}`)
-                }
                 return (
                   <path
                     key="family-connector"
