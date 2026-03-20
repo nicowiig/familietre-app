@@ -2,6 +2,23 @@ import { useState, useEffect } from 'react'
 import { Layout } from '../components/Layout'
 import { supabase } from '../supabase'
 
+/** Henter alle rader fra en tabell ved å paginere i bolker på 1000. */
+async function fetchAll(table, columns, filters = []) {
+  const PAGE = 1000
+  let from = 0
+  let all = []
+  while (true) {
+    let q = supabase.from(table).select(columns).range(from, from + PAGE - 1)
+    for (const [method, ...args] of filters) q = q[method](...args)
+    const { data, error } = await q
+    if (error || !data) break
+    all = all.concat(data)
+    if (data.length < PAGE) break
+    from += PAGE
+  }
+  return all
+}
+
 export function StatistikkPage() {
   return (
     <Layout>
@@ -78,11 +95,7 @@ function SexDistribution() {
 
   useEffect(() => {
     async function load() {
-      const { data: rows } = await supabase
-        .from('persons')
-        .select('sex')
-        .eq('is_deleted', false)
-      if (!rows) return
+      const rows = await fetchAll('persons', 'sex', [['eq', 'is_deleted', false]])
       const counts = { M: 0, F: 0, U: 0 }
       rows.forEach(r => {
         if (r.sex === 'M') counts.M++
@@ -125,14 +138,12 @@ function BirthDecades() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from('person_facts')
-        .select('date_year')
-        .eq('fact_type', 'BIRT')
-        .not('date_year', 'is', null)
-        .gte('date_year', 1500)
-        .lte('date_year', 2030)
-      if (!data) return
+      const data = await fetchAll('person_facts', 'date_year', [
+        ['eq', 'fact_type', 'BIRT'],
+        ['not', 'date_year', 'is', null],
+        ['gte', 'date_year', 1500],
+        ['lte', 'date_year', 2030],
+      ])
 
       const counts = {}
       data.forEach(r => {
@@ -173,12 +184,7 @@ function TopSurnames() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from('person_names')
-        .select('surname')
-        .eq('is_preferred', true)
-        .not('surname', 'is', null)
-      if (!data) return
+      const data = await fetchAll('person_names', 'surname', [['eq', 'is_preferred', true], ['not', 'surname', 'is', null]])
       const counts = {}
       data.forEach(r => { counts[r.surname] = (counts[r.surname] || 0) + 1 })
       const sorted = Object.entries(counts)
@@ -206,12 +212,7 @@ function TopBirthCities() {
 
   useEffect(() => {
     async function load() {
-      // Hent både place_city og place_raw — de fleste har kun place_raw
-      const { data } = await supabase
-        .from('person_facts')
-        .select('place_city, place_raw')
-        .eq('fact_type', 'BIRT')
-      if (!data) return
+      const data = await fetchAll('person_facts', 'place_city, place_raw', [['eq', 'fact_type', 'BIRT']])
       const counts = {}
       data.forEach(r => {
         // Bruk place_city hvis satt, ellers trekk ut første del av place_raw
@@ -246,12 +247,7 @@ function TopOccupations() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from('person_roles')
-        .select('value')
-        .eq('role_type', 'occupation')
-        .not('value', 'is', null)
-      if (!data) return
+      const data = await fetchAll('person_roles', 'value', [['eq', 'role_type', 'occupation'], ['not', 'value', 'is', null]])
       const counts = {}
       data.forEach(r => {
         // Normaliser til lowercase for sammenligning
