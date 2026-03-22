@@ -291,11 +291,13 @@ export function TreePage() {
   const mode     = searchParams.get('mode') || 'aner'
   const [maxGen, setMaxGen] = useState(4)
 
-  const containerRef  = useRef(null)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const containerRef    = useRef(null)
+  const [pan, setPan]   = useState({ x: 0, y: 0 })
   const [scale, setScale] = useState(1)
-  const isDragging    = useRef(false)
-  const lastPointer   = useRef({ x: 0, y: 0 })
+  const isDragging      = useRef(false)
+  const lastPointer     = useRef({ x: 0, y: 0 })
+  const activePointers  = useRef(new Map())   // pointerId → {x, y}
+  const lastPinchDist   = useRef(null)
 
   // ─── Layout ────────────────────────────────────────────
   const { nodes, edges } = useMemo(() => {
@@ -533,13 +535,45 @@ export function TreePage() {
   }, [handleWheel])
 
   const startDrag = useCallback((e) => {
-    if (e.button !== 0) return
-    isDragging.current = true
-    lastPointer.current = { x: e.clientX, y: e.clientY }
+    if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return
+    activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     e.currentTarget.setPointerCapture(e.pointerId)
+    if (activePointers.current.size === 1) {
+      isDragging.current = true
+      lastPointer.current = { x: e.clientX, y: e.clientY }
+    }
   }, [])
 
   const onPointerMove = useCallback((e) => {
+    activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+    if (activePointers.current.size === 2) {
+      // Pinch-to-zoom
+      const pts = [...activePointers.current.values()]
+      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y)
+      if (lastPinchDist.current !== null && dist > 0) {
+        const factor = dist / lastPinchDist.current
+        const midX = (pts[0].x + pts[1].x) / 2
+        const midY = (pts[0].y + pts[1].y) / 2
+        const rect = containerRef.current?.getBoundingClientRect()
+        if (rect) {
+          const mx = midX - rect.left
+          const my = midY - rect.top
+          setScale(prev => {
+            const next = Math.min(3, Math.max(0.15, prev * factor))
+            setPan(p => ({
+              x: mx - (mx - p.x) * (next / prev),
+              y: my - (my - p.y) * (next / prev),
+            }))
+            return next
+          })
+        }
+      }
+      lastPinchDist.current = dist
+      return
+    }
+
+    lastPinchDist.current = null
     if (!isDragging.current) return
     const dx = e.clientX - lastPointer.current.x
     const dy = e.clientY - lastPointer.current.y
@@ -547,8 +581,20 @@ export function TreePage() {
     setPan(p => ({ x: p.x + dx, y: p.y + dy }))
   }, [])
 
-  const stopDrag = useCallback(() => {
-    isDragging.current = false
+  const stopDrag = useCallback((e) => {
+    if (e?.pointerId !== undefined) {
+      activePointers.current.delete(e.pointerId)
+    } else {
+      activePointers.current.clear()
+    }
+    lastPinchDist.current = null
+    if (activePointers.current.size === 0) {
+      isDragging.current = false
+    } else if (activePointers.current.size === 1) {
+      // En finger gjenstår — fortsett å panne
+      const remaining = [...activePointers.current.values()][0]
+      lastPointer.current = remaining
+    }
   }, [])
 
   const handleNodeNavigate = useCallback((id) => {
@@ -667,7 +713,7 @@ export function TreePage() {
         }}>
           {[
             ['aner',          'Aner'],
-            ['etterkommere',  'Etterkommere'],
+            ['etterkommere',  'Etterm.'],
             ['begge',         'Begge'],
           ].map(([val, label]) => (
             <button
@@ -732,10 +778,11 @@ export function TreePage() {
       <div
         ref={containerRef}
         style={{
-          height:   'calc(100vh - 130px)',
-          overflow: 'hidden',
-          cursor:   'grab',
-          position: 'relative',
+          height:      'calc(100dvh - 130px)',
+          overflow:    'hidden',
+          cursor:      'grab',
+          position:    'relative',
+          touchAction: 'none',
           backgroundColor: 'var(--color-bg)',
         }}
         onPointerDown={startDrag}
