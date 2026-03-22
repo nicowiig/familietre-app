@@ -13,6 +13,14 @@ import {
 } from '../lib/persons'
 import { useFamilyGraph } from '../hooks/useFamilyGraph'
 import { findKinship, findSpouseKinship, getAncestors } from '../lib/kinship'
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
+import iconUrl        from 'leaflet/dist/images/marker-icon.png'
+import shadowUrl      from 'leaflet/dist/images/marker-shadow.png'
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl })
 
 export function PersonPage() {
   const { id } = useParams()
@@ -36,6 +44,7 @@ export function PersonPage() {
   const [auditLog,      setAuditLog]      = useState([])
   const [loading,       setLoading]       = useState(true)
   const [notFound,      setNotFound]      = useState(false)
+  const [buildings,     setBuildings]     = useState([])
 
   useEffect(() => {
     if (id) load(id)
@@ -46,7 +55,7 @@ export function PersonPage() {
     setNotFound(false)
     try {
       const [
-        personRes, namesRes, factsRes, addrRes, bioRes, rolesRes, workExpRes, photosRes, sourcesRes, auditLogRes, mediaRes,
+        personRes, namesRes, factsRes, addrRes, bioRes, rolesRes, workExpRes, photosRes, sourcesRes, auditLogRes, mediaRes, buildingsRes,
       ] = await Promise.all([
         supabase.from('persons').select('*').eq('person_id', personId).eq('is_deleted', false).maybeSingle(),
         supabase.from('person_names').select('*').eq('person_id', personId).order('is_preferred', { ascending: false }),
@@ -59,6 +68,7 @@ export function PersonPage() {
         supabase.from('person_sources').select('*').eq('person_id', personId).order('found_date', { ascending: false }),
         supabase.from('person_audit_log').select('*').eq('person_id', personId).order('changed_at', { ascending: false }).limit(50),
         supabase.from('person_media').select('*').eq('person_id', personId).order('display_order'),
+        supabase.from('person_buildings').select('*').eq('person_id', personId).order('sort_order'),
       ])
 
       if (!personRes.data) { setNotFound(true); return }
@@ -110,6 +120,7 @@ export function PersonPage() {
       setSources(sourcesRes.data || [])
       setMedia(mediaRes.data || [])
       setAuditLog(auditLogRes.data || [])
+      setBuildings(buildingsRes.data || [])
 
       // Hent familier der personen er ektefelle
       const [famAsSpouse, famAsChild] = await Promise.all([
@@ -374,6 +385,7 @@ export function PersonPage() {
             {eduRoles.length > 0 && <UtdannelseSection roles={eduRoles} facts={facts} />}
             {titleRoles.length > 0 && <TitlerSection roles={titleRoles} />}
             {otherRoles.length > 0 && <RolesSection roles={otherRoles} title="Andre roller" />}
+            <BuildingsSection buildings={buildings} />
             <AddressesSection
               addresses={addresses}
               deathYear={deathYear}
@@ -1784,6 +1796,164 @@ const ADDR_TYPE_LABELS = {
   burial_place:    'Gravsted',
   other:           'Annet',
   RESI:            'Bosted',
+}
+
+/* ===== Arkitektoniske verk ===== */
+function BuildingsSection({ buildings }) {
+  const [activeIdx, setActiveIdx] = useState(0)
+  const [imageUrls, setImageUrls] = useState({})
+
+  useEffect(() => {
+    if (!buildings.length) return
+    const paths = buildings.filter(b => b.image_path).map(b => b.image_path)
+    if (!paths.length) return
+    supabase.storage.from('person-photos').createSignedUrls(paths, 3600).then(({ data }) => {
+      const map = {}
+      ;(data || []).forEach(s => { map[s.path] = s.signedUrl })
+      setImageUrls(map)
+    })
+  }, [buildings])
+
+  if (!buildings.length) return null
+
+  const active = buildings[activeIdx]
+  const activeSrc = active.image_path ? imageUrls[active.image_path] : null
+  const mapBuildings = buildings.filter(b => b.lat && b.lng)
+  const mapCenter = mapBuildings.length
+    ? [mapBuildings.reduce((s, b) => s + Number(b.lat), 0) / mapBuildings.length,
+       mapBuildings.reduce((s, b) => s + Number(b.lng), 0) / mapBuildings.length]
+    : [59.91, 10.75]
+
+  return (
+    <div className="profile-section">
+      <h2 className="profile-section-header">Arkitektoniske verk</h2>
+
+      {/* Thumbnail-karusell */}
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, marginBottom: 12 }}>
+        {buildings.map((b, i) => (
+          <button
+            key={b.id}
+            onClick={() => setActiveIdx(i)}
+            style={{
+              flexShrink: 0,
+              width: 72, height: 72,
+              border: `2px solid ${i === activeIdx ? 'var(--color-accent)' : 'var(--color-border)'}`,
+              borderRadius: 'var(--radius)',
+              overflow: 'hidden',
+              background: 'var(--color-surface-raised)',
+              cursor: 'pointer',
+              padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {b.image_path && imageUrls[b.image_path] ? (
+              <img
+                src={imageUrls[b.image_path]}
+                alt={b.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <span style={{ fontSize: 24 }}>🏛</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Aktivt verk — bilde + info */}
+      <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-6)', alignItems: 'flex-start' }}>
+        <div style={{
+          width: 200, height: 150, flexShrink: 0,
+          background: 'var(--color-surface-raised)',
+          borderRadius: 'var(--radius)',
+          border: '1px solid var(--color-border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden',
+        }}>
+          {activeSrc ? (
+            <img src={activeSrc} alt={active.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <span style={{ fontSize: 48 }}>🏛</span>
+          )}
+        </div>
+        <div>
+          <p style={{ fontWeight: 600, fontSize: 'var(--text-md)', marginBottom: 2 }}>
+            {active.name}
+            {active.year_built && (
+              <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', marginLeft: 8 }}>({active.year_built})</span>
+            )}
+          </p>
+          {(active.location_name || active.city) && (
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 6 }}>
+              📍 {[active.location_name, active.city].filter(Boolean).join(', ')}
+            </p>
+          )}
+          {active.description && (
+            <p style={{ fontSize: 'var(--text-sm)', lineHeight: 1.55, color: 'var(--color-text-secondary)' }}>
+              {active.description}
+            </p>
+          )}
+          {active.source && (
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 6, fontStyle: 'italic' }}>
+              Kilde: {active.source}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Leaflet-kart */}
+      {mapBuildings.length > 0 && (
+        <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+          <MapContainer
+            center={mapCenter}
+            zoom={mapBuildings.length === 1 ? 13 : 7}
+            style={{ height: 340 }}
+            scrollWheelZoom={false}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://carto.com">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            />
+            {mapBuildings.map((b, i) => {
+              const origIdx = buildings.findIndex(bb => bb.id === b.id)
+              return (
+                <CircleMarker
+                  key={b.id}
+                  center={[Number(b.lat), Number(b.lng)]}
+                  radius={origIdx === activeIdx ? 10 : 7}
+                  pathOptions={{
+                    color: '#7a5c38',
+                    fillColor: origIdx === activeIdx ? '#c09a5a' : '#a07840',
+                    fillOpacity: 0.9,
+                    weight: 2,
+                  }}
+                  eventHandlers={{ click: () => setActiveIdx(origIdx) }}
+                >
+                  <Popup>
+                    <div style={{ minWidth: 180 }}>
+                      {b.image_path && imageUrls[b.image_path] && (
+                        <img
+                          src={imageUrls[b.image_path]}
+                          alt={b.name}
+                          style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4, marginBottom: 6 }}
+                        />
+                      )}
+                      <strong style={{ display: 'block', marginBottom: 2 }}>{b.name}</strong>
+                      {b.year_built && <span style={{ fontSize: 12, color: '#666' }}>{b.year_built}</span>}
+                      {b.description && (
+                        <p style={{ fontSize: 12, marginTop: 4, lineHeight: 1.4, color: '#444' }}>
+                          {b.description.length > 120 ? b.description.slice(0, 120) + '…' : b.description}
+                        </p>
+                      )}
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              )
+            })}
+          </MapContainer>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function AddressesSection({ addresses, deathYear }) {
