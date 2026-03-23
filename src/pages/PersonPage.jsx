@@ -2014,15 +2014,29 @@ function AddressesSection({ addresses, deathYear }) {
     ? Math.min(...specificAddrs.map(a => addrDateNum(a.date_from)).filter(Boolean))
     : Infinity
 
+  // Bygg opp sett av adressenøkler som allerede har en residence-periode
+  const residenceKeys = new Set(
+    addresses
+      .filter(a => a.address_type === 'residence' && a.street_name)
+      .map(a => `${a.street_name} ${a.street_number || ''}`.trim().toLowerCase())
+  )
+
   const filtered = addresses
     .filter(a => {
       if (VAGUE.has(a.granularity) && hasSpecificAddr) {
+        // Studieopphold og arbeidsopphold med employer vises alltid
+        if (a.employer) return true
         // Vis likevel hvis adressen tydelig avsluttes FØR de spesifikke starter
         const thisEnd = addrDateNum(a.date_to)
         if (thisEnd && thisEnd <= earliestSpecificStart) return true
         return false
       }
       if (a.address_type !== 'census_record') return true
+      // Skjul folktellings-rad hvis det allerede finnes en residence på samme adresse
+      if (a.street_name) {
+        const key = `${a.street_name} ${a.street_number || ''}`.trim().toLowerCase()
+        if (residenceKeys.has(key)) return false
+      }
       return a.street_name || a.place_raw || a.notes
     })
 
