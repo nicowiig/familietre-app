@@ -1825,7 +1825,7 @@ function BuildingsSection({ buildings }) {
     : [59.91, 10.75]
 
   return (
-    <div className="profile-section" style={{ overflow: 'hidden' }}>
+    <div className="profile-section">
       <h2 className="profile-section-header">Arkitektoniske verk</h2>
 
       {/* Reel — horisontal scroll med bildekort */}
@@ -1834,7 +1834,12 @@ function BuildingsSection({ buildings }) {
         gap: 10,
         overflowX: 'auto',
         scrollSnapType: 'x mandatory',
-        paddingBottom: 10,
+        paddingBottom: 12,
+        paddingTop: 2,
+        paddingLeft: 2,
+        paddingRight: 2,
+        marginLeft: -2,
+        marginRight: -2,
         marginBottom: 16,
         WebkitOverflowScrolling: 'touch',
       }}>
@@ -1884,9 +1889,9 @@ function BuildingsSection({ buildings }) {
       </div>
 
       {/* Aktivt verk — bilde + info */}
-      <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-6)', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-6)', alignItems: 'flex-start', minWidth: 0 }}>
         <div style={{
-          width: 200, height: 150, flexShrink: 0,
+          width: 'min(200px, 42%)', aspectRatio: '4/3', flexShrink: 0,
           background: 'var(--color-surface-raised)',
           borderRadius: 'var(--radius)',
           border: '1px solid var(--color-border)',
@@ -1926,7 +1931,7 @@ function BuildingsSection({ buildings }) {
 
       {/* Leaflet-kart */}
       {mapBuildings.length > 0 && (
-        <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--color-border)', width: '100%' }}>
+        <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--color-border)', maxWidth: '100%' }}>
           <MapContainer
             center={mapCenter}
             zoom={mapBuildings.length === 1 ? 13 : 7}
