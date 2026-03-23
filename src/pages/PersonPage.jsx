@@ -1825,7 +1825,7 @@ function BuildingsSection({ buildings }) {
     : [59.91, 10.75]
 
   return (
-    <div className="profile-section">
+    <div className="profile-section" style={{ overflow: 'hidden' }}>
       <h2 className="profile-section-header">Arkitektoniske verk</h2>
 
       {/* Reel — horisontal scroll med bildekort */}
@@ -1835,11 +1835,6 @@ function BuildingsSection({ buildings }) {
         overflowX: 'auto',
         scrollSnapType: 'x mandatory',
         paddingBottom: 12,
-        paddingTop: 2,
-        paddingLeft: 2,
-        paddingRight: 2,
-        marginLeft: -2,
-        marginRight: -2,
         marginBottom: 16,
         WebkitOverflowScrolling: 'touch',
       }}>
@@ -1854,34 +1849,40 @@ function BuildingsSection({ buildings }) {
                 flexShrink: 0,
                 scrollSnapAlign: 'start',
                 width: 130,
-                border: `2px solid ${isActive ? 'var(--color-accent)' : 'var(--color-border)'}`,
-                borderRadius: 'var(--radius)',
-                overflow: 'hidden',
-                background: 'var(--color-surface-raised)',
+                background: 'transparent',
+                border: 'none',
                 cursor: 'pointer',
                 padding: 0,
                 textAlign: 'left',
-                transition: 'border-color 0.15s',
               }}
             >
-              <div style={{ width: 130, height: 82, overflow: 'hidden', background: 'var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {src
-                  ? <img src={src} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <span style={{ fontSize: 26 }}>🏛</span>
-                }
-              </div>
-              <div style={{ padding: '4px 6px 6px' }}>
-                <div style={{
-                  fontSize: 11, fontWeight: 600, lineHeight: 1.3,
-                  color: isActive ? 'var(--color-accent)' : 'var(--color-text)',
-                  overflow: 'hidden', display: '-webkit-box',
-                  WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                }}>
-                  {b.name}
+              {/* Bord og border-radius på indre div — unngår button overflow:hidden-feil */}
+              <div style={{
+                borderRadius: 'var(--radius)',
+                overflow: 'hidden',
+                border: `2px solid ${isActive ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                background: 'var(--color-surface-raised)',
+                transition: 'border-color 0.15s',
+              }}>
+                <div style={{ width: '100%', height: 82, background: 'var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {src
+                    ? <img src={src} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <span style={{ fontSize: 26 }}>🏛</span>
+                  }
                 </div>
-                {b.year_built && (
-                  <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1 }}>{b.year_built}</div>
-                )}
+                <div style={{ padding: '4px 6px 6px' }}>
+                  <div style={{
+                    fontSize: 11, fontWeight: 600, lineHeight: 1.3,
+                    color: isActive ? 'var(--color-accent)' : 'var(--color-text)',
+                    overflow: 'hidden', display: '-webkit-box',
+                    WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                  }}>
+                    {b.name}
+                  </div>
+                  {b.year_built && (
+                    <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1 }}>{b.year_built}</div>
+                  )}
+                </div>
               </div>
             </button>
           )
