@@ -1891,6 +1891,59 @@ function BuildingsSection({ buildings }) {
         </div>
       </div>
 
+      {/* Leaflet-kart — rett under aktivt verk for geografisk sammenheng */}
+      {mapBuildings.length > 0 && (
+        <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--color-border)', marginBottom: 'var(--space-4)' }}>
+          <MapContainer
+            center={mapCenter}
+            zoom={mapBuildings.length === 1 ? 13 : 7}
+            style={{ height: 300, width: '100%' }}
+            scrollWheelZoom={false}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://carto.com">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            />
+            {mapBuildings.map((b) => {
+              const origIdx = buildings.findIndex(bb => bb.id === b.id)
+              return (
+                <CircleMarker
+                  key={b.id}
+                  center={[Number(b.lat), Number(b.lng)]}
+                  radius={origIdx === activeIdx ? 10 : 7}
+                  pathOptions={{
+                    color: '#7a5c38',
+                    fillColor: origIdx === activeIdx ? '#c09a5a' : '#a07840',
+                    fillOpacity: 0.9,
+                    weight: 2,
+                  }}
+                  eventHandlers={{ click: () => setActiveIdx(origIdx) }}
+                >
+                  <Popup>
+                    <div style={{ minWidth: 180 }}>
+                      {b.image_path && imageUrls[b.image_path] && (
+                        <img
+                          src={imageUrls[b.image_path]}
+                          alt={b.name}
+                          style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4, marginBottom: 6 }}
+                        />
+                      )}
+                      <strong style={{ display: 'block', marginBottom: 2 }}>{b.name}</strong>
+                      {b.year_built && <span style={{ fontSize: 12, color: '#666' }}>{b.year_built}</span>}
+                      {b.description && (
+                        <p style={{ fontSize: 12, marginTop: 4, lineHeight: 1.4, color: '#444' }}>
+                          {b.description.length > 120 ? b.description.slice(0, 120) + '…' : b.description}
+                        </p>
+                      )}
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              )
+            })}
+          </MapContainer>
+        </div>
+      )}
+
       {/* Rutenett med thumbnails */}
       <div style={{
         display: 'grid',
@@ -1940,59 +1993,6 @@ function BuildingsSection({ buildings }) {
           )
         })}
       </div>
-
-      {/* Leaflet-kart */}
-      {mapBuildings.length > 0 && (
-        <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
-          <MapContainer
-            center={mapCenter}
-            zoom={mapBuildings.length === 1 ? 13 : 7}
-            style={{ height: 340, width: '100%' }}
-            scrollWheelZoom={false}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://carto.com">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            />
-            {mapBuildings.map((b) => {
-              const origIdx = buildings.findIndex(bb => bb.id === b.id)
-              return (
-                <CircleMarker
-                  key={b.id}
-                  center={[Number(b.lat), Number(b.lng)]}
-                  radius={origIdx === activeIdx ? 10 : 7}
-                  pathOptions={{
-                    color: '#7a5c38',
-                    fillColor: origIdx === activeIdx ? '#c09a5a' : '#a07840',
-                    fillOpacity: 0.9,
-                    weight: 2,
-                  }}
-                  eventHandlers={{ click: () => setActiveIdx(origIdx) }}
-                >
-                  <Popup>
-                    <div style={{ minWidth: 180 }}>
-                      {b.image_path && imageUrls[b.image_path] && (
-                        <img
-                          src={imageUrls[b.image_path]}
-                          alt={b.name}
-                          style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4, marginBottom: 6 }}
-                        />
-                      )}
-                      <strong style={{ display: 'block', marginBottom: 2 }}>{b.name}</strong>
-                      {b.year_built && <span style={{ fontSize: 12, color: '#666' }}>{b.year_built}</span>}
-                      {b.description && (
-                        <p style={{ fontSize: 12, marginTop: 4, lineHeight: 1.4, color: '#444' }}>
-                          {b.description.length > 120 ? b.description.slice(0, 120) + '…' : b.description}
-                        </p>
-                      )}
-                    </div>
-                  </Popup>
-                </CircleMarker>
-              )
-            })}
-          </MapContainer>
-        </div>
-      )}
 
       {/* Lightbox */}
       {lightboxOpen && activeSrc && (
