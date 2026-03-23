@@ -1825,38 +1825,62 @@ function BuildingsSection({ buildings }) {
     : [59.91, 10.75]
 
   return (
-    <div className="profile-section">
+    <div className="profile-section" style={{ overflow: 'hidden' }}>
       <h2 className="profile-section-header">Arkitektoniske verk</h2>
 
-      {/* Thumbnail-karusell */}
-      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, marginBottom: 12 }}>
-        {buildings.map((b, i) => (
-          <button
-            key={b.id}
-            onClick={() => setActiveIdx(i)}
-            style={{
-              flexShrink: 0,
-              width: 72, height: 72,
-              border: `2px solid ${i === activeIdx ? 'var(--color-accent)' : 'var(--color-border)'}`,
-              borderRadius: 'var(--radius)',
-              overflow: 'hidden',
-              background: 'var(--color-surface-raised)',
-              cursor: 'pointer',
-              padding: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            {b.image_path && imageUrls[b.image_path] ? (
-              <img
-                src={imageUrls[b.image_path]}
-                alt={b.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : (
-              <span style={{ fontSize: 24 }}>🏛</span>
-            )}
-          </button>
-        ))}
+      {/* Reel — horisontal scroll med bildekort */}
+      <div style={{
+        display: 'flex',
+        gap: 10,
+        overflowX: 'auto',
+        scrollSnapType: 'x mandatory',
+        paddingBottom: 10,
+        marginBottom: 16,
+        WebkitOverflowScrolling: 'touch',
+      }}>
+        {buildings.map((b, i) => {
+          const src = b.image_path ? imageUrls[b.image_path] : null
+          const isActive = i === activeIdx
+          return (
+            <button
+              key={b.id}
+              onClick={() => setActiveIdx(i)}
+              style={{
+                flexShrink: 0,
+                scrollSnapAlign: 'start',
+                width: 130,
+                border: `2px solid ${isActive ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                borderRadius: 'var(--radius)',
+                overflow: 'hidden',
+                background: 'var(--color-surface-raised)',
+                cursor: 'pointer',
+                padding: 0,
+                textAlign: 'left',
+                transition: 'border-color 0.15s',
+              }}
+            >
+              <div style={{ width: 130, height: 82, overflow: 'hidden', background: 'var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {src
+                  ? <img src={src} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <span style={{ fontSize: 26 }}>🏛</span>
+                }
+              </div>
+              <div style={{ padding: '4px 6px 6px' }}>
+                <div style={{
+                  fontSize: 11, fontWeight: 600, lineHeight: 1.3,
+                  color: isActive ? 'var(--color-accent)' : 'var(--color-text)',
+                  overflow: 'hidden', display: '-webkit-box',
+                  WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                }}>
+                  {b.name}
+                </div>
+                {b.year_built && (
+                  <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1 }}>{b.year_built}</div>
+                )}
+              </div>
+            </button>
+          )
+        })}
       </div>
 
       {/* Aktivt verk — bilde + info */}
@@ -1875,7 +1899,7 @@ function BuildingsSection({ buildings }) {
             <span style={{ fontSize: 48 }}>🏛</span>
           )}
         </div>
-        <div>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <p style={{ fontWeight: 600, fontSize: 'var(--text-md)', marginBottom: 2 }}>
             {active.name}
             {active.year_built && (
@@ -1902,11 +1926,11 @@ function BuildingsSection({ buildings }) {
 
       {/* Leaflet-kart */}
       {mapBuildings.length > 0 && (
-        <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+        <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--color-border)', width: '100%' }}>
           <MapContainer
             center={mapCenter}
             zoom={mapBuildings.length === 1 ? 13 : 7}
-            style={{ height: 340 }}
+            style={{ height: 340, width: '100%' }}
             scrollWheelZoom={false}
           >
             <TileLayer
