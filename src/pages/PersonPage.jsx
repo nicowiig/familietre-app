@@ -2041,7 +2041,8 @@ function AddressesSection({ addresses, deathYear }) {
       return a.street_name || a.place_raw || a.notes
     })
 
-  const sorted = filtered.sort((a, b) => addrDateNum(b.date_from) - addrDateNum(a.date_from))
+  // Sorter stigende for dedup-logikken, reverser til synkende for visning (nyest øverst)
+  const sorted = filtered.sort((a, b) => addrDateNum(a.date_from) - addrDateNum(b.date_from))
 
   // Kun bostedstyper brukes til å beregne neste adresse i kjeden (ikke workplace etc.)
   const RESIDENTIAL_TYPES = new Set(['residence', 'childhood_home', 'student_housing', 'census_record'])
@@ -2120,9 +2121,12 @@ function AddressItem({ addr, deathYear }) {
   const period    = duration ? `${periodParts} · ${duration}` : periodParts
   const streetPart = addr.street_name ? `${addr.street_name} ${addr.street_number || ''}`.trim() : null
   const postalPart = [addr.postal_code, addr.city].filter(Boolean).join(' ')
+  const cityFallback = addr.city
+    ? [addr.city, addr.country && addr.country !== 'Norge' ? addr.country : null].filter(Boolean).join(', ')
+    : null
   const display   = streetPart
     ? [streetPart, postalPart].filter(Boolean).join(', ')
-    : addr.place_raw || (addr.address_type === 'census_record' ? addr.notes : null)
+    : addr.place_raw || (addr.address_type === 'census_record' ? addr.notes : null) || cityFallback
   const noteText = addr.notes || (streetPart && addr.place_raw ? addr.place_raw : null)
 
   return (
