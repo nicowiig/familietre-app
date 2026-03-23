@@ -31,6 +31,7 @@ export function AdminPage() {
             { id: 'tilganger',    label: 'Tilganger' },
             { id: 'rettelser',    label: 'Innsendte rettelser' },
             { id: 'datakvalitet', label: 'Datakvalitet' },
+            { id: 'endringslogg', label: 'Endringslogg' },
           ].map(t => (
             <button
               key={t.id}
@@ -50,6 +51,7 @@ export function AdminPage() {
 
         {tab === 'tilganger'    && <AccessTab />}
         {tab === 'datakvalitet' && <DataQualityTab />}
+        {tab === 'endringslogg' && <AuditLogTab />}
         {tab === 'rettelser' && (
           <div className="text-muted text-center" style={{ padding: 'var(--space-10)' }}>
             <p>Ingen innsendte rettelser ennå.</p>
@@ -448,6 +450,210 @@ function StatCard({ label, value, pct }) {
       {pct !== undefined && (
         <div style={{ marginTop: 8, background: 'var(--color-border-light)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
           <div style={{ width: `${pct}%`, background: 'var(--color-accent)', height: '100%', borderRadius: 4 }} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ===== Endringslogg (audit log) ===== */
+
+const AUDIT_TABLE_LABELS = {
+  persons:                'Person',
+  person_names:           'Navn',
+  person_facts:           'Hendelse',
+  person_biography:       'Biografi',
+  person_roles:           'Rolle',
+  person_work_experience: 'Arbeidserfaring',
+  person_sources:         'Kilde',
+  address_periods:        'Adresse',
+}
+const AUDIT_TYPE_META = {
+  insert: { label: 'Lagt til',  bg: '#dcfce7', text: '#166534' },
+  update: { label: 'Oppdatert', bg: '#e0f2fe', text: '#0369a1' },
+  delete: { label: 'Slettet',   bg: '#fee2e2', text: '#991b1b' },
+}
+const AUDIT_USER_NAMES = {
+  'nicowiig@gmail.com':         'Nicolay Wiig',
+  'tallberg.marlene@gmail.com': 'Marlene Tallberg Wiig',
+  'njwiig@gmail.com':           'njwiig',
+  'sjokoladekake54@gmail.com':  'Gustav Wiig',
+  'jontallbe@gmail.com':        'Jon Tallberg',
+  'mamsemoren@gmail.com':       'Anne Wiig',
+}
+function auditDisplayUser(v) {
+  if (!v || v === 'script') return 'Nicolay Wiig (script)'
+  return AUDIT_USER_NAMES[v] || v
+}
+function auditFmtRel(ts) {
+  const diff = Date.now() - new Date(ts).getTime()
+  const mins = Math.floor(diff / 60000), hours = Math.floor(diff / 3600000), days = Math.floor(diff / 86400000)
+  if (mins < 2)   return 'akkurat nå'
+  if (mins < 60)  return `${mins} min siden`
+  if (hours < 24) return `${hours} t siden`
+  if (days < 7)   return `${days} d siden`
+  return new Date(ts).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+function auditDayHeader(ts) {
+  const d = new Date(ts); d.setHours(0,0,0,0)
+  const today = new Date(); today.setHours(0,0,0,0)
+  const yest  = new Date(today); yest.setDate(today.getDate() - 1)
+  if (d.getTime() === today.getTime()) return 'I dag'
+  if (d.getTime() === yest.getTime())  return 'I går'
+  return d.toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+const AUDIT_PAGE = 75
+
+function AuditLogTab() {
+  const [rows,        setRows]        = useState([])
+  const [nameMap,     setNameMap]     = useState({})
+  const [loading,     setLoading]     = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore,     setHasMore]     = useState(false)
+  const [offset,      setOffset]      = useState(0)
+  const [filterType,  setFilterType]  = useState(null)
+  const [filterTable, setFilterTable] = useState(null)
+
+  async function fetchNames(ids) {
+    if (!ids.length) return {}
+    const { data } = await supabase.from('person_names')
+      .select('person_id, given_name, surname')
+      .in('person_id', ids).eq('is_preferred', true)
+    const map = {}
+    for (const n of (data || []))
+      map[n.person_id] = [n.given_name, n.surname].filter(Boolean).join(' ')
+    return map
+  }
+
+  async function load(reset = false) {
+    const off = reset ? 0 : offset
+    if (reset) setLoading(true); else setLoadingMore(true)
+    let q = supabase.from('person_audit_log').select('*')
+      .order('changed_at', { ascending: false })
+      .range(off, off + AUDIT_PAGE - 1)
+    if (filterType)  q = q.eq('change_type', filterType)
+    if (filterTable) q = q.eq('table_name', filterTable)
+    const { data } = await q
+    const newRows = data || []
+    const ids = [...new Set(newRows.map(r => r.person_id))]
+    const names = await fetchNames(ids)
+    setNameMap(prev => ({ ...prev, ...names }))
+    setRows(prev => reset ? newRows : [...prev, ...newRows])
+    setOffset(off + newRows.length)
+    setHasMore(newRows.length === AUDIT_PAGE)
+    setLoading(false)
+    setLoadingMore(false)
+  }
+
+  useEffect(() => { load(true) }, [filterType, filterTable]) // eslint-disable-line
+
+  function groupByDay(rows) {
+    const groups = []
+    let cur = null
+    for (const row of rows) {
+      const day = new Date(row.changed_at).toDateString()
+      if (day !== cur) { cur = day; groups.push({ day, ts: row.changed_at, entries: [] }) }
+      groups[groups.length - 1].entries.push(row)
+    }
+    return groups
+  }
+
+  const allTables = [...new Set(rows.map(r => r.table_name).filter(Boolean))]
+  const groups    = groupByDay(rows)
+
+  if (loading) return <LoadingSpinner text="Laster endringslogg…" />
+
+  return (
+    <div>
+      {/* Filter-chips */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
+        {Object.entries(AUDIT_TYPE_META).map(([type, meta]) => (
+          <button key={type} onClick={() => setFilterType(p => p === type ? null : type)} style={{
+            fontSize: 'var(--text-xs)', fontWeight: 600, padding: '4px 12px', borderRadius: 99, cursor: 'pointer', border: '1px solid',
+            background:  filterType === type ? meta.bg   : 'transparent',
+            color:       filterType === type ? meta.text : 'var(--color-text-muted)',
+            borderColor: filterType === type ? meta.text : 'var(--color-border)',
+          }}>
+            {meta.label}
+          </button>
+        ))}
+        {allTables.map(t => (
+          <button key={t} onClick={() => setFilterTable(p => p === t ? null : t)} style={{
+            fontSize: 'var(--text-xs)', fontWeight: 500, padding: '4px 12px', borderRadius: 99, cursor: 'pointer', border: '1px solid',
+            background:  filterTable === t ? 'rgba(192,154,90,0.15)' : 'transparent',
+            color:       filterTable === t ? 'var(--color-accent)' : 'var(--color-text-muted)',
+            borderColor: filterTable === t ? 'var(--color-accent)' : 'var(--color-border)',
+          }}>
+            {AUDIT_TABLE_LABELS[t] || t}
+          </button>
+        ))}
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted">Ingen endringer.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+          {groups.map(group => (
+            <div key={group.day}>
+              <div style={{
+                fontSize: 'var(--text-xs)', fontWeight: 700, letterSpacing: '0.06em',
+                textTransform: 'uppercase', color: 'var(--color-text-muted)',
+                marginBottom: 'var(--space-3)', paddingBottom: 'var(--space-2)',
+                borderBottom: '1px solid var(--color-border)',
+              }}>
+                {auditDayHeader(group.ts)}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                {group.entries.map(row => {
+                  const meta   = AUDIT_TYPE_META[row.change_type] || AUDIT_TYPE_META.update
+                  const table  = AUDIT_TABLE_LABELS[row.table_name] || row.table_name
+                  const name   = nameMap[row.person_id]
+                  const detail = [row.field_name, row.old_value && row.new_value ? `«${row.old_value}» → «${row.new_value}»` : (row.new_value ? `«${row.new_value}»` : null), row.note].filter(Boolean).join(' · ')
+                  return (
+                    <div key={row.id} style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
+                      padding: 'var(--space-3) var(--space-4)',
+                      background: 'var(--color-surface)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius)',
+                    }}>
+                      <span style={{ flexShrink: 0, fontSize: 'var(--text-xs)', fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: meta.bg, color: meta.text, marginTop: 2 }}>
+                        {meta.label}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 'var(--text-sm)', lineHeight: 1.5 }}>
+                          <span style={{ color: 'var(--color-text-muted)' }}>{auditDisplayUser(row.changed_by)}</span>
+                          {name && (
+                            <><span style={{ color: 'var(--color-text-muted)' }}> · </span>
+                            <Link to={`/person/${row.person_id}`} style={{ color: 'var(--color-accent)', fontWeight: 600, textDecoration: 'none' }}>{name}</Link></>
+                          )}
+                          {table && <span style={{ color: 'var(--color-text-muted)' }}> · {table}</span>}
+                        </div>
+                        {detail && (
+                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {detail}
+                          </div>
+                        )}
+                      </div>
+                      <span style={{ flexShrink: 0, fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2 }}>
+                        {auditFmtRel(row.changed_at)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+          {hasMore && (
+            <button onClick={() => load(false)} disabled={loadingMore} style={{
+              alignSelf: 'center', padding: '8px 24px', borderRadius: 99,
+              border: '1px solid var(--color-border)', background: 'transparent',
+              fontSize: 'var(--text-sm)', cursor: 'pointer', color: 'var(--color-text-muted)',
+            }}>
+              {loadingMore ? 'Laster…' : 'Last flere'}
+            </button>
+          )}
         </div>
       )}
     </div>
