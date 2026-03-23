@@ -1802,6 +1802,7 @@ const ADDR_TYPE_LABELS = {
 function BuildingsSection({ buildings }) {
   const [activeIdx, setActiveIdx] = useState(0)
   const [imageUrls, setImageUrls] = useState({})
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   useEffect(() => {
     if (!buildings.length) return
@@ -1814,6 +1815,13 @@ function BuildingsSection({ buildings }) {
     })
   }, [buildings])
 
+  useEffect(() => {
+    if (!lightboxOpen) return
+    const handler = (e) => { if (e.key === 'Escape') setLightboxOpen(false) }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [lightboxOpen])
+
   if (!buildings.length) return null
 
   const active = buildings[activeIdx]
@@ -1825,82 +1833,35 @@ function BuildingsSection({ buildings }) {
     : [59.91, 10.75]
 
   return (
-    <div className="profile-section" style={{ overflow: 'hidden' }}>
+    <div className="profile-section">
       <h2 className="profile-section-header">Arkitektoniske verk</h2>
 
-      {/* Reel — horisontal scroll med bildekort */}
-      <div style={{
-        display: 'flex',
-        gap: 10,
-        overflowX: 'auto',
-        scrollSnapType: 'x mandatory',
-        paddingBottom: 12,
-        marginBottom: 16,
-        WebkitOverflowScrolling: 'touch',
-      }}>
-        {buildings.map((b, i) => {
-          const src = b.image_path ? imageUrls[b.image_path] : null
-          const isActive = i === activeIdx
-          return (
-            <button
-              key={b.id}
-              onClick={() => setActiveIdx(i)}
-              style={{
-                flexShrink: 0,
-                scrollSnapAlign: 'start',
-                width: 130,
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                textAlign: 'left',
-              }}
-            >
-              {/* Bord og border-radius på indre div — unngår button overflow:hidden-feil */}
-              <div style={{
-                borderRadius: 'var(--radius)',
-                overflow: 'hidden',
-                border: `2px solid ${isActive ? 'var(--color-accent)' : 'var(--color-border)'}`,
-                background: 'var(--color-surface-raised)',
-                transition: 'border-color 0.15s',
-              }}>
-                <div style={{ width: '100%', height: 82, background: 'var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                  {src
-                    ? <img src={src} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <span style={{ fontSize: 26 }}>🏛</span>
-                  }
-                </div>
-                <div style={{ padding: '4px 6px 6px' }}>
-                  <div style={{
-                    fontSize: 11, fontWeight: 600, lineHeight: 1.3,
-                    color: isActive ? 'var(--color-accent)' : 'var(--color-text)',
-                    overflow: 'hidden', display: '-webkit-box',
-                    WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                  }}>
-                    {b.name}
-                  </div>
-                  {b.year_built && (
-                    <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1 }}>{b.year_built}</div>
-                  )}
-                </div>
-              </div>
-            </button>
-          )
-        })}
-      </div>
-
       {/* Aktivt verk — bilde + info */}
-      <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-6)', alignItems: 'flex-start', minWidth: 0 }}>
-        <div style={{
-          width: 'min(200px, 42%)', aspectRatio: '4/3', flexShrink: 0,
-          background: 'var(--color-surface-raised)',
-          borderRadius: 'var(--radius)',
-          border: '1px solid var(--color-border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          overflow: 'hidden',
-        }}>
+      <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-4)', alignItems: 'flex-start', minWidth: 0 }}>
+        {/* Klikkbart bilde → lightbox */}
+        <div
+          onClick={() => activeSrc && setLightboxOpen(true)}
+          style={{
+            width: 'min(220px, 44%)', aspectRatio: '4/3', flexShrink: 0,
+            background: 'var(--color-surface-raised)',
+            borderRadius: 'var(--radius)',
+            border: '1px solid var(--color-border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden',
+            cursor: activeSrc ? 'zoom-in' : 'default',
+            position: 'relative',
+          }}
+        >
           {activeSrc ? (
-            <img src={activeSrc} alt={active.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <>
+              <img src={activeSrc} alt={active.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{
+                position: 'absolute', bottom: 6, right: 6,
+                background: 'rgba(0,0,0,0.45)', borderRadius: 4, padding: '2px 5px',
+                fontSize: 11, color: '#fff', lineHeight: 1.2,
+                pointerEvents: 'none',
+              }}>⛶</div>
+            </>
           ) : (
             <span style={{ fontSize: 48 }}>🏛</span>
           )}
@@ -1930,9 +1891,59 @@ function BuildingsSection({ buildings }) {
         </div>
       </div>
 
+      {/* Rutenett med thumbnails */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+        gap: 8,
+        marginBottom: 'var(--space-6)',
+      }}>
+        {buildings.map((b, i) => {
+          const src = b.image_path ? imageUrls[b.image_path] : null
+          const isActive = i === activeIdx
+          return (
+            <button
+              key={b.id}
+              onClick={() => setActiveIdx(i)}
+              style={{
+                background: 'transparent', border: 'none',
+                cursor: 'pointer', padding: 0, textAlign: 'left',
+              }}
+            >
+              <div style={{
+                borderRadius: 'var(--radius)', overflow: 'hidden',
+                border: `2px solid ${isActive ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                background: 'var(--color-surface-raised)',
+                transition: 'border-color 0.15s',
+              }}>
+                <div style={{ width: '100%', height: 72, background: 'var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {src
+                    ? <img src={src} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <span style={{ fontSize: 22 }}>🏛</span>
+                  }
+                </div>
+                <div style={{ padding: '3px 5px 5px' }}>
+                  <div style={{
+                    fontSize: 10, fontWeight: 600, lineHeight: 1.3,
+                    color: isActive ? 'var(--color-accent)' : 'var(--color-text)',
+                    overflow: 'hidden', display: '-webkit-box',
+                    WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                  }}>
+                    {b.name}
+                  </div>
+                  {b.year_built && (
+                    <div style={{ fontSize: 9, color: 'var(--color-text-muted)', marginTop: 1 }}>{b.year_built}</div>
+                  )}
+                </div>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
       {/* Leaflet-kart */}
       {mapBuildings.length > 0 && (
-        <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--color-border)', maxWidth: '100%' }}>
+        <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
           <MapContainer
             center={mapCenter}
             zoom={mapBuildings.length === 1 ? 13 : 7}
@@ -1943,7 +1954,7 @@ function BuildingsSection({ buildings }) {
               attribution='&copy; <a href="https://carto.com">CARTO</a>'
               url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             />
-            {mapBuildings.map((b, i) => {
+            {mapBuildings.map((b) => {
               const origIdx = buildings.findIndex(bb => bb.id === b.id)
               return (
                 <CircleMarker
@@ -1980,6 +1991,51 @@ function BuildingsSection({ buildings }) {
               )
             })}
           </MapContainer>
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxOpen && activeSrc && (
+        <div
+          onClick={() => setLightboxOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }}>
+            <img
+              src={activeSrc}
+              alt={active.name}
+              style={{
+                maxWidth: '90vw', maxHeight: '85vh',
+                objectFit: 'contain',
+                borderRadius: 'var(--radius)',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+              }}
+              onClick={e => e.stopPropagation()}
+            />
+            <div style={{
+              position: 'absolute', bottom: -32, left: 0, right: 0,
+              textAlign: 'center', color: 'rgba(255,255,255,0.8)',
+              fontSize: 13,
+            }}>
+              {active.name}{active.year_built ? ` (${active.year_built})` : ''}
+            </div>
+            <button
+              onClick={() => setLightboxOpen(false)}
+              style={{
+                position: 'absolute', top: -16, right: -16,
+                width: 32, height: 32, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',
+                color: '#fff', fontSize: 18, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                lineHeight: 1,
+              }}
+            >×</button>
+          </div>
         </div>
       )}
     </div>
