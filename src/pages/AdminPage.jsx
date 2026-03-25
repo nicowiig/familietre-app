@@ -31,6 +31,7 @@ export function AdminPage() {
             { id: 'tilganger',    label: 'Tilganger' },
             { id: 'rettelser',    label: 'Innsendte rettelser' },
             { id: 'datakvalitet', label: 'Datakvalitet' },
+            { id: 'hva-er-nytt',  label: 'Hva er nytt?' },
             { id: 'endringslogg', label: 'Endringslogg' },
           ].map(t => (
             <button
@@ -51,6 +52,7 @@ export function AdminPage() {
 
         {tab === 'tilganger'    && <AccessTab />}
         {tab === 'datakvalitet' && <DataQualityTab />}
+        {tab === 'hva-er-nytt'  && <ChangelogTab />}
         {tab === 'endringslogg' && <AuditLogTab />}
         {tab === 'rettelser' && (
           <div className="text-muted text-center" style={{ padding: 'var(--space-10)' }}>
@@ -452,6 +454,137 @@ function StatCard({ label, value, pct }) {
           <div style={{ width: `${pct}%`, background: 'var(--color-accent)', height: '100%', borderRadius: 4 }} />
         </div>
       )}
+    </div>
+  )
+}
+
+/* ===== Hva er nytt? (changelog_entries) ===== */
+
+const CL_TYPE_LABELS  = { feature: 'Ny funksjon', improvement: 'Forbedring', bugfix: 'Feilretting' }
+const CL_TYPE_COLORS  = {
+  feature:     { bg: '#e8f0f8', text: '#1a4a7a' },
+  improvement: { bg: '#e8f0e8', text: '#1a4a1a' },
+  bugfix:      { bg: '#f8ede8', text: '#7a2a1a' },
+}
+const BLANK_FORM = { entry_date: new Date().toISOString().slice(0, 10), entry_type: 'feature', title: '', description: '' }
+
+function ChangelogTab() {
+  const [entries, setEntries] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [form,    setForm]    = useState(BLANK_FORM)
+  const [saving,  setSaving]  = useState(false)
+  const [error,   setError]   = useState(null)
+
+  async function load() {
+    setLoading(true)
+    const { data } = await supabase.from('changelog_entries')
+      .select('*').order('entry_date', { ascending: false }).order('id', { ascending: false })
+    setEntries(data || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  async function handleSave(e) {
+    e.preventDefault()
+    if (!form.title.trim() || !form.description.trim()) return
+    setSaving(true); setError(null)
+    const { error: err } = await supabase.from('changelog_entries').insert({
+      entry_date:  form.entry_date,
+      entry_type:  form.entry_type,
+      title:       form.title.trim(),
+      description: form.description.trim(),
+    })
+    if (err) { setError(err.message); setSaving(false); return }
+    setForm(BLANK_FORM)
+    setSaving(false)
+    load()
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm('Slette denne entryen?')) return
+    await supabase.from('changelog_entries').delete().eq('id', id)
+    load()
+  }
+
+  const inputStyle = {
+    width: '100%', padding: 'var(--space-2) var(--space-3)', boxSizing: 'border-box',
+    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)',
+    borderRadius: 'var(--radius)', color: 'var(--color-text)', fontSize: 'var(--text-sm)',
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+      {/* Legg til ny entry */}
+      <div className="card">
+        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-base)', marginBottom: 'var(--space-4)' }}>
+          Legg til ny entry
+        </h3>
+        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+            <div>
+              <label className="text-xs text-muted" style={{ display: 'block', marginBottom: 4 }}>Dato</label>
+              <input type="date" value={form.entry_date} onChange={e => setForm(f => ({ ...f, entry_date: e.target.value }))} style={inputStyle} required />
+            </div>
+            <div>
+              <label className="text-xs text-muted" style={{ display: 'block', marginBottom: 4 }}>Type</label>
+              <select value={form.entry_type} onChange={e => setForm(f => ({ ...f, entry_type: e.target.value }))} style={inputStyle}>
+                <option value="feature">Ny funksjon</option>
+                <option value="improvement">Forbedring</option>
+                <option value="bugfix">Feilretting</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-muted" style={{ display: 'block', marginBottom: 4 }}>Tittel</label>
+            <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} style={inputStyle} placeholder="F.eks. «Arkitektoniske verk»" required />
+          </div>
+          <div>
+            <label className="text-xs text-muted" style={{ display: 'block', marginBottom: 4 }}>Beskrivelse</label>
+            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }} placeholder="Hva er nytt og hvorfor er det nyttig?" required />
+          </div>
+          {error && <p style={{ color: 'var(--color-error)', fontSize: 'var(--text-xs)' }}>{error}</p>}
+          <div>
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? 'Lagrer…' : 'Publiser'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Eksisterende entries */}
+      <div>
+        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-base)', marginBottom: 'var(--space-4)' }}>
+          Publiserte entries
+        </h3>
+        {loading ? <LoadingSpinner text="Laster…" /> : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            {entries.map(e => {
+              const c = CL_TYPE_COLORS[e.entry_type] || CL_TYPE_COLORS.feature
+              return (
+                <div key={e.id} className="card" style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: c.bg, color: c.text }}>
+                        {CL_TYPE_LABELS[e.entry_type] || e.entry_type}
+                      </span>
+                      <span className="text-xs text-muted">{new Date(e.entry_date).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    </div>
+                    <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{e.title}</div>
+                    <div className="text-xs text-muted" style={{ marginTop: 2 }}>{e.description}</div>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(e.id)}
+                    style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)', padding: '4px 8px' }}
+                  >
+                    Slett
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
