@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { Layout } from '../components/Layout'
@@ -34,7 +34,10 @@ export function SearchPage() {
   const [total,   setTotal]   = useState(0)
   const [loading, setLoading] = useState(false)
   const [page,    setPage]    = useState(0)
+  const [filterOpen, setFilterOpen] = useState(null)  // 'surname' | 'birthplace' | 'occupation' | null
+  const [filterDraft, setFilterDraft] = useState('')
   const debounceRef = useRef()
+  const filterInputRef = useRef()
 
   // Hent person-detaljer (persons + fødsel/død) for en liste med person_ids
   async function fetchPersonDetails(ids, namesByPersonId = {}) {
@@ -182,6 +185,21 @@ export function SearchPage() {
     setInput('')
   }
 
+  function openFilter(type) {
+    if (filterOpen === type) { setFilterOpen(null); return }
+    setFilterOpen(type)
+    setFilterDraft('')
+    setTimeout(() => filterInputRef.current?.focus(), 50)
+  }
+
+  function applyFilter(type, value) {
+    if (!value.trim()) return
+    setParams({ [type]: value.trim() })
+    setInput('')
+    setFilterOpen(null)
+    setFilterDraft('')
+  }
+
   const filterMeta = activeFilter ? FILTER_META[activeFilter.type] : null
   const resultHint = filterMeta ? filterMeta.hint(activeFilter.value) : query ? `på «${query}»` : ''
 
@@ -190,7 +208,7 @@ export function SearchPage() {
       <div className="page-container" style={{ paddingTop: 'var(--space-10)', paddingBottom: 'var(--space-16)' }}>
 
         {/* Søkefelt */}
-        <form onSubmit={handleSubmit} style={{ marginBottom: activeFilter ? 'var(--space-4)' : 'var(--space-8)', maxWidth: 480 }}>
+        <form onSubmit={handleSubmit} style={{ marginBottom: 'var(--space-3)', maxWidth: 480 }}>
           <div className="search-wrapper">
             <span className="search-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -207,6 +225,51 @@ export function SearchPage() {
             />
           </div>
         </form>
+
+        {/* Filterkategori-chips */}
+        {!activeFilter && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', alignItems: 'center' }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginRight: 2 }}>Filtrer på:</span>
+            {Object.entries(FILTER_META).map(([type, meta]) => (
+              <button
+                key={type}
+                onClick={() => openFilter(type)}
+                style={{
+                  fontSize: 'var(--text-xs)', fontWeight: 600, padding: '4px 10px',
+                  borderRadius: 99, cursor: 'pointer',
+                  background: filterOpen === type ? 'rgba(122,58,26,0.12)' : 'var(--color-bg)',
+                  color: filterOpen === type ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                  border: filterOpen === type ? '1px solid rgba(122,58,26,0.4)' : '1px solid var(--color-border)',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {meta.label} {filterOpen === type ? '▲' : '▼'}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Inline filterinput */}
+        {filterOpen && !activeFilter && (
+          <form
+            onSubmit={e => { e.preventDefault(); applyFilter(filterOpen, filterDraft) }}
+            style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', maxWidth: 400, alignItems: 'center' }}
+          >
+            <input
+              ref={filterInputRef}
+              value={filterDraft}
+              onChange={e => setFilterDraft(e.target.value)}
+              placeholder={`Filtrer på ${FILTER_META[filterOpen].label.toLowerCase()}…`}
+              style={{ flex: 1, height: 36, fontSize: 'var(--text-sm)', paddingLeft: 'var(--space-3)', borderRadius: 8, border: '1px solid var(--color-border)', background: 'var(--color-bg-subtle)' }}
+            />
+            <button type="submit" className="btn btn-primary" style={{ height: 36, padding: '0 var(--space-4)', fontSize: 'var(--text-sm)' }}>
+              Søk
+            </button>
+            <button type="button" onClick={() => setFilterOpen(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: 'var(--text-lg)', lineHeight: 1 }}>
+              ✕
+            </button>
+          </form>
+        )}
 
         {/* Aktivt filter-chip */}
         {activeFilter && (
