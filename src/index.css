@@ -864,6 +864,20 @@ label {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 }
 
+/* ===== Forsideoppsettet ===== */
+.home-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: var(--space-10);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .home-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===== Innloggingsside ===== */
 .login-page {
   min-height: 100vh;

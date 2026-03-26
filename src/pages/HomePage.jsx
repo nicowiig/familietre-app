@@ -55,7 +55,7 @@ export function HomePage() {
       </div>
 
       <div className="page-container" style={{ paddingTop: 'var(--space-10)', paddingBottom: 'var(--space-16)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 'var(--space-10)', alignItems: 'start' }}>
+        <div className="home-layout-grid">
 
           {/* Venstre kolonne: artikler */}
           <div>
