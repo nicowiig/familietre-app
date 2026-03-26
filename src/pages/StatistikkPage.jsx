@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Layout } from '../components/Layout'
 import { supabase } from '../supabase'
 
@@ -201,7 +202,8 @@ function TopSurnames() {
   return (
     <div className="card">
       <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-lg)', marginBottom: 'var(--space-5)' }}>Vanligste etternavn</h3>
-      <TopList items={items.map(i => ({ label: i.name, count: i.count }))} max={max} />
+      <TopList items={items.map(i => ({ label: i.name, count: i.count }))} max={max}
+        getLink={item => `/søk?surname=${encodeURIComponent(item.label)}`} />
     </div>
   )
 }
@@ -235,7 +237,8 @@ function TopBirthCities() {
       <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-lg)', marginBottom: 'var(--space-5)' }}>Vanligste fødselssteder</h3>
       {items.length === 0
         ? <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Ingen stedsdata registrert.</p>
-        : <TopList items={items.map(i => ({ label: i.name, count: i.count }))} max={max} />
+        : <TopList items={items.map(i => ({ label: i.name, count: i.count }))} max={max}
+            getLink={item => `/søk?birthplace=${encodeURIComponent(item.label)}`} />
       }
     </div>
   )
@@ -269,30 +272,40 @@ function TopOccupations() {
       <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-lg)', marginBottom: 'var(--space-5)' }}>Vanligste yrker</h3>
       {items.length === 0
         ? <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Ingen yrkesdata registrert.</p>
-        : <TopList items={items.map(i => ({ label: i.label, count: i.count }))} max={max} />
+        : <TopList items={items.map(i => ({ label: i.label, count: i.count }))} max={max}
+            getLink={item => `/søk?occupation=${encodeURIComponent(item.label)}`} />
       }
     </div>
   )
 }
 
 // ─── Felles listehjelper ──────────────────────────────────
-function TopList({ items, max }) {
+function TopList({ items, max, getLink }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-      {items.map(({ label, count }, i) => (
-        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-light)', width: 16, flexShrink: 0, textAlign: 'right' }}>{i + 1}.</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', marginBottom: 2 }}>
-              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
-              <span style={{ color: 'var(--color-text-muted)', flexShrink: 0, marginLeft: 4 }}>{count}</span>
-            </div>
-            <div style={{ height: 4, background: 'var(--color-bg)', borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${count / max * 100}%`, background: 'var(--color-accent)', borderRadius: 2, opacity: 0.6 }} />
+      {items.map(({ label, count }, i) => {
+        const href = getLink ? getLink({ label, count }) : null
+        const labelEl = href
+          ? <Link to={href} style={{ color: 'inherit', textDecoration: 'none' }}
+              onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+              onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+            >{label}</Link>
+          : label
+        return (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-light)', width: 16, flexShrink: 0, textAlign: 'right' }}>{i + 1}.</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', marginBottom: 2 }}>
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{labelEl}</span>
+                <span style={{ color: 'var(--color-text-muted)', flexShrink: 0, marginLeft: 4 }}>{count}</span>
+              </div>
+              <div style={{ height: 4, background: 'var(--color-bg)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${count / max * 100}%`, background: 'var(--color-accent)', borderRadius: 2, opacity: 0.6 }} />
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
