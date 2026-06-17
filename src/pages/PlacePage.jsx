@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
+import { LinkPreview } from '../components/LinkPreview'
 
 // Markdown-renderer — støtter overskrifter, bold, kursiv, lenker, sitater, horisontale linjer, tabeller
 function renderInline(text) {
@@ -24,10 +25,11 @@ function renderInline(text) {
       const linkText = match[1]
       const url = match[2]
       if (url.startsWith('/')) {
+        // Interne lenker med preview-popover
         result.push(
-          <Link key={key++} to={url} style={{ color: 'var(--color-accent)', textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}>
+          <LinkPreview key={key++} to={url}>
             {linkText}
-          </Link>
+          </LinkPreview>
         )
       } else {
         result.push(
