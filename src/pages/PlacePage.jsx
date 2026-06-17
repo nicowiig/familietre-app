@@ -4,44 +4,156 @@ import { supabase } from '../supabase'
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 
-// Enkel Markdown-renderer — støtter ## overskrifter, ### overskrifter, **bold**, avsnitt
+// Markdown-renderer — støtter overskrifter, bold, kursiv, lenker, sitater, horisontale linjer, tabeller
+function renderInline(text) {
+  // Håndterer: [lenketekst](/url), **bold**, *kursiv*
+  const parts = text.split(/(\[([^\]]+)\]\(([^)]+)\)|\*\*[^*]+\*\*|\*[^*]+\*)/)
+  const result = []
+  let i = 0
+  while (i < parts.length) {
+    const p = parts[i]
+    if (!p) { i++; continue }
+    // Lenke-match: split gir [fullMatch, linkText, url] i påfølgende grupper
+    if (p.startsWith('[') && p.includes('](')) {
+      const linkMatch = p.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
+      if (linkMatch) {
+        const [, linkText, url] = linkMatch
+        // Interne lenker (/person/..., /place/...) → React Router Link
+        if (url.startsWith('/')) {
+          result.push(
+            <Link key={i} to={url} style={{ color: 'var(--color-accent)', textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}>
+              {linkText}
+            </Link>
+          )
+        } else {
+          result.push(
+            <a key={i} href={url} target="_blank" rel="noreferrer" style={{ color: 'var(--color-accent)', textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}>
+              {linkText}
+            </a>
+          )
+        }
+        i++; continue
+      }
+    }
+    if (p.startsWith('**') && p.endsWith('**')) {
+      result.push(<strong key={i}>{p.slice(2, -2)}</strong>)
+    } else if (p.startsWith('*') && p.endsWith('*') && !p.startsWith('**')) {
+      result.push(<em key={i}>{p.slice(1, -1)}</em>)
+    } else {
+      result.push(p)
+    }
+    i++
+  }
+  return result
+}
+
 function renderMarkdown(md) {
   if (!md) return null
   const lines = md.split('\n')
   const elements = []
   let key = 0
+  let i = 0
 
-  for (let i = 0; i < lines.length; i++) {
+  while (i < lines.length) {
     const line = lines[i]
 
+    // Horisontal linje
+    if (line.trim() === '---' || line.trim() === '***') {
+      elements.push(
+        <hr key={key++} style={{ border: 'none', borderTop: '1px solid var(--color-border)', margin: 'var(--space-6) 0' }} />
+      )
+      i++; continue
+    }
+
+    // Overskrifter
     if (line.startsWith('### ')) {
       elements.push(
         <h3 key={key++} style={{ fontSize: 'var(--text-base)', fontWeight: 600, marginTop: 'var(--space-5)', marginBottom: 'var(--space-1)', color: 'var(--color-text)' }}>
-          {line.slice(4)}
+          {renderInline(line.slice(4))}
         </h3>
       )
-    } else if (line.startsWith('## ')) {
+      i++; continue
+    }
+    if (line.startsWith('## ')) {
       elements.push(
         <h2 key={key++} style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginTop: 'var(--space-6)', marginBottom: 'var(--space-2)', color: 'var(--color-text)' }}>
-          {line.slice(3)}
+          {renderInline(line.slice(3))}
         </h2>
       )
-    } else if (line.trim() === '') {
-      elements.push(<div key={key++} style={{ height: 'var(--space-3)' }} />)
-    } else {
-      // Inline bold: **text**
-      const parts = line.split(/(\*\*[^*]+\*\*)/)
-      const rendered = parts.map((p, j) =>
-        p.startsWith('**') && p.endsWith('**')
-          ? <strong key={j}>{p.slice(2, -2)}</strong>
-          : p
-      )
-      elements.push(
-        <p key={key++} style={{ margin: 0, lineHeight: 1.7, color: 'var(--color-text)' }}>
-          {rendered}
-        </p>
-      )
+      i++; continue
     }
+
+    // Sitat (blockquote)
+    if (line.startsWith('> ')) {
+      const quoteLines = []
+      while (i < lines.length && lines[i].startsWith('> ')) {
+        quoteLines.push(lines[i].slice(2))
+        i++
+      }
+      elements.push(
+        <blockquote key={key++} style={{ borderLeft: '3px solid var(--color-accent)', paddingLeft: 'var(--space-4)', margin: 'var(--space-4) 0', color: 'var(--color-text-muted)', fontStyle: 'italic', lineHeight: 1.7 }}>
+          {quoteLines.map((ql, qi) => <p key={qi} style={{ margin: qi > 0 ? 'var(--space-2) 0 0 0' : 0 }}>{renderInline(ql)}</p>)}
+        </blockquote>
+      )
+      continue
+    }
+
+    // Tabell
+    if (line.includes('|') && line.trim().startsWith('|')) {
+      const tableLines = []
+      while (i < lines.length && lines[i].includes('|') && lines[i].trim().startsWith('|')) {
+        tableLines.push(lines[i])
+        i++
+      }
+      // Filtrer ut separator-linjen (|---|---|)
+      const dataRows = tableLines.filter(tl => !tl.match(/^\|[\s\-:|]+\|$/))
+      if (dataRows.length > 0) {
+        const parseRow = (row) => row.split('|').slice(1, -1).map(c => c.trim())
+        const headers = parseRow(dataRows[0])
+        const rows = dataRows.slice(1).map(parseRow)
+        elements.push(
+          <div key={key++} style={{ overflowX: 'auto', margin: 'var(--space-4) 0' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
+              <thead>
+                <tr>
+                  {headers.map((h, hi) => (
+                    <th key={hi} style={{ textAlign: 'left', padding: 'var(--space-2) var(--space-3)', borderBottom: '2px solid var(--color-border)', fontWeight: 600, color: 'var(--color-text)' }}>
+                      {renderInline(h)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, ri) => (
+                  <tr key={ri}>
+                    {row.map((cell, ci) => (
+                      <td key={ci} style={{ padding: 'var(--space-2) var(--space-3)', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text)' }}>
+                        {renderInline(cell)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      }
+      continue
+    }
+
+    // Tom linje
+    if (line.trim() === '') {
+      elements.push(<div key={key++} style={{ height: 'var(--space-3)' }} />)
+      i++; continue
+    }
+
+    // Vanlig avsnitt med inline-formatering
+    elements.push(
+      <p key={key++} style={{ margin: 0, lineHeight: 1.7, color: 'var(--color-text)' }}>
+        {renderInline(line)}
+      </p>
+    )
+    i++
   }
   return elements
 }
