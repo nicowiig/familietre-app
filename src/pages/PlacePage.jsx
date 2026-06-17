@@ -401,12 +401,9 @@ export function PlacePage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               {persons.map(p => (
                 <div key={p.person_id} style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                  <Link
-                    to={`/person/${p.person_id}`}
-                    style={{ color: 'var(--color-accent)', fontWeight: 500, textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}
-                  >
+                  <LinkPreview to={`/person/${p.person_id}`}>
                     {personNames[p.person_id] || p.person_id}
-                  </Link>
+                  </LinkPreview>
                   {p.role_note && (
                     <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
                       — {p.role_note}

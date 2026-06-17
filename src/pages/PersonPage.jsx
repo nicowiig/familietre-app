@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
+import { LinkPreview } from '../components/LinkPreview'
 import { SilhouetteSvg } from '../components/PersonCard'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -740,7 +741,7 @@ function renderBiographyParagraph(text, paraKey) {
     const href = match[1]
     const label = match[2]
     if (href.startsWith('/')) {
-      parts.push(<Link key={match.index} to={href}>{label}</Link>)
+      parts.push(<LinkPreview key={match.index} to={href}>{label}</LinkPreview>)
     } else {
       parts.push(<a key={match.index} href={href} target="_blank" rel="noreferrer">{label}</a>)
     }
@@ -1234,12 +1235,11 @@ function TimelineEventRow({ event }) {
   }
 
   const labelNode = eventPersonId ? (
-    <Link
+    <LinkPreview
       to={`/person/${eventPersonId}`}
-      style={{ fontWeight: 500, color: 'var(--color-text)', textDecoration: 'underline', textDecorationColor: 'var(--color-border)' }}
     >
       {label}
-    </Link>
+    </LinkPreview>
   ) : (
     <span style={{ fontWeight: 500 }}>{label}</span>
   )
@@ -1486,9 +1486,9 @@ function renderWithPersonLinks(text, nameMap) {
     if (n) {
       const name = [n.given_name, n.surname].filter(Boolean).join(' ')
       return (
-        <Link key={i} to={`/person/${part}`} style={{ color: 'var(--color-accent)', textDecoration: 'underline', fontStyle: 'normal' }}>
+        <LinkPreview key={i} to={`/person/${part}`}>
           {name}
-        </Link>
+        </LinkPreview>
       )
     }
     return part
