@@ -7,44 +7,52 @@ import { LoadingSpinner } from '../components/LoadingSpinner'
 // Markdown-renderer — støtter overskrifter, bold, kursiv, lenker, sitater, horisontale linjer, tabeller
 function renderInline(text) {
   // Håndterer: [lenketekst](/url), **bold**, *kursiv*
-  const parts = text.split(/(\[([^\]]+)\]\(([^)]+)\)|\*\*[^*]+\*\*|\*[^*]+\*)/)
+  const regex = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g
   const result = []
-  let i = 0
-  while (i < parts.length) {
-    const p = parts[i]
-    if (!p) { i++; continue }
-    // Lenke-match: split gir [fullMatch, linkText, url] i påfølgende grupper
-    if (p.startsWith('[') && p.includes('](')) {
-      const linkMatch = p.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
-      if (linkMatch) {
-        const [, linkText, url] = linkMatch
-        // Interne lenker (/person/..., /place/...) → React Router Link
-        if (url.startsWith('/')) {
-          result.push(
-            <Link key={i} to={url} style={{ color: 'var(--color-accent)', textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}>
-              {linkText}
-            </Link>
-          )
-        } else {
-          result.push(
-            <a key={i} href={url} target="_blank" rel="noreferrer" style={{ color: 'var(--color-accent)', textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}>
-              {linkText}
-            </a>
-          )
-        }
-        i++; continue
+  let lastIndex = 0
+  let match
+  let key = 0
+
+  while ((match = regex.exec(text)) !== null) {
+    // Tekst før matchen
+    if (match.index > lastIndex) {
+      result.push(text.slice(lastIndex, match.index))
+    }
+
+    if (match[1] && match[2]) {
+      // Lenke: [tekst](url)
+      const linkText = match[1]
+      const url = match[2]
+      if (url.startsWith('/')) {
+        result.push(
+          <Link key={key++} to={url} style={{ color: 'var(--color-accent)', textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}>
+            {linkText}
+          </Link>
+        )
+      } else {
+        result.push(
+          <a key={key++} href={url} target="_blank" rel="noreferrer" style={{ color: 'var(--color-accent)', textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}>
+            {linkText}
+          </a>
+        )
       }
+    } else if (match[3]) {
+      // Bold: **tekst**
+      result.push(<strong key={key++}>{match[3]}</strong>)
+    } else if (match[4]) {
+      // Kursiv: *tekst*
+      result.push(<em key={key++}>{match[4]}</em>)
     }
-    if (p.startsWith('**') && p.endsWith('**')) {
-      result.push(<strong key={i}>{p.slice(2, -2)}</strong>)
-    } else if (p.startsWith('*') && p.endsWith('*') && !p.startsWith('**')) {
-      result.push(<em key={i}>{p.slice(1, -1)}</em>)
-    } else {
-      result.push(p)
-    }
-    i++
+
+    lastIndex = match.index + match[0].length
   }
-  return result
+
+  // Tekst etter siste match
+  if (lastIndex < text.length) {
+    result.push(text.slice(lastIndex))
+  }
+
+  return result.length > 0 ? result : [text]
 }
 
 function renderMarkdown(md) {
