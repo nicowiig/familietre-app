@@ -109,13 +109,14 @@ export function PersonPage() {
       // Hent samboere: alle andre som har bodd på de samme adressene
       const myAddressIds = [...new Set(flatAddresses.map(a => a.address_id).filter(Boolean))]
       if (myAddressIds.length > 0) {
-        const { data: coRes } = await supabase
+        const { data: coRes, error: coErr } = await supabase
           .from('address_periods')
           .select('entity_id, address_id, date_from, date_to, period_type')
           .eq('entity_type', 'person')
           .in('address_id', myAddressIds)
-          .in('period_type', ['residence', 'childhood_home', 'student_housing'])
+          .or('period_type.eq.residence,period_type.eq.childhood_home,period_type.eq.student_housing')
           .neq('entity_id', personId)
+        if (coErr) console.warn('Co-residents query error:', coErr)
         if (coRes && coRes.length > 0) {
           // Hent navn for alle co-residents
           const coIds = [...new Set(coRes.map(r => r.entity_id))]
