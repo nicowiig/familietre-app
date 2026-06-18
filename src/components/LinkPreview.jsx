@@ -12,7 +12,7 @@ async function fetchPersonPreview(personId) {
     supabase.from('persons').select('person_id, sex, is_living').eq('person_id', personId).single(),
     supabase.from('person_names').select('given_name, middle_name, surname, is_preferred').eq('person_id', personId),
     supabase.from('person_facts').select('fact_type, date_year, place_city, place_raw').eq('person_id', personId).in('fact_type', ['BIRT', 'DEAT']),
-    supabase.from('person_photos').select('storage_path, is_primary').eq('person_id', personId).eq('is_primary', true).limit(1),
+    supabase.from('person_photos').select('drive_url, is_primary').eq('person_id', personId).order('photo_order').limit(5),
   ])
 
   if (!person) return null
@@ -33,12 +33,13 @@ async function fetchPersonPreview(personId) {
   else if (birthYear && person.is_living) lifespan = `f. ${birthYear}`
   else if (birthYear) lifespan = `f. ${birthYear}`
 
-  // Bilde
+  // Bilde — bruk primærbilde, fallback til første
   let photoUrl = null
-  if (photos && photos.length > 0) {
+  const primaryPhoto = (photos || []).find(p => p.is_primary) || (photos || [])[0]
+  if (primaryPhoto) {
     const { data: signed } = await supabase.storage
       .from('person-photos')
-      .createSignedUrl(photos[0].storage_path, 3600)
+      .createSignedUrl(primaryPhoto.drive_url, 3600)
     photoUrl = signed?.signedUrl || null
   }
 
