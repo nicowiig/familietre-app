@@ -1032,6 +1032,57 @@ label {
   user-select: none;
 }
 
+/* ===== Editable Dates & Confirm ===== */
+.date-editable {
+  cursor: pointer;
+  border-bottom: 1px dashed transparent;
+  transition: border-color 0.15s;
+}
+.date-editable:hover {
+  border-bottom-color: var(--color-accent);
+}
+.date-unconfirmed {
+  color: var(--color-text-light);
+  border-bottom: 1px dashed var(--color-border);
+}
+.date-inline-input {
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background: var(--color-bg-alt);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm, 4px);
+  padding: 1px 6px;
+  width: 80px;
+  outline: none;
+}
+.confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border);
+  background: none;
+  color: var(--color-text-light);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+.confirm-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.confirm-btn.confirmed {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
+}
+
 /* ===== Link Preview Popover ===== */
 .link-preview-popover {
   position: absolute;

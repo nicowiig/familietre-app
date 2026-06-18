@@ -85,6 +85,7 @@ export function PersonPage() {
         date_from:    p.date_from,
         date_to:      p.date_to,
         is_current:   p.is_current,
+        is_confirmed: p.is_confirmed ?? false,
         employer:     p.employer,
         department:   p.department,
         notes:        p.notes,
@@ -2237,16 +2238,82 @@ function renderNoteWithLinks(text) {
   return parts.length > 1 ? parts : text
 }
 
+function EditableDate({ value, periodId, field, onSaved, isConfirmed }) {
+  const [editing, setEditing] = useState(false)
+  const [input, setInput] = useState(value || '')
+  const { user } = useAuth()
+
+  async function save() {
+    setEditing(false)
+    const trimmed = input.trim()
+    if (trimmed === (value || '')) return
+    const { error } = await supabase
+      .from('address_periods')
+      .update({ [field]: trimmed || null })
+      .eq('id', periodId)
+    if (!error && onSaved) onSaved(field, trimmed || null)
+  }
+
+  if (!user) return <span className={isConfirmed ? '' : 'date-unconfirmed'}>{formatAddrDate(value)}</span>
+
+  if (editing) {
+    return (
+      <input
+        className="date-inline-input"
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        onBlur={save}
+        onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
+        autoFocus
+        placeholder="ÅÅÅÅ-MM"
+      />
+    )
+  }
+
+  return (
+    <span
+      className={`date-editable ${isConfirmed ? '' : 'date-unconfirmed'}`}
+      onClick={() => { setInput(value || ''); setEditing(true) }}
+      title="Klikk for å redigere"
+    >
+      {formatAddrDate(value) || '?'}
+    </span>
+  )
+}
+
+function ConfirmButton({ periodId, isConfirmed, onToggle }) {
+  const { user } = useAuth()
+  if (!user) return null
+
+  async function toggle() {
+    const newVal = !isConfirmed
+    const { error } = await supabase
+      .from('address_periods')
+      .update({ is_confirmed: newVal })
+      .eq('id', periodId)
+    if (!error && onToggle) onToggle(newVal)
+  }
+
+  return (
+    <button
+      className={`confirm-btn ${isConfirmed ? 'confirmed' : ''}`}
+      onClick={toggle}
+      title={isConfirmed ? 'Bekreftet — klikk for å fjerne' : 'Klikk for å bekrefte'}
+    >
+      ✓
+    </button>
+  )
+}
+
 function AddressItem({ addr, deathYear, coResidents = [] }) {
+  const [dateFrom, setDateFrom] = useState(addr.date_from)
+  const [dateTo_, setDateTo_] = useState(addr.date_to)
+  const [confirmed, setConfirmed] = useState(addr.is_confirmed)
+
   const typeLabel = ADDR_TYPE_LABELS[addr.address_type] || addr.address_type || 'Bosted'
   const isBirthPlace = addr.address_type === 'birth_place'
-  const dateTo = isBirthPlace ? null : (addr.date_to ?? addr.effective_date_to)
-  const duration  = isBirthPlace ? null : calcYears(addr.date_from, dateTo, deathYear)
-  const periodParts = isBirthPlace
-    ? [formatAddrDate(addr.date_from)].filter(Boolean)
-    : [formatAddrDate(addr.date_from), formatAddrDate(dateTo)].filter(Boolean)
-  const periodStr = periodParts.join(' – ')
-  const period    = duration ? `${periodStr} · ${duration}` : periodStr
+  const dateTo = isBirthPlace ? null : (dateTo_ ?? addr.effective_date_to)
+  const duration  = isBirthPlace ? null : calcYears(dateFrom, dateTo, deathYear)
   const streetPart = addr.street_name ? `${addr.street_name} ${addr.street_number || ''}`.trim() : null
   const postalPart = [addr.postal_code, addr.city].filter(Boolean).join(' ')
   const cityFallback = addr.city
@@ -2276,7 +2343,29 @@ function AddressItem({ addr, deathYear, coResidents = [] }) {
 
   return (
     <div className="timeline-item">
-      {period && <div className="timeline-date">{period}</div>}
+      <div className="timeline-date" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        <EditableDate
+          value={dateFrom}
+          periodId={addr.id}
+          field="date_from"
+          isConfirmed={confirmed}
+          onSaved={(f, v) => setDateFrom(v)}
+        />
+        {!isBirthPlace && (
+          <>
+            <span style={{ color: 'var(--color-text-muted)' }}> – </span>
+            <EditableDate
+              value={dateTo_}
+              periodId={addr.id}
+              field="date_to"
+              isConfirmed={confirmed}
+              onSaved={(f, v) => setDateTo_(v)}
+            />
+          </>
+        )}
+        {duration && <span style={{ color: 'var(--color-text-muted)' }}> · {duration}</span>}
+        <ConfirmButton periodId={addr.id} isConfirmed={confirmed} onToggle={setConfirmed} />
+      </div>
       {display && (
         <div className="timeline-title">
           <a
