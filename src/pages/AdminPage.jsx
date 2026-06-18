@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { Link } from 'react-router-dom'
+import { LinkPreview } from '../components/LinkPreview'
 
 export function AdminPage() {
   const { isAdmin } = useAuth()
@@ -207,9 +208,9 @@ function AccessCard({ row, linkedPersonName, onApprove, onReject, onLink, onUnli
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 <span className="text-sm text-muted">Koblet til:</span>
-                <Link to={`/person/${row.person_id}`} style={{ color: 'var(--color-accent)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+                <LinkPreview to={`/person/${row.person_id}`}>
                   {linkedPersonName || row.person_id}
-                </Link>
+                </LinkPreview>
               </div>
               <button className="btn btn-ghost btn-sm" style={{ color: 'var(--color-error)' }} onClick={onUnlink}>
                 Koble fra
@@ -382,10 +383,9 @@ function PersonLinkSearch({ user, onLink }) {
               gap: 'var(--space-3)',
             }}>
               <div>
-                <Link to={`/person/${s.person_id}`} target="_blank"
-                  style={{ fontWeight: 600, color: 'var(--color-accent)', fontSize: 'var(--text-sm)' }}>
+                <LinkPreview to={`/person/${s.person_id}`}>
                   {fullName}
-                </Link>
+                </LinkPreview>
                 {lifespan && <span className="text-xs text-muted" style={{ marginLeft: 'var(--space-2)' }}>{lifespan}</span>}
                 {s.title && <div className="text-xs text-muted">{s.title}</div>}
               </div>
@@ -759,7 +759,7 @@ function AuditLogTab() {
                           <span style={{ color: 'var(--color-text-muted)' }}>{auditDisplayUser(row.changed_by)}</span>
                           {name && (
                             <><span style={{ color: 'var(--color-text-muted)' }}> · </span>
-                            <Link to={`/person/${row.person_id}`} style={{ color: 'var(--color-accent)', fontWeight: 600, textDecoration: 'none' }}>{name}</Link></>
+                            <LinkPreview to={`/person/${row.person_id}`}>{name}</LinkPreview></>
                           )}
                           {table && <span style={{ color: 'var(--color-text-muted)' }}> · {table}</span>}
                         </div>

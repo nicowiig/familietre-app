@@ -2240,12 +2240,9 @@ function AddressItem({ addr, deathYear }) {
         </div>
       )}
       {addr.place_article_id && (
-        <Link
-          to={`/place/${addr.place_article_id}`}
-          style={{ fontSize: 'var(--text-xs)', color: '#b45309', textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}
-        >
+        <LinkPreview to={`/place/${addr.place_article_id}`}>
           Les mer om {addr.place_article_title} →
-        </Link>
+        </LinkPreview>
       )}
     </div>
   )
