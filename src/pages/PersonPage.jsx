@@ -2169,12 +2169,37 @@ function formatAddrDate(val) {
   return s
 }
 
+function renderNoteWithLinks(text) {
+  if (!text) return null
+  const parts = []
+  let lastIndex = 0
+  let match
+  TAG_RE.lastIndex = 0
+  while ((match = TAG_RE.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
+    const href = match[1]
+    const label = match[2]
+    if (href.startsWith('/')) {
+      parts.push(<LinkPreview key={match.index} to={href}>{label}</LinkPreview>)
+    } else {
+      parts.push(<a key={match.index} href={href} target="_blank" rel="noreferrer">{label}</a>)
+    }
+    lastIndex = match.index + match[0].length
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+  return parts
+}
+
 function AddressItem({ addr, deathYear }) {
   const typeLabel = ADDR_TYPE_LABELS[addr.address_type] || addr.address_type || 'Bosted'
-  const dateTo = addr.date_to ?? addr.effective_date_to
-  const duration  = calcYears(addr.date_from, dateTo, deathYear)
-  const periodParts = [formatAddrDate(addr.date_from), formatAddrDate(dateTo)].filter(Boolean).join(' – ')
-  const period    = duration ? `${periodParts} · ${duration}` : periodParts
+  const isBirthPlace = addr.address_type === 'birth_place'
+  const dateTo = isBirthPlace ? null : (addr.date_to ?? addr.effective_date_to)
+  const duration  = isBirthPlace ? null : calcYears(addr.date_from, dateTo, deathYear)
+  const periodParts = isBirthPlace
+    ? [formatAddrDate(addr.date_from)].filter(Boolean)
+    : [formatAddrDate(addr.date_from), formatAddrDate(dateTo)].filter(Boolean)
+  const periodStr = periodParts.join(' – ')
+  const period    = duration ? `${periodStr} · ${duration}` : periodStr
   const streetPart = addr.street_name ? `${addr.street_name} ${addr.street_number || ''}`.trim() : null
   const postalPart = [addr.postal_code, addr.city].filter(Boolean).join(' ')
   const cityFallback = addr.city
@@ -2211,7 +2236,7 @@ function AddressItem({ addr, deathYear }) {
       )}
       {noteText && (
         <div className="timeline-place" style={{ fontStyle: 'italic', color: 'var(--color-text-light)' }}>
-          {noteText}
+          {renderNoteWithLinks(noteText)}
         </div>
       )}
       {addr.place_article_id && (
