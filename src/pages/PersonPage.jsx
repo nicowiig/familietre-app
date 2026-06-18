@@ -43,6 +43,7 @@ export function PersonPage() {
   const [spouseNames,   setSpouseNames]   = useState({}) // family_id → formatted spouse name
   const [childBirths,   setChildBirths]   = useState([]) // [{name, sex, year, month, day, childId}]
   const [auditLog,      setAuditLog]      = useState([])
+  const [coResidents,   setCoResidents]   = useState({}) // address_id → [{person_id, name, date_from, date_to}]
   const [loading,       setLoading]       = useState(true)
   const [notFound,      setNotFound]      = useState(false)
   const [buildings,     setBuildings]     = useState([])
@@ -104,6 +105,39 @@ export function PersonPage() {
         place_article_title: p.addresses?.place_articles?.[0]?.title || null,
       }))
       setAddresses(flatAddresses)
+
+      // Hent samboere: alle andre som har bodd på de samme adressene
+      const myAddressIds = [...new Set(flatAddresses.map(a => a.address_id).filter(Boolean))]
+      if (myAddressIds.length > 0) {
+        const { data: coRes } = await supabase
+          .from('address_periods')
+          .select('entity_id, address_id, date_from, date_to, period_type')
+          .eq('entity_type', 'person')
+          .in('address_id', myAddressIds)
+          .in('period_type', ['residence', 'childhood_home', 'student_housing'])
+          .neq('entity_id', personId)
+        if (coRes && coRes.length > 0) {
+          // Hent navn for alle co-residents
+          const coIds = [...new Set(coRes.map(r => r.entity_id))]
+          const { data: coNames } = await supabase
+            .from('person_names')
+            .select('person_id, given_name, surname, is_preferred')
+            .in('person_id', coIds)
+          const nameMap = {}
+          ;(coNames || []).forEach(n => {
+            if (!nameMap[n.person_id] || n.is_preferred) {
+              nameMap[n.person_id] = [n.given_name, n.surname].filter(Boolean).join(' ')
+            }
+          })
+          // Grupper per address_id
+          const grouped = {}
+          coRes.forEach(r => {
+            if (!grouped[r.address_id]) grouped[r.address_id] = []
+            grouped[r.address_id].push({ ...r, name: nameMap[r.entity_id] || r.entity_id })
+          })
+          setCoResidents(grouped)
+        }
+      }
       setBiography(bioRes.data || null)
       setRoles(rolesRes.data || [])
       setWorkExp(workExpRes.data || [])
@@ -390,6 +424,7 @@ export function PersonPage() {
             <AddressesSection
               addresses={addresses}
               deathYear={deathYear}
+              coResidents={coResidents}
             />
             {sources.length > 0 && <SourcesSection sources={sources} />}
             <DigitalarkivetLink name={preferred} birthYear={facts.find(f => normFact(f.fact_type) === 'BIRT')?.date_year} />
@@ -2042,7 +2077,7 @@ function BuildingsSection({ buildings }) {
   )
 }
 
-function AddressesSection({ addresses, deathYear }) {
+function AddressesSection({ addresses, deathYear, coResidents = {} }) {
   function addrDateNum(v) {
     if (!v) return 0
     const s = String(v)
@@ -2152,7 +2187,7 @@ function AddressesSection({ addresses, deathYear }) {
       <h2 className="profile-section-header">Adresser og bosteder</h2>
       <div className="timeline">
         {combined.map((a, i) => (
-          <AddressItem key={a.id || a._id || i} addr={a} deathYear={deathYear} />
+          <AddressItem key={a.id || a._id || i} addr={a} deathYear={deathYear} coResidents={coResidents[a.address_id] || []} />
         ))}
       </div>
     </div>
@@ -2167,6 +2202,17 @@ function formatAddrDate(val) {
   const mm = s.match(/^(\d{4})-(\d{2})$/)
   if (mm) return `${MONTH_NAMES_NO[parseInt(mm[2]) - 1]} ${mm[1]}`
   return s
+}
+
+// Konverter dato-streng til tall for sammenligning (YYYYMM)
+function addrDateToNum(v) {
+  if (!v) return 0
+  const s = String(v)
+  const full = s.match(/^(\d{4})-(\d{2})/)
+  if (full) return parseInt(full[1]) * 100 + parseInt(full[2])
+  const yy = s.match(/^(\d{4})/)
+  if (yy) return parseInt(yy[1]) * 100 + 1
+  return 0
 }
 
 function renderNoteWithLinks(text) {
@@ -2190,7 +2236,7 @@ function renderNoteWithLinks(text) {
   return parts.length > 1 ? parts : text
 }
 
-function AddressItem({ addr, deathYear }) {
+function AddressItem({ addr, deathYear, coResidents = [] }) {
   const typeLabel = ADDR_TYPE_LABELS[addr.address_type] || addr.address_type || 'Bosted'
   const isBirthPlace = addr.address_type === 'birth_place'
   const dateTo = isBirthPlace ? null : (addr.date_to ?? addr.effective_date_to)
@@ -2209,6 +2255,23 @@ function AddressItem({ addr, deathYear }) {
     ? [streetPart, postalPart].filter(Boolean).join(', ')
     : addr.place_raw || (addr.address_type === 'census_record' ? addr.notes : null) || cityFallback
   const noteText = addr.notes || (streetPart && addr.place_raw ? addr.place_raw : null)
+
+  // Filtrer samboere som har tidsmessig overlapp med denne perioden
+  const overlapping = coResidents.filter(cr => {
+    if (!addr.date_from) return false
+    const aStart = addrDateToNum(addr.date_from)
+    const aEnd = addrDateToNum(dateTo) || 999999
+    const bStart = addrDateToNum(cr.date_from)
+    const bEnd = addrDateToNum(cr.date_to) || 999999
+    return aStart < bEnd && bStart < aEnd
+  })
+  // Dedupliser per person (kan ha flere perioder på samme adresse)
+  const seen = new Set()
+  const uniqueCoRes = overlapping.filter(cr => {
+    if (seen.has(cr.entity_id)) return false
+    seen.add(cr.entity_id)
+    return true
+  })
 
   return (
     <div className="timeline-item">
@@ -2234,7 +2297,18 @@ function AddressItem({ addr, deathYear }) {
       {addr.employer && (
         <div className="timeline-place">{addr.employer}{addr.department ? ` · ${addr.department}` : ''}</div>
       )}
-      {noteText && (
+      {uniqueCoRes.length > 0 && (
+        <div className="timeline-place" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-light)', display: 'flex', alignItems: 'baseline', gap: 4, flexWrap: 'wrap' }}>
+          <span>👥</span>
+          {uniqueCoRes.map((cr, i) => (
+            <span key={cr.entity_id}>
+              <LinkPreview to={`/person/${cr.entity_id}`}>{cr.name}</LinkPreview>
+              {i < uniqueCoRes.length - 2 ? ', ' : i === uniqueCoRes.length - 2 ? ' og ' : ''}
+            </span>
+          ))}
+        </div>
+      )}
+      {noteText && !noteText.includes('<a href=') && (
         <div className="timeline-place" style={{ fontStyle: 'italic', color: 'var(--color-text-light)' }}>
           {renderNoteWithLinks(noteText)}
         </div>
