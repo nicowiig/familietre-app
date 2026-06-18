@@ -2171,11 +2171,11 @@ function formatAddrDate(val) {
 
 function renderNoteWithLinks(text) {
   if (!text) return null
+  const re = /<a\s+href="([^"]*)"[^>]*>(.*?)<\/a>/gi
   const parts = []
   let lastIndex = 0
   let match
-  TAG_RE.lastIndex = 0
-  while ((match = TAG_RE.exec(text)) !== null) {
+  while ((match = re.exec(text)) !== null) {
     if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
     const href = match[1]
     const label = match[2]
@@ -2187,7 +2187,7 @@ function renderNoteWithLinks(text) {
     lastIndex = match.index + match[0].length
   }
   if (lastIndex < text.length) parts.push(text.slice(lastIndex))
-  return parts
+  return parts.length > 1 ? parts : text
 }
 
 function AddressItem({ addr, deathYear }) {
