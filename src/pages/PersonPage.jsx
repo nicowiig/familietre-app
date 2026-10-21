@@ -202,7 +202,7 @@ export function PersonPage() {
           : { data: [] },
         allChildIds.length > 0
           ? supabase.from('person_facts')
-              .select('person_id, date_year, date_month, date_day, place_city, place_raw')
+              .select(`person_id, date_year, date_month, date_day, place_city, place_raw, place:place_id(${PLACE_SELECT})`)
               .in('person_id', allChildIds)
               .in('fact_type', ['BIRT'])
           : { data: [] },
@@ -253,6 +253,7 @@ export function PersonPage() {
           month: birthFact?.date_month || null,
           day: birthFact?.date_day || null,
           place: birthFact?.place_city || birthFact?.place_raw || null,
+          placeObj: birthFact?.place || null,
         }
       }).filter(cb => cb.name || cb.year) // kun med navn eller år
       setChildBirths(births)
@@ -1123,7 +1124,10 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles
       day: cb.day,
       label,
       note: null,
-      place: cb.place || null,
+      place: placeAt(cb.placeObj, cb.year, cb.place).label,
+      placeObj: cb.placeObj || null,
+      placeContext: placeAt(cb.placeObj, cb.year).context,
+      placeTitle: placeAt(cb.placeObj, cb.year).title,
       source: null,
       eventPersonId: cb.childId,
     })
@@ -2398,7 +2402,7 @@ function AddressItem({ addr, deathYear, coResidents = [] }) {
       {addr.employer && (
         <div className="timeline-place">{addr.employer}{addr.department ? ` · ${addr.department}` : ''}</div>
       )}
-      {uniqueCoRes.length > 0 && (
+      {uniqueCoRes.length > 0 && !isBirthPlace && !['city', 'county', 'country', 'unknown'].includes(addr.granularity) && (
         <div className="timeline-place" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-light)', display: 'flex', alignItems: 'baseline', gap: 4, flexWrap: 'wrap' }}>
           <span>👥</span>
           {uniqueCoRes.map((cr, i) => (
