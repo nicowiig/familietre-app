@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { to: '/grener',      label: 'Slektsgrener' },
   { to: '/tre',         label: 'Familietre' },
   { to: '/steder',      label: 'Steder' },
+  { to: '/roller',      label: 'Yrker og titler' },
   { to: '/statistikk',  label: 'Statistikk' },
   { to: '/hva-er-nytt', label: 'Hva er nytt?' },
 ]

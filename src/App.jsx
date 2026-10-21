@@ -16,6 +16,8 @@ import { StederPage }      from './pages/StederPage'
 import { DatakvalitetPage } from './pages/DatakvalitetPage'
 import { DuplikatPage }     from './pages/DuplikatPage'
 import { StatistikkPage }   from './pages/StatistikkPage'
+import { RollerPage }       from './pages/RollerPage'
+import { RolePage }         from './pages/RolePage'
 
 export default function App() {
   return (
@@ -59,6 +61,12 @@ export default function App() {
           } />
           <Route path="/duplikat/:id1/:id2" element={
             <ProtectedRoute><DuplikatPage /></ProtectedRoute>
+          } />
+          <Route path="/roller" element={
+            <ProtectedRoute><RollerPage /></ProtectedRoute>
+          } />
+          <Route path="/rolle/:id" element={
+            <ProtectedRoute><RolePage /></ProtectedRoute>
           } />
           <Route path="/statistikk" element={
             <ProtectedRoute><StatistikkPage /></ProtectedRoute>

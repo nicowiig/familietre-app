@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { RoleName, RoleSourceNote, RoleExplainer, AcquiredBadge } from '../components/RoleInfo'
+import { ROLE_CATALOG_SELECT } from '../lib/roles'
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { LinkPreview } from '../components/LinkPreview'
@@ -64,7 +66,7 @@ export function PersonPage() {
         supabase.from('person_facts').select('*').eq('person_id', personId).order('date_year'),
         supabase.from('address_periods').select('*, addresses(*, place_articles(id, title))').eq('entity_type', 'person').eq('entity_id', personId).order('date_from'),
         supabase.from('person_biography').select('*').eq('person_id', personId).maybeSingle(),
-        supabase.from('person_roles').select('*').eq('person_id', personId).order('date_from'),
+        supabase.from('person_roles').select(ROLE_CATALOG_SELECT).eq('person_id', personId).order('date_from'),
         supabase.from('person_work_experience').select('*').eq('person_id', personId).order('date_from'),
         supabase.from('person_photos').select('*').eq('person_id', personId).order('photo_order'),
         supabase.from('person_sources').select('*').eq('person_id', personId).order('found_date', { ascending: false }),
@@ -293,7 +295,7 @@ export function PersonPage() {
   const birthDisplay  = birthDateText || birth?.place_raw || birth?.place_city
 
   // Roller etter type
-  const CAREER_TYPES  = new Set(['occupation', 'position', 'military', 'OCCU', 'TITL', 'Military Service', 'political', 'public_office'])
+  const CAREER_TYPES  = new Set(['occupation', 'position', 'military', 'military_rank', 'OCCU', 'TITL', 'Military Service', 'political', 'public_office'])
   const EDU_TYPES     = new Set(['education', 'exam'])
   const TITLE_TYPES   = new Set(['title', 'nobility'])
 
@@ -1407,6 +1409,7 @@ function roleToEntry(r) {
     date_to:   r.date_to,
     notes:     r.reason || null,
     _type:     'role',
+    _role:     r,
   }
 }
 
@@ -1481,6 +1484,7 @@ function CareerSection({ roles = [], workExp = [], deathYear }) {
 function WorkExpGroup({ group, nameMap, deathYear }) {
   const { employer, place, entries } = group
   const hasMultiple = entries.length > 1
+  const groupRole = entries.find(e => e._role?.role_id)?._role || null
 
   const fromNums = entries.map(e => parseInt(e.date_from) || 0).filter(Boolean)
   const toNums   = entries.map(e => parseInt(e.date_to || e.date_from) || 0).filter(Boolean)
@@ -1497,8 +1501,9 @@ function WorkExpGroup({ group, nameMap, deathYear }) {
       <WorkExpIcon />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: 'var(--text-base)' }}>
-          {employer || 'Ukjent arbeidsgiver'}
+          {groupRole ? <RoleName role={groupRole}>{employer}</RoleName> : (employer || 'Ukjent arbeidsgiver')}
         </div>
+        {groupRole && <RoleExplainer catalog={groupRole.catalog} />}
         {hasMultiple && (place || period) && (
           <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-2)' }}>
             {[place, period].filter(Boolean).join(' · ')}
@@ -1557,6 +1562,7 @@ function WorkExpEntry({ entry, compact, nameMap = {}, deathYear }) {
       <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
         {[entry.place, period, duration].filter(Boolean).join(' · ')}
       </div>
+      {entry._role && <RoleSourceNote role={entry._role} style={{ display: 'block' }} />}
       {entry.notes && (
         <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', fontStyle: 'italic', marginTop: 'var(--space-1)' }}>
           {renderWithPersonLinks(notesContent, nameMap)}
@@ -1731,9 +1737,11 @@ function TitleCard({ role }) {
     <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
       <TitleIcon />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: 'var(--text-base)', marginBottom: 'var(--space-1)' }}>
-          {value}
+        <div style={{ fontWeight: 700, fontSize: 'var(--text-base)', marginBottom: 'var(--space-1)', display: 'flex', gap: 'var(--space-2)', alignItems: 'baseline', flexWrap: 'wrap' }}>
+          <RoleName role={role}>{value}</RoleName>
+          <AcquiredBadge value={role.acquired_by} />
         </div>
+        <RoleSourceNote role={role} style={{ display: 'block', marginBottom: 2 }} />
         {role.place && (
           <div style={{ fontSize: 'var(--text-sm)', marginBottom: 2 }}>{role.place}</div>
         )}
@@ -1745,6 +1753,7 @@ function TitleCard({ role }) {
             {role.reason}
           </div>
         )}
+        <RoleExplainer catalog={role.catalog} />
       </div>
     </div>
   )
@@ -1758,6 +1767,11 @@ const ROLE_TYPE_LABELS = {
   occupation:         'Yrke',
   title:              'Tittel',
   military:           'Militær rang',
+  military_rank:      'Militær grad',
+  political:          'Politisk verv',
+  public_office:      'Offentlig verv',
+  life_event:         'Hendelse',
+  other:              'Annet',
   'Military Service': 'Militærtjeneste',
   education:          'Utdannelse',
   exam:               'Eksamen',
@@ -1805,8 +1819,9 @@ function RoleItem({ role }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-        <strong style={{ fontSize: 'var(--text-base)' }}>{displayValue}</strong>
+        <strong style={{ fontSize: 'var(--text-base)' }}><RoleName role={role}>{displayValue}</RoleName></strong>
         <span className="text-xs text-muted">{typeLabel}</span>
+        <AcquiredBadge value={role.acquired_by} />
         {periods && <span className="text-xs text-light">{periods}</span>}
       </div>
       {role.place && (
@@ -1815,6 +1830,8 @@ function RoleItem({ role }) {
       {role.reason && (
         <span className="text-sm" style={{ fontStyle: 'italic', color: 'var(--color-text-muted)' }}>{role.reason}</span>
       )}
+      <RoleSourceNote role={role} />
+      <RoleExplainer catalog={role.catalog} />
     </div>
   )
 }
@@ -2585,12 +2602,14 @@ function AuditLogSection({ auditLog }) {
   }
 
   // Lesbar etikett for table_name / field_name
-  const TABLE_LABELS = { person_facts: 'Hendelse', persons: 'Person', person_names: 'Navn', person_sources: 'Kilde', address_periods: 'Adresse', person_biography: 'Biografi', person_roles: 'Rolle', person_work_experience: 'Arbeidserfaring' }
+  const TABLE_LABELS = { person_facts: 'Hendelse', persons: 'Person', person_names: 'Navn', person_sources: 'Kilde', address_periods: 'Adresse', person_biography: 'Biografi', person_roles: 'Rolle', person_work_experience: 'Arbeidserfaring', families: 'Familie', family_children: 'Foreldre/barn' }
   const FIELD_LABELS = {
     fact_date: 'Dato', date_value: 'Dato', date_day: 'Dag', date_month: 'Måned', date_year: 'År',
     fact_type: 'Type', place_raw: 'Sted', place_city: 'By', notes: 'Notat', value: 'Verdi',
     birth_date: 'Fødselsdato', death_date: 'Dødsdato', burial_place: 'Gravsted',
     display_name: 'Visningsnavn', sex: 'Kjønn', birth_year: 'Fødselsår',
+    role_type: 'Type', role_id: 'Katalogrolle', original_value: 'Kildens skrivemåte',
+    husband_id: 'Ektemann', wife_id: 'Hustru', family_id: 'Familie',
   }
   function fmtField(table, field) {
     if (!table && !field) return null
