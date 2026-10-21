@@ -290,7 +290,9 @@ export function PersonPage() {
   const nickname    = preferred?.nickname || getNickname(names)
   const signedName  = names.find(n => n.name_type === 'signed')
   const { birth, death, christening, burial } = extractBirthDeath(facts)
-  const primaryPhoto = photos.find(p => p.is_primary) || photos[0]
+  // Gruppebilder (bryllup o.l.) blir aldri profilbilde med mindre de er eksplisitt valgt
+  const primaryPhoto = photos.find(p => p.is_primary) || photos.find(p => !p.is_group)
+  const galleryPhotos = photos.filter(p => p !== primaryPhoto)
 
   const birthYear  = birth?.date_year
   const deathYear  = death?.date_year
@@ -455,7 +457,7 @@ export function PersonPage() {
               families={families}
               parentFamilies={children}
             />
-            {photos.length > 1 && <PhotosSection photos={photos} fullName={fullName} />}
+            {galleryPhotos.length > 0 && <PhotosSection photos={primaryPhoto ? photos : galleryPhotos} fullName={fullName} />}
           </div>
         </div>
       </div>
@@ -639,12 +641,19 @@ function Lightbox({ photos, initial, onClose }) {
         onClick={e => { e.stopPropagation(); prev() }}
         style={{ position: 'absolute', left: 24, color: '#fff', background: 'none', border: 'none', fontSize: 32, cursor: 'pointer' }}
       >‹</button>
-      <img
-        src={photo.signedUrl}
-        alt=""
-        style={{ maxHeight: '90vh', maxWidth: '90vw', objectFit: 'contain' }}
-        onClick={e => e.stopPropagation()}
-      />
+      <figure style={{ margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }} onClick={e => e.stopPropagation()}>
+        <img
+          src={photo.signedUrl}
+          alt={photo.caption || ''}
+          style={{ maxHeight: photo.caption ? '80vh' : '90vh', maxWidth: '90vw', objectFit: 'contain' }}
+        />
+        {photo.caption && (
+          <figcaption style={{ color: '#e8e2d6', fontSize: 'var(--text-sm)', maxWidth: 'min(90vw, 760px)', textAlign: 'center', lineHeight: 1.5 }}>
+            {photo.caption}
+            {photo.date_taken && <span style={{ opacity: 0.7 }}> · {photo.date_taken}</span>}
+          </figcaption>
+        )}
+      </figure>
       <button
         onClick={e => { e.stopPropagation(); next() }}
         style={{ position: 'absolute', right: 24, color: '#fff', background: 'none', border: 'none', fontSize: 32, cursor: 'pointer' }}
@@ -664,7 +673,21 @@ function PhotosSection({ photos, fullName }) {
     <div className="profile-section mt-6">
       <h3 className="profile-section-header">Bilder</h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-        {photos.map((p, i) => (
+        {photos.map((p, i) => p.is_group ? (
+          <figure key={p.id} style={{ gridColumn: '1 / -1', margin: 0 }}>
+            <img
+              src={p.signedUrl}
+              alt={p.caption || fullName}
+              style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: 'var(--radius)', cursor: 'zoom-in', filter: 'sepia(30%) contrast(1.05)' }}
+              onClick={() => setLightbox(i)}
+            />
+            {p.caption && (
+              <figcaption className="text-xs text-muted" style={{ marginTop: 4, lineHeight: 1.4 }}>
+                {p.caption.length > 110 ? p.caption.slice(0, 110).trimEnd() + '…' : p.caption}
+              </figcaption>
+            )}
+          </figure>
+        ) : (
           <img
             key={p.id}
             src={p.signedUrl}
