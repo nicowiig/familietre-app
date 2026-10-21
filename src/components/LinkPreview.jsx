@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { formatName } from '../lib/persons'
 
 // In-memory cache for preview-data (per sesjon)
 const previewCache = {}
@@ -10,7 +11,7 @@ async function fetchPersonPreview(personId) {
 
   const [{ data: person }, { data: names }, { data: facts }, { data: photos }] = await Promise.all([
     supabase.from('persons').select('person_id, sex, is_living').eq('person_id', personId).single(),
-    supabase.from('person_names').select('given_name, middle_name, surname, is_preferred').eq('person_id', personId),
+    supabase.from('person_names').select('given_name, middle_name, surname, prefix, is_preferred').eq('person_id', personId),
     supabase.from('person_facts').select('fact_type, date_year, place_city, place_raw').eq('person_id', personId).in('fact_type', ['BIRT', 'DEAT']),
     supabase.from('person_photos').select('drive_url, is_primary').eq('person_id', personId).order('photo_order').limit(5),
   ])
@@ -19,7 +20,7 @@ async function fetchPersonPreview(personId) {
 
   // Navn
   const preferred = (names || []).find(n => n.is_preferred) || (names || [])[0] || {}
-  const fullName = [preferred.given_name, preferred.middle_name, preferred.surname].filter(Boolean).join(' ')
+  const fullName = formatName(preferred, { personId })
 
   // Årstall
   const birth = (facts || []).find(f => f.fact_type === 'BIRT')

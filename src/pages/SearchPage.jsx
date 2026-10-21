@@ -61,7 +61,7 @@ export function SearchPage() {
       return { person: p, preferred, birth, death,
                birthPlace: birth?.place_city || birth?.place_raw,
                matchedNames: namesByPersonId[p.person_id] || [] }
-    }).sort((a, b) => formatName(a.preferred).localeCompare(formatName(b.preferred), 'nb'))
+    }).sort((a, b) => formatName(a.preferred, { title: false }).localeCompare(formatName(b.preferred, { title: false }), 'nb'))
   }
 
   // Navnesøk (eksisterende logikk)
@@ -73,7 +73,7 @@ export function SearchPage() {
       async function fetchForToken(token) {
         const { data } = await supabase
           .from('person_names')
-          .select('person_id, given_name, middle_name, surname, nickname, is_preferred, name_type')
+          .select('person_id, given_name, middle_name, surname, prefix, nickname, is_preferred, name_type')
           .or(`given_name.ilike.%${token}%,surname.ilike.%${token}%,middle_name.ilike.%${token}%,nickname.ilike.%${token}%`)
           .limit(200)
         return data || []
@@ -137,7 +137,7 @@ export function SearchPage() {
       // Hent foretrukne navn for alle
       const { data: nameRows } = await supabase
         .from('person_names')
-        .select('person_id, given_name, middle_name, surname, nickname, is_preferred, name_type')
+        .select('person_id, given_name, middle_name, surname, prefix, nickname, is_preferred, name_type')
         .in('person_id', ids)
       const idToNames = {}
       ;(nameRows || []).forEach(n => {
@@ -421,7 +421,7 @@ function BrowseAll() {
     async function load() {
       const { data: names } = await supabase
         .from('person_names')
-        .select('person_id, given_name, surname, middle_name, is_preferred')
+        .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
         .eq('is_preferred', true)
         .order('surname')
         .limit(50)

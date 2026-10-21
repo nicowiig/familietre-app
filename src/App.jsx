@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { TitlesProvider } from './contexts/TitlesContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginPage }       from './pages/LoginPage'
 import { AccessPage }      from './pages/AccessPage'
@@ -23,6 +24,7 @@ export default function App() {
   return (
     <BrowserRouter basename="/familietre-app">
       <AuthProvider>
+        <TitlesProvider>
         <Routes>
           {/* Offentlige ruter */}
           <Route path="/logg-inn" element={<LoginPage />} />
@@ -78,6 +80,7 @@ export default function App() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </TitlesProvider>
       </AuthProvider>
     </BrowserRouter>
   )
