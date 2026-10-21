@@ -56,6 +56,15 @@ COMMENT ON COLUMN public.person_roles.original_value IS
   'Rollen slik kilden skrev den (f.eks. «Høiesteretsadvokat»). value er den standardiserte formen.';
 CREATE INDEX IF NOT EXISTS idx_person_roles_role_id ON public.person_roles(role_id);
 
+-- Hvordan rollen/tittelen ble oppnådd. NULL = ukjent.
+-- Utledes fra profilen (fars/ektemanns titler, «-inde»/«-kone»-former), kan overstyres manuelt.
+ALTER TABLE public.person_roles ADD COLUMN IF NOT EXISTS acquired_by text;
+ALTER TABLE public.person_roles DROP CONSTRAINT IF EXISTS person_roles_acquired_by_check;
+ALTER TABLE public.person_roles ADD CONSTRAINT person_roles_acquired_by_check
+  CHECK (acquired_by IS NULL OR acquired_by IN ('fødsel','ekteskap','utnevnelse','erverv'));
+COMMENT ON COLUMN public.person_roles.acquired_by IS
+  'fødsel | ekteskap | utnevnelse | erverv. Skiller f.eks. født komtesse fra inngiftet grevinne.';
+
 -- title_glossary: historiske skrivemåter → kanonisk rolle
 ALTER TABLE public.title_glossary ADD COLUMN IF NOT EXISTS role_id integer REFERENCES public.role_catalog(id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_title_glossary_original ON public.title_glossary (lower(original));
