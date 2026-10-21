@@ -21,7 +21,6 @@ INSERT INTO person_facts (person_id, fact_type, date_text, date_year, place_raw)
 INSERT INTO families (family_id, husband_id, wife_id, marr_date, marr_place_raw, family_type) VALUES
   ('F502007','I500161','I502387','10 JUL 1792','Bergen','married'),   -- Johan Martens + Maren Malene Hagelsteen
   ('F502008',NULL,'I500484',NULL,NULL,'married'),                      -- Anna Stina Andersdatter + ukjent Bengt
-  ('F502009','I500647',NULL,NULL,NULL,'married'),                      -- Henrik Jørgensen Bull + ukjent første kone
   ('F502010','I501498',NULL,NULL,NULL,'married'),                      -- Anders Aarsæter + ukjent første kone
   ('F502011',NULL,'I501986',NULL,NULL,'married'),                      -- ukjent Gran + Else Akkermann (Jens Grans foreldre)
   ('F502012',NULL,'I502324',NULL,NULL,'married'),                      -- Berte Hansdatter + ukjent annen mann
@@ -54,9 +53,6 @@ INSERT INTO _mv VALUES
   ('I500837','F500116','F502008','Bengtsdatter – født da Johan Fredric Tallberg var 13; far er en ukjent Bengt'),
   ('I500838','F500116','F502008','Bengtsdatter – født da Johan Fredric Tallberg var 15; far er en ukjent Bengt'),
   ('I500839','F500116','F502008','Bengtsdatter – far er en ukjent Bengt'),
-  -- Henrik Bull: døtre født før Anna Holm (f. 1647) ble gift ca. 1661
-  ('I500655','F500152','F502009','Født 1655 – Anna Holm var 8 år; mor er en ukjent første kone'),
-  ('I500656','F500152','F502009','Født ca. 1660 – før ekteskapet med Anna Holm ca. 1661'),
   -- Arnet: barn født 1733–1741 er med første kone (I501326, d. 1741), ikke Christine Heide (f. 1724)
   ('I501330','F500294','F500367','Født ca. 1733 – Christine Heide var 9; første kone døde 1741'),
   ('I501331','F500294','F500367','Født 1734 – første kone'),('I501332','F500294','F500367','Født 1735 – første kone'),
@@ -162,6 +158,31 @@ UPDATE person_facts SET date_text = 'BEF 1749', date_year = 1748,
 UPDATE person_facts SET date_text = 'BEF 1746', date_year = 1745,
   notes = coalesce(notes || ' ', '') || '[Rettet 2026-10-21 fra 1750: faren døde 1745 og moren ville vært 58.]'
   WHERE person_id = 'I501051' AND fact_type = 'BIRT' AND date_year = 1750;
+-- Henrik Jørgensen Bull: én kone, Ane Andersdatter Holm, mor til alle barna fra ca. 1655 (vestraat.net).
+-- Fødselsåret 1647 og vielsen «ca. 1661» er derfor feil.
+UPDATE person_facts SET date_text = NULL, date_year = NULL,
+  notes = coalesce(notes || ' ', '') || '[Rettet 2026-10-21: fødselsår «1647» fjernet – hun var mor til Dorothea, født ca. 1655.]'
+  WHERE person_id = 'I500650' AND fact_type = 'BIRT' AND date_year = 1647;
+UPDATE families SET marr_date = NULL WHERE family_id = 'F500152' AND marr_date = 'ABT 1661';
+INSERT INTO person_audit_log(person_id, changed_by, change_type, table_name, note) VALUES
+  ('I500650','claude','update','families','Vielse «ca. 1661» fjernet – første barn født ca. 1655');
+
+-- Anders Henriksen Bull: andre kone Margarethe Mortensdatter (g. 1705) – mor til barna etter 1704
+INSERT INTO persons (person_id, sex, is_living) VALUES ('I502388', 'F', false) ON CONFLICT DO NOTHING;
+INSERT INTO person_names (person_id, name_type, given_name, surname, is_preferred)
+  SELECT 'I502388', 'birth', 'Margarethe', 'Mortensdatter', true WHERE NOT EXISTS (SELECT 1 FROM person_names WHERE person_id = 'I502388');
+UPDATE families SET wife_id = 'I502388', marr_date = '1705' WHERE family_id = 'F500151' AND wife_id IS NULL;
+INSERT INTO person_audit_log(person_id, changed_by, change_type, table_name, note) VALUES
+  ('I502388','claude','insert','persons','Lagt inn som Anders Henriksen Bulls andre kone (g. 1705), etter vestraat.net');
+
+-- Wang: Mette Bulls mor Anne Kathrine Tandberg levde 1839–1898 (Wikipedia), ikke 1855–ca. 1875
+UPDATE person_facts SET date_text = '1839', date_year = 1839, notes = 'Rettet 2026-10-21 fra 1855 (Wikipedia: Mette Bull).'
+  WHERE person_id = 'I501253' AND fact_type = 'BIRT';
+UPDATE person_facts SET date_text = '1898', date_year = 1898, notes = 'Rettet 2026-10-21 fra ca. 1875 (Wikipedia: Mette Bull).'
+  WHERE person_id = 'I501253' AND fact_type = 'DEAT';
+UPDATE families SET marr_date = '18 DEC 1897' WHERE family_id = 'F500350' AND marr_date IS NULL;
+UPDATE families SET family_type = 'divorced' WHERE family_id = 'F500350';
+
 -- Martens: Johan Christian døde 1890 ifølge geneanet (treet sa 1895, samme år som broren Hans Didrik)
 UPDATE person_facts SET notes = coalesce(notes || ' ', '') || '[Geneanet (Arvid Østbye) oppgir død 1890.]'
   WHERE person_id = 'I500166' AND fact_type = 'DEAT';
@@ -173,6 +194,13 @@ SELECT * FROM (VALUES
   '18 barn: 5 med Maren Malene Hagelsteen (1771–1799, g. 10.7.1792) og 13 med Bente Cathrine Hagelsteen (g. 5.11.1799, Korskirken).'),
  ('I502387','Geneanet (Arvid Østbye)','Johan Martens (1769–1844)','https://gw.geneanet.org/arvidostbye?lang=fr&n=martens&p=johan','family_history','2026-10-21','Claude',
   'Første kone til Johan Martens; mor til Johan (1793–95), Hans (1794–1814), Johan (1796–1876), Cathrine Marie (1797–1837) og Didrik Bergmann (1799–1812).')
+,
+ ('I500647','vestraat.net','Etterkommere etter Jens Andersen Bull','https://vestraat.net/ettersl/bull0001.htm','family_history','2026-10-21','Claude',
+  'Gift med Ane Andersdatter Holm. Barn: Anna (d. 1702), Dorothea (ca. 1655–1726), Elen (ca. 1660–1696), Anders (1663–1735), Margrete (ca. 1665), Martha (ca. 1670–ca. 1718).'),
+ ('I500631','vestraat.net','Etterkommere etter Jens Andersen Bull','https://vestraat.net/ettersl/bull0001.htm','family_history','2026-10-21','Claude',
+  'Gift 1692 (Hitra) med Birgitte Rasmusdatter Rosing, 1705 med Margarethe Mortensdatter.'),
+ ('I501251','Wikipedia','Mette Bull','https://en.wikipedia.org/wiki/Mette_Bull','encyclopedia','2026-10-21','Claude',
+  'Født 31.1.1876 i Christiania, datter av kjøpmann Hans Emanuel Wang (1839–1918) og Anne Kathrine Tandberg (1839–1898). Gift 18.12.1897 med operasanger Jens Elias Berntsen (oppløst), 8.5.1905 med arkitekt Henrik Bull.')
 ) v(person_id, archive, title, url, record_type, found_date, found_by, notes)
 WHERE NOT EXISTS (SELECT 1 FROM person_sources s WHERE s.person_id = v.person_id AND s.url = v.url);
 
