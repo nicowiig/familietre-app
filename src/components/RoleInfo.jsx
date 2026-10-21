@@ -59,6 +59,59 @@ export function UnapprovedNote({ catalog }) {
   )
 }
 
+/** Panelet med katalogforklaringen. */
+function ExplainerPanel({ catalog }) {
+  const meta = [catalog.period, catalog.context].filter(Boolean).join(' · ')
+  return (
+    <div style={{
+      marginTop: 'var(--space-1)', padding: 'var(--space-2) var(--space-3)',
+      background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+      borderRadius: 'var(--radius)', fontSize: 'var(--text-sm)', lineHeight: 1.5,
+      color: 'var(--color-text-muted)', display: 'flex', flexDirection: 'column', gap: 4,
+      fontWeight: 400,
+    }}>
+      <span>{catalog.description}</span>
+      {meta && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-light)' }}>{meta}</span>}
+      <UnapprovedNote catalog={catalog} />
+    </div>
+  )
+}
+
+/** Moderne yrkestitler trenger ingen historisk forklaring. */
+export function hasExplainer(catalog) {
+  return !!catalog?.description && catalog.social_group !== 'Moderne arbeidsliv'
+}
+
+/**
+ * Rollenavn med en diskret ⓘ-knapp som folder ut forklaringen fra katalogen.
+ * Brukes i karrierelisten i stedet for en «Hva innebar dette?»-lenke på hver rolle.
+ */
+export function RoleTitleWithInfo({ role, children }) {
+  const [open, setOpen] = useState(false)
+  const catalog = role?.catalog
+  const show = hasExplainer(catalog)
+  return (
+    <>
+      <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 6 }}>
+        <RoleName role={role}>{children}</RoleName>
+        {show && (
+          <button
+            type="button"
+            onClick={() => setOpen(o => !o)}
+            aria-expanded={open}
+            aria-label={open ? 'Skjul forklaring' : 'Hva innebar dette?'}
+            title={open ? 'Skjul forklaring' : 'Hva innebar dette?'}
+            className="role-info-btn"
+          >
+            {open ? '×' : 'i'}
+          </button>
+        )}
+      </span>
+      {show && open && <ExplainerPanel catalog={catalog} />}
+    </>
+  )
+}
+
 /** «Hva innebar dette?» – utvidbar forklaring fra katalogen. */
 export function RoleExplainer({ catalog, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen)
