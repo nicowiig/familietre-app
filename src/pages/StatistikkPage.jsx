@@ -185,9 +185,9 @@ function TopSurnames() {
 
   useEffect(() => {
     async function load() {
-      const data = await fetchAll('person_names', 'surname', [['eq', 'is_preferred', true], ['not', 'surname', 'is', null]])
+      const data = await fetchAll('person_names', 'surname, prefix', [['eq', 'is_preferred', true], ['not', 'surname', 'is', null]])
       const counts = {}
-      data.forEach(r => { counts[r.surname] = (counts[r.surname] || 0) + 1 })
+      data.filter(r => r.prefix !== 'av').forEach(r => { counts[r.surname] = (counts[r.surname] || 0) + 1 })
       const sorted = Object.entries(counts)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 12)

@@ -339,6 +339,12 @@ export function PersonPage() {
 
             <h1 className="profile-name">{fullName}</h1>
 
+            {person.dynasty && (
+              <p className="text-sm text-muted" style={{ marginBottom: 'var(--space-1)', letterSpacing: '0.02em' }}>
+                Huset {person.dynasty}
+              </p>
+            )}
+
             {signedName && (
               <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-1)', fontSize: 'var(--text-sm)' }}>
                 Kjent som: {formatName(signedName)}
