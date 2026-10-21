@@ -35,7 +35,7 @@ export function BranchDetailPage() {
       if (branchRes.data?.surname) {
         const { data: names } = await supabase
           .from('person_names')
-          .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
+          .select('person_id, given_name, epithet, surname, middle_name, prefix, is_preferred')
           .ilike('surname', branchRes.data.surname)
 
         if (names?.length) {

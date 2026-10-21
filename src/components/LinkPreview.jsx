@@ -11,7 +11,7 @@ async function fetchPersonPreview(personId) {
 
   const [{ data: person }, { data: names }, { data: facts }, { data: photos }] = await Promise.all([
     supabase.from('persons').select('person_id, sex, is_living').eq('person_id', personId).single(),
-    supabase.from('person_names').select('given_name, middle_name, surname, prefix, is_preferred').eq('person_id', personId),
+    supabase.from('person_names').select('given_name, epithet, middle_name, surname, prefix, is_preferred').eq('person_id', personId),
     supabase.from('person_facts').select('fact_type, date_year, place_city, place_raw').eq('person_id', personId).in('fact_type', ['BIRT', 'DEAT']),
     supabase.from('person_photos').select('drive_url, is_primary').eq('person_id', personId).order('photo_order').limit(5),
   ])

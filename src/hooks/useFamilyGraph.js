@@ -7,6 +7,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { buildParentMap, buildSpouseMap, buildChildMap } from '../lib/kinship'
+import { surnameParticle } from '../lib/persons'
+
+function surnameWithParticle(prefix, surname) {
+  const p = surnameParticle(prefix)
+  return p && !/(^|\s)(von|af|av|de|du|zu|van)(\s|$)/i.test(surname) ? `${p} ${surname}` : surname
+}
 
 // Modul-nivå cache — overlever re-renders og komponent-unmounting
 let _cache = null        // { parentMap, spouseMap, childMap, sexMap, nameMap, infoMap }
@@ -65,7 +71,7 @@ async function loadGraph() {
       fetchAll('families', 'family_id, husband_id, wife_id'),
       fetchAll('family_children', 'family_id, child_id'),
       fetchAll('persons', 'person_id, sex'),
-      fetchAll('person_names', 'person_id, given_name, surname, is_preferred'),
+      fetchAll('person_names', 'person_id, given_name, epithet, surname, prefix, is_preferred'),
       fetchBirthDeathFacts(),
     ])
 
@@ -105,8 +111,8 @@ async function loadGraph() {
       }
       const info = infoMap.get(n.person_id)
       if (n.is_preferred || !info.givenName) {
-        if (n.given_name) info.givenName = n.given_name
-        if (n.surname) info.surname = n.surname
+        if (n.given_name) info.givenName = [n.given_name, n.epithet].filter(Boolean).join(' ')
+        if (n.surname) info.surname = surnameWithParticle(n.prefix, n.surname)
       }
     }
 

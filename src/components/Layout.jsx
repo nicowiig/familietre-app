@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { formatName } from '../lib/persons'
+import { formatName, searchTokens } from '../lib/persons'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../supabase'
 
@@ -85,23 +85,28 @@ export function Layout({ children }) {
     }
 
     debounceRef.current = setTimeout(async () => {
-      const tokens = val.trim().split(/\s+/).filter(Boolean)
+      const tokens = searchTokens(val)
       if (tokens.length === 0) { setSuggestions([]); setSugOpen(false); return }
 
-      // For hvert token, søk i alle navnefelt
+      // For hvert ord: søk i alle navneformer (også alternative), kallenavn og tilnavn
       async function fetchToken(token) {
         const { data } = await supabase
           .from('person_names')
-          .select('person_id, given_name, surname, middle_name, prefix')
-          .or(`given_name.ilike.%${token}%,surname.ilike.%${token}%,middle_name.ilike.%${token}%`)
-          .eq('is_preferred', true)
-          .limit(50)
+          .select('person_id')
+          .or(`given_name.ilike.%${token}%,surname.ilike.%${token}%,middle_name.ilike.%${token}%,nickname.ilike.%${token}%,epithet.ilike.%${token}%`)
+          .limit(200)
         return data || []
       }
 
       const tokenResults = await Promise.all(tokens.map(fetchToken))
       const idSets = tokenResults.map(rows => new Set(rows.map(r => r.person_id)))
-      const matched = tokenResults[0].filter(r => idSets.every(s => s.has(r.person_id)))
+      const hitIds = [...idSets[0]].filter(id => idSets.every(s => s.has(id))).slice(0, 50)
+      const { data: prefNames } = hitIds.length
+        ? await supabase.from('person_names')
+            .select('person_id, given_name, epithet, surname, middle_name, prefix')
+            .in('person_id', hitIds).eq('is_preferred', true)
+        : { data: [] }
+      const matched = prefNames || []
 
       // Skjul sammenslåtte/slettede personer
       const matchedIds = [...new Set(matched.map(r => r.person_id))]

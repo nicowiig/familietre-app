@@ -4,7 +4,7 @@ import { supabase } from '../supabase'
 import { Layout } from '../components/Layout'
 import { PersonCard } from '../components/PersonCard'
 import { LoadingSpinner } from '../components/LoadingSpinner'
-import { getPreferredName, formatName } from '../lib/persons'
+import { getPreferredName, formatName, searchTokens } from '../lib/persons'
 import { formatLifespan, formatDateText } from '../lib/dates'
 
 const PAGE_SIZE = 20
@@ -69,12 +69,12 @@ export function SearchPage() {
     if (!q.trim()) return
     setLoading(true)
     try {
-      const tokens = q.trim().slice(0, 100).split(/\s+/).filter(Boolean).slice(0, 5)
+      const tokens = searchTokens(q)
       async function fetchForToken(token) {
         const { data } = await supabase
           .from('person_names')
-          .select('person_id, given_name, middle_name, surname, prefix, nickname, is_preferred, name_type')
-          .or(`given_name.ilike.%${token}%,surname.ilike.%${token}%,middle_name.ilike.%${token}%,nickname.ilike.%${token}%`)
+          .select('person_id, given_name, epithet, middle_name, surname, prefix, nickname, is_preferred, name_type')
+          .or(`given_name.ilike.%${token}%,surname.ilike.%${token}%,middle_name.ilike.%${token}%,nickname.ilike.%${token}%,epithet.ilike.%${token}%`)
           .limit(200)
         return data || []
       }
@@ -137,7 +137,7 @@ export function SearchPage() {
       // Hent foretrukne navn for alle
       const { data: nameRows } = await supabase
         .from('person_names')
-        .select('person_id, given_name, middle_name, surname, prefix, nickname, is_preferred, name_type')
+        .select('person_id, given_name, epithet, middle_name, surname, prefix, nickname, is_preferred, name_type')
         .in('person_id', ids)
       const idToNames = {}
       ;(nameRows || []).forEach(n => {
@@ -421,7 +421,7 @@ function BrowseAll() {
     async function load() {
       const { data: names } = await supabase
         .from('person_names')
-        .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
+        .select('person_id, given_name, epithet, surname, middle_name, prefix, is_preferred')
         .eq('is_preferred', true)
         .order('surname')
         .limit(50)

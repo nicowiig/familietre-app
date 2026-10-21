@@ -125,7 +125,7 @@ export function PersonPage() {
           const coIds = [...new Set(coRes.map(r => r.entity_id))]
           const { data: coNames } = await supabase
             .from('person_names')
-            .select('person_id, given_name, middle_name, surname, prefix, is_preferred')
+            .select('person_id, given_name, epithet, middle_name, surname, prefix, is_preferred')
             .in('person_id', coIds)
           const nameMap = {}
           ;(coNames || []).forEach(n => {
@@ -188,12 +188,12 @@ export function PersonPage() {
       const [spouseNamesRes, childNamesRes, childBirthFactsRes, childPersonsRes] = await Promise.all([
         allSpouseIds.length > 0
           ? supabase.from('person_names')
-              .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
+              .select('person_id, given_name, epithet, surname, middle_name, prefix, is_preferred')
               .in('person_id', allSpouseIds)
           : { data: [] },
         allChildIds.length > 0
           ? supabase.from('person_names')
-              .select('person_id, given_name, middle_name, surname, prefix, is_preferred')
+              .select('person_id, given_name, epithet, middle_name, surname, prefix, is_preferred')
               .in('person_id', allChildIds)
           : { data: [] },
         allChildIds.length > 0
@@ -338,6 +338,12 @@ export function PersonPage() {
             )}
 
             <h1 className="profile-name">{fullName}</h1>
+
+            {person.dynasty && (
+              <p className="text-sm text-muted" style={{ marginBottom: 'var(--space-1)', letterSpacing: '0.02em' }}>
+                Huset {person.dynasty}
+              </p>
+            )}
 
             {signedName && (
               <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-1)', fontSize: 'var(--text-sm)' }}>
@@ -1404,7 +1410,7 @@ function CareerSection({ roles = [], workExp = [], deathYear }) {
     })
     if (ids.size === 0) return
     supabase.from('person_names')
-      .select('person_id, given_name, middle_name, surname, prefix, is_preferred')
+      .select('person_id, given_name, epithet, middle_name, surname, prefix, is_preferred')
       .in('person_id', [...ids])
       .then(({ data }) => {
         const map = {}
@@ -2714,7 +2720,7 @@ function ParentFamilyCard({ family, personId, myAncestors }) {
       if (!ids.length) return
       const { data } = await supabase
         .from('person_names')
-        .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
+        .select('person_id, given_name, epithet, surname, middle_name, prefix, is_preferred')
         .in('person_id', ids)
       if (data) {
         const byId = {}
@@ -2732,7 +2738,7 @@ function ParentFamilyCard({ family, personId, myAncestors }) {
       if (siblingIds.length > 0) {
         const { data: sibNames } = await supabase
           .from('person_names')
-          .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
+          .select('person_id, given_name, epithet, surname, middle_name, prefix, is_preferred')
           .in('person_id', siblingIds)
         if (sibNames) {
           const sibById = {}
@@ -2787,7 +2793,7 @@ function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
       if (!ids.length) return
       const { data } = await supabase
         .from('person_names')
-        .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
+        .select('person_id, given_name, epithet, surname, middle_name, prefix, is_preferred')
         .in('person_id', ids)
       if (data) {
         const byId = {}
