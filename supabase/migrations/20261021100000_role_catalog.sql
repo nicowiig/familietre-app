@@ -17,10 +17,7 @@ CREATE TABLE IF NOT EXISTS public.role_catalog (
   name               text NOT NULL UNIQUE,            -- kanonisk form, moderne bokmål
   category           text NOT NULL CHECK (category IN
                        ('occupation','position','title','military_rank','education','other')),
-  social_group       text CHECK (social_group IN
-                       ('kongelig','høyadel','lavadel','hoff','geistlig','embetsstand','militær',
-                        'borgerskap','håndverk','sjøfart','bondestand','tjenestefolk','akademia',
-                        'moderne','annet')),
+  social_group       text,                             -- stand/sosialt lag, fritekst inntil inndelingen er avklart
   parent_id          integer REFERENCES public.role_catalog(id),  -- bredere rolle: Sogneprest → Prest
   gender_variant_of  integer REFERENCES public.role_catalog(id),  -- Grevinne → Greve
   rank_order         integer,                          -- rekkefølge i adels-/militærhierarki
@@ -64,37 +61,50 @@ ALTER TABLE public.title_glossary ADD COLUMN IF NOT EXISTS role_id integer REFER
 CREATE UNIQUE INDEX IF NOT EXISTS uq_title_glossary_original ON public.title_glossary (lower(original));
 CREATE INDEX IF NOT EXISTS idx_title_glossary_role_id ON public.title_glossary(role_id);
 
--- Endringslogg for person_roles: logg også gammel/ny verdi og role_id
+-- Endringslogg for person_roles.
+-- Samme note-format som før («Rolle lagt til/oppdatert/slettet: X»), men
+-- nå også med gammel/ny verdi per felt, slik at historiske skrivemåter
+-- ikke går tapt ved fremtidig opprydding. Tomme oppdateringer logges ikke.
 CREATE OR REPLACE FUNCTION public._audit_person_roles()
  RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $fn$
-DECLARE v_pid text; v_op text;
+DECLARE v_pid text; v_op text; v_note text; v_logged boolean := false;
 BEGIN
   v_op  := lower(TG_OP);
   v_pid := CASE WHEN TG_OP = 'DELETE' THEN OLD.person_id ELSE NEW.person_id END;
   IF TG_OP = 'INSERT' THEN
     INSERT INTO person_audit_log(person_id, changed_by, change_type, table_name, field_name, new_value, note)
-    VALUES (v_pid, _audit_changed_by(), v_op, 'person_roles', NEW.role_type, NEW.value,
+    VALUES (v_pid, _audit_changed_by(), v_op, 'person_roles', 'value', NEW.value,
             'Rolle lagt til: ' || COALESCE(NEW.value, NEW.role_type, ''));
   ELSIF TG_OP = 'UPDATE' THEN
-    IF OLD.value IS DISTINCT FROM NEW.value OR OLD.role_type IS DISTINCT FROM NEW.role_type
-       OR OLD.role_id IS DISTINCT FROM NEW.role_id THEN
+    v_note := 'Rolle oppdatert: ' || COALESCE(NEW.value, NEW.role_type, '');
+    IF OLD.value IS DISTINCT FROM NEW.value THEN
       INSERT INTO person_audit_log(person_id, changed_by, change_type, table_name, field_name, old_value, new_value, note)
-      VALUES (v_pid, _audit_changed_by(), v_op, 'person_roles',
-              CASE WHEN OLD.value IS DISTINCT FROM NEW.value THEN 'value'
-                   WHEN OLD.role_type IS DISTINCT FROM NEW.role_type THEN 'role_type'
-                   ELSE 'role_id' END,
-              CONCAT_WS(' / ', OLD.value, OLD.role_type, OLD.role_id::text),
-              CONCAT_WS(' / ', NEW.value, NEW.role_type, NEW.role_id::text),
-              'Rolle oppdatert: ' || COALESCE(NEW.value, NEW.role_type, ''));
-    ELSIF OLD IS DISTINCT FROM NEW THEN
-      INSERT INTO person_audit_log(person_id, changed_by, change_type, table_name, field_name, note)
-      VALUES (v_pid, _audit_changed_by(), v_op, 'person_roles', NEW.role_type,
-              'Rolle oppdatert: ' || COALESCE(NEW.value, NEW.role_type, ''));
+      VALUES (v_pid, _audit_changed_by(), v_op, 'person_roles', 'value', OLD.value, NEW.value, v_note);
+      v_logged := true;
+    END IF;
+    IF OLD.role_type IS DISTINCT FROM NEW.role_type THEN
+      INSERT INTO person_audit_log(person_id, changed_by, change_type, table_name, field_name, old_value, new_value, note)
+      VALUES (v_pid, _audit_changed_by(), v_op, 'person_roles', 'role_type', OLD.role_type, NEW.role_type, v_note);
+      v_logged := true;
+    END IF;
+    IF OLD.original_value IS DISTINCT FROM NEW.original_value THEN
+      INSERT INTO person_audit_log(person_id, changed_by, change_type, table_name, field_name, old_value, new_value, note)
+      VALUES (v_pid, _audit_changed_by(), v_op, 'person_roles', 'original_value', OLD.original_value, NEW.original_value, v_note);
+      v_logged := true;
+    END IF;
+    IF OLD.role_id IS DISTINCT FROM NEW.role_id THEN
+      INSERT INTO person_audit_log(person_id, changed_by, change_type, table_name, field_name, old_value, new_value, note)
+      VALUES (v_pid, _audit_changed_by(), v_op, 'person_roles', 'role_id', OLD.role_id::text, NEW.role_id::text, v_note);
+      v_logged := true;
+    END IF;
+    IF NOT v_logged AND OLD IS DISTINCT FROM NEW THEN
+      INSERT INTO person_audit_log(person_id, changed_by, change_type, table_name, note)
+      VALUES (v_pid, _audit_changed_by(), v_op, 'person_roles', v_note);
     END IF;
   ELSIF TG_OP = 'DELETE' THEN
     INSERT INTO person_audit_log(person_id, changed_by, change_type, table_name, field_name, old_value, note)
-    VALUES (v_pid, _audit_changed_by(), v_op, 'person_roles', OLD.role_type, OLD.value,
+    VALUES (v_pid, _audit_changed_by(), v_op, 'person_roles', 'value', OLD.value,
             'Rolle slettet: ' || COALESCE(OLD.value, OLD.role_type, ''));
   END IF;
   RETURN NULL;
