@@ -16,7 +16,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 
 /** Kolonner som hentes når et sted embeddes i en spørring. */
-export const PLACE_SELECT = 'id, name_short, name_display, city, county, country, historical_name, historical_region, coordinates_lat, coordinates_lng'
+export const PLACE_SELECT = 'id, name_short, name_display, city, county, country, historical_name, historical_region, coordinates_lat, coordinates_lng, granularity, building_name'
 
 // ---------- Tidsdata (lastes én gang per økt) ----------
 let jurisdictions = []   // { country, region, address_id, polity, description, from, to }
@@ -124,9 +124,16 @@ export function placeAt(place, year, fallback, mode = currentMode) {
   return { label, context: bits.length ? bits.join(' · ') : null, title }
 }
 
+/** Adresser, gater og bygninger (sykehus, kirker, klinikker) vises med byen på toppen av personsiden. */
+function headlineName(place) {
+  if (!place) return null
+  const isAddress = ['full_address', 'street'].includes(place.granularity) || !!place.building_name
+  return (isAddress && place.city) ? place.city : (place.name_short || place.city)
+}
+
 /** Kort navn (toppen av personsiden): «Kristiania» / «Oslo» avhengig av visningsform. */
 export function placeShortAt(place, year, fallback, mode = currentMode) {
-  const short = place?.name_short || place?.city || fallback || null
+  const short = headlineName(place) || fallback || null
   if (!place || mode === 'moderne') return short
   const hist = historicalNameAt(place, year)
   return hist && same(hist.modern, short) ? hist.name : short

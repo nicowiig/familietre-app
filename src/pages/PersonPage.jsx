@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
-import { RoleName, RoleSourceNote, RoleExplainer, AcquiredBadge } from '../components/RoleInfo'
-import { ROLE_CATALOG_SELECT } from '../lib/roles'
+import { RoleName, RoleSourceNote, RoleExplainer, RoleTitleWithInfo, AcquiredBadge } from '../components/RoleInfo'
+import { ROLE_CATALOG_SELECT, pickPrimaryRole } from '../lib/roles'
 import { placeAt, placeShortAt, isRedundantPlaceNote, placeMapsUrl, PLACE_SELECT, usePlaceMode, PLACE_MODES } from '../lib/places'
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
@@ -294,6 +294,8 @@ export function PersonPage() {
 
   const birthYear  = birth?.date_year
   const deathYear  = death?.date_year
+  // Lever: eksplisitt flagg, ellers ingen død registrert og født for under 105 år siden
+  const isLiving   = person.is_living ?? (!death && !!birth?.date_year && birth.date_year > new Date().getFullYear() - 105)
   const lifespan   = formatLifespan(birthYear, deathYear, person.is_living)
   const age        = calcAge(birthYear, deathYear)
   const birthDateText = birth ? formatDateText(birth.date_text, birth.date_year, birth.date_month, birth.date_day) : null
@@ -327,13 +329,6 @@ export function PersonPage() {
               personId={id}
               onPhotoUploaded={() => load(id)}
             />
-            <Link
-              to={`/tre?person=${id}&mode=aner`}
-              className="btn btn-secondary btn-sm"
-              style={{ justifyContent: 'center' }}
-            >
-              Vis {preferred?.given_name ?? fullName.split(' ')[0] ?? 'person'} i familietre
-            </Link>
           </div>
 
           {/* Info */}
@@ -399,9 +394,12 @@ export function PersonPage() {
               )}
             </div>
 
-            <PrimaryOccupation roles={roles} />
+            <PrimaryOccupation roles={roles} isLiving={isLiving} />
 
             <div className="profile-actions">
+              <Link to={`/tre?person=${id}&mode=aner`} className="btn btn-primary btn-sm">
+                Vis i familietreet
+              </Link>
               <a
                 className="btn btn-secondary btn-sm"
                 href={`mailto:nicowiig@gmail.com?subject=${encodeURIComponent(`Rettelse: ${fullName} (${id})`)}&body=${encodeURIComponent(`Gjelder: ${window.location.href}\n\nHva er feil, og hva er riktig (gjerne med kilde)?\n\n`)}`}
@@ -435,14 +433,14 @@ export function PersonPage() {
               childBirths={childBirths}
               roles={[...careerRoles, ...eduRoles]}
             />
-            {(careerRoles.length > 0 || workExp.length > 0) && <CareerSection roles={careerRoles} workExp={workExp} deathYear={deathYear} />}
+            {(careerRoles.length > 0 || workExp.length > 0) && <CareerSection roles={careerRoles} workExp={workExp} isLiving={isLiving} />}
             {eduRoles.length > 0 && <UtdannelseSection roles={eduRoles} facts={facts} />}
             {titleRoles.length > 0 && <TitlerSection roles={titleRoles} />}
             {otherRoles.length > 0 && <RolesSection roles={otherRoles} title="Andre roller" />}
             <BuildingsSection buildings={buildings} />
             <AddressesSection
               addresses={addresses}
-              deathYear={deathYear}
+              isLiving={isLiving}
               coResidents={coResidents}
             />
             {sources.length > 0 && <SourcesSection sources={sources} />}
@@ -756,22 +754,9 @@ function RelationBadge({ personId, myPersonId }) {
 }
 
 /* ===== Primæryrke ===== */
-const LOW_PRIORITY_OCC = ['advokatfullmektig', 'dommerfullmektig', 'fullmektig']
-
-function PrimaryOccupation({ roles }) {
-  const occRoles = roles.filter(r =>
-    ['OCCU', 'TITL', 'occupation', 'title', 'position'].includes(r.role_type) && r.value
-  )
-  if (!occRoles.length) return null
-
-  const scored = occRoles.map(r => ({
-    ...r,
-    duration: (r.date_to || 9999) - (r.date_from || 0),
-    isLow: LOW_PRIORITY_OCC.some(l => r.value?.toLowerCase().includes(l)),
-  }))
-  scored.sort((a, b) => a.isLow - b.isLow || b.duration - a.duration)
-  const occ = scored[0]
-
+function PrimaryOccupation({ roles, isLiving }) {
+  const occ = pickPrimaryRole(roles, { isLiving })
+  if (!occ) return null
   return (
     <p style={{ fontSize: 'var(--text-md)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>
       {expandRoleValue(occ.value)}
@@ -1140,8 +1125,8 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles
     if (!parsed?.year) return
     const isEdu = EDU_ROLE_TYPES.has(r.role_type)
     const label = isEdu
-      ? (r.place || r.value || 'Utdanning')
-      : [r.value, r.place].filter(Boolean).join(' · ')
+      ? `Utdanning: ${[r.value, r.place].filter(Boolean).join(' · ') || 'ukjent'}`
+      : [expandRoleValue(r.value), r.place].filter(Boolean).join(' · ')
     events.push({
       year: parsed.year,
       month: parsed.month || null,
@@ -1183,6 +1168,18 @@ function TimelineSection({ facts, families, spouseNamesMap, childBirths, roles }
 
   const years = Object.keys(byYear).map(Number).sort((a, b) => b - a)
 
+  // Historisk stedskontekst («nå Oslo · den gang unionen Sverige-Norge») vises bare første gang
+  // samme sted med samme kontekst dukker opp – ellers gjentas den på hver rad.
+  const seenContext = new Set()
+  const withContext = e => {
+    if (!e.placeContext) return e
+    const k = `${e.place}|${e.placeContext}`
+    if (seenContext.has(k)) return { ...e, placeContext: null }
+    seenContext.add(k)
+    return e
+  }
+  const yearRows = years.map(year => [year, sortYearEvents(byYear[year]).map(withContext)])
+
   return (
     <div className="profile-section">
       <div className="profile-section-header" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
@@ -1190,7 +1187,7 @@ function TimelineSection({ facts, families, spouseNamesMap, childBirths, roles }
         <PlaceModeToggle />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-        {years.map(year => (
+        {yearRows.map(([year, yearEvents]) => (
           <div key={year} style={{ display: 'flex', gap: 'var(--space-4)' }}>
             {/* Årstall */}
             <div style={{
@@ -1213,7 +1210,7 @@ function TimelineSection({ facts, families, spouseNamesMap, childBirths, roles }
               flexDirection: 'column',
               gap: 'var(--space-2)',
             }}>
-              {sortYearEvents(byYear[year]).map((e, i) => (
+              {yearEvents.map((e, i) => (
                 <TimelineEventRow key={i} event={e} />
               ))}
             </div>
@@ -1324,7 +1321,12 @@ function parseRoleDate(val) {
   if (!val) return null
   const str = String(val)
   const full = str.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (full) return { year: parseInt(full[1]), month: parseInt(full[2]), day: parseInt(full[3]) }
+  if (full) {
+    // 1. januar (og 31. desember) er plassholdere for «bare årstall»
+    const [y, m, d] = [parseInt(full[1]), parseInt(full[2]), parseInt(full[3])]
+    if ((m === 1 && d === 1) || (m === 12 && d === 31)) return { year: y, month: null }
+    return { year: y, month: m, day: d }
+  }
   const mm = str.match(/^(\d{4})-(\d{2})$/)
   if (mm) return { year: parseInt(mm[1]), month: parseInt(mm[2]) }
   const yy = str.match(/^(\d{4})$/)
@@ -1340,33 +1342,47 @@ function formatRoleDate(parsed) {
   return String(parsed.year)
 }
 
-function formatRolePeriod(from, to, deathYear) {
+/**
+ * Periode for en rolle/adresse.
+ *  - Mangler sluttdato: «2023 – nå» for levende, «fra 1857» for døde (vi vet ikke når det sluttet)
+ */
+function formatRolePeriod(from, to, isLiving) {
   if (!from && !to) return null
   const fromParsed = parseRoleDate(from)
   const toParsed   = parseRoleDate(to)
   const fromStr    = formatRoleDate(fromParsed)
-  const toStr      = toParsed ? formatRoleDate(toParsed) : (deathYear ? String(deathYear) : 'nå')
-  if (fromStr) return `${fromStr} – ${toStr}`
+  const toStr      = toParsed ? formatRoleDate(toParsed) : null
+  if (fromStr && toStr) return fromStr === toStr ? fromStr : `${fromStr} – ${toStr}`
+  if (fromStr) return isLiving ? `${fromStr} – nå` : `fra ${fromStr}`
   return `frem til ${toStr}`
 }
 
-function calcYears(from, to, deathYear) {
+/**
+ * Varighet. Bare når både start og slutt er kjent (eller personen lever og perioden pågår).
+ * Med bare årstall regnes hele år («33 år»), aldri «32 år 11 mnd».
+ */
+function calcYears(from, to, isLiving) {
   if (!from) return null
   const fromParsed = parseRoleDate(from)
-  const toParsed   = parseRoleDate(to)
   if (!fromParsed) return null
-  const now = new Date()
-  const fromMonths = fromParsed.year * 12 + (fromParsed.month || 1)
-  const toMonths   = toParsed
-    ? toParsed.year * 12 + (toParsed.month || 12)
-    : (deathYear ? deathYear * 12 + 12 : now.getFullYear() * 12 + (now.getMonth() + 1))
-  const totalMonths = toMonths - fromMonths
-  if (totalMonths <= 0) return null
-  const years  = Math.floor(totalMonths / 12)
-  const months = totalMonths % 12
-  if (years === 0) return months === 1 ? '1 mnd' : `${months} mnd`
-  if (months === 0) return years === 1 ? '1 år' : `${years} år`
-  return `${years} år ${months} mnd`
+  let toParsed = parseRoleDate(to)
+  if (!toParsed) {
+    if (!isLiving) return null
+    const now = new Date()
+    toParsed = { year: now.getFullYear(), month: now.getMonth() + 1 }
+  }
+  const fmt = (y, m) => {
+    if (y === 0) return m === 1 ? '1 mnd' : `${m} mnd`
+    const ys = y === 1 ? '1 år' : `${y} år`
+    return m ? `${ys} ${m} mnd` : ys
+  }
+  if (!fromParsed.month || !toParsed.month) {
+    const years = toParsed.year - fromParsed.year
+    return years > 0 ? fmt(years, 0) : null
+  }
+  const total = (toParsed.year * 12 + toParsed.month) - (fromParsed.year * 12 + fromParsed.month)
+  if (total <= 0) return null
+  return fmt(Math.floor(total / 12), total % 12)
 }
 
 function roleDateSort(a, b) {
@@ -1420,7 +1436,7 @@ function WorkExpIcon() {
   )
 }
 
-function CareerSection({ roles = [], workExp = [], deathYear }) {
+function CareerSection({ roles = [], workExp = [], isLiving }) {
   // Hent navn for eventuelle person-ID-er nevnt i notater
   const [nameMap, setNameMap] = useState({})
   useEffect(() => {
@@ -1440,8 +1456,12 @@ function CareerSection({ roles = [], workExp = [], deathYear }) {
       })
   }, [workExp])
 
-  // Normaliser roles til work-exp-format og slå sammen
-  const roleEntries = roles.map(roleToEntry)
+  // Normaliser roles til work-exp-format og slå sammen.
+  // En rolle som også står som stillingstittel i arbeidserfaringen (samme tittel) vises bare der.
+  const workTitles = new Set(workExp.map(w => (w.title || '').toLowerCase().trim()).filter(Boolean))
+  const roleEntries = roles
+    .filter(r => !workTitles.has((expandRoleValue(r.value) || '').toLowerCase().trim()))
+    .map(roleToEntry)
   const allEntries = [...roleEntries, ...workExp]
 
   // Grupper etter employer
@@ -1456,7 +1476,7 @@ function CareerSection({ roles = [], workExp = [], deathYear }) {
 
   // Sorter grupper: nyeste øverst
   groups.sort((a, b) => {
-    const latest = es => Math.max(...es.map(e => parseInt(e.date_to || e.date_from || '0') || 0))
+    const latest = es => Math.max(...es.map(e => (!e.date_to && e.date_from && isLiving) ? 9999 : (parseInt(e.date_to || e.date_from || '0') || 0)))
     return latest(b.entries) - latest(a.entries)
   })
 
@@ -1464,35 +1484,42 @@ function CareerSection({ roles = [], workExp = [], deathYear }) {
     <div className="profile-section">
       <h2 className="profile-section-header">Karriere</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-        {groups.map((g, i) => <WorkExpGroup key={i} group={g} nameMap={nameMap} deathYear={deathYear} />)}
+        {groups.map((g, i) => <WorkExpGroup key={i} group={g} nameMap={nameMap} isLiving={isLiving} />)}
       </div>
     </div>
   )
 }
 
-function WorkExpGroup({ group, nameMap, deathYear }) {
-  const { employer, place, entries } = group
+function WorkExpGroup({ group, nameMap, isLiving }) {
+  const { employer, entries } = group
   const hasMultiple = entries.length > 1
   const groupRole = entries.find(e => e._role?.role_id)?._role || null
 
-  const fromNums = entries.map(e => parseInt(e.date_from) || 0).filter(Boolean)
-  const toNums   = entries.map(e => parseInt(e.date_to || e.date_from) || 0).filter(Boolean)
+  // Felles sted vises bare når alle innslagene deler det (ellers står stedet på hvert innslag)
+  const places = [...new Set(entries.map(e => e.place).filter(Boolean))]
+  const place = places.length === 1 && entries.every(e => e.place) ? places[0] : null
+
+  const yr = v => parseRoleDate(v)?.year || null
+  const fromNums = entries.map(e => yr(e.date_from)).filter(Boolean)
+  const toNums   = entries.map(e => yr(e.date_to) || yr(e.date_from)).filter(Boolean)
+  const ongoing  = isLiving && entries.some(e => e.date_from && !e.date_to)
   const minYear  = fromNums.length ? Math.min(...fromNums) : null
   const maxYear  = toNums.length   ? Math.max(...toNums)   : null
   const period   = minYear
-    ? (maxYear && maxYear !== minYear ? `${minYear}–${maxYear}` : String(minYear))
+    ? (ongoing ? `${minYear}–nå` : maxYear && maxYear !== minYear ? `${minYear}–${maxYear}` : String(minYear))
     : null
 
-  const sorted = [...entries].sort((a, b) => (parseInt(a.date_from) || 0) - (parseInt(b.date_from) || 0))
+  const sorted = [...entries].sort((a, b) => (yr(a.date_from) || 0) - (yr(b.date_from) || 0))
 
   return (
     <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
       <WorkExpIcon />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: 'var(--text-base)' }}>
-          {groupRole ? <RoleName role={groupRole}>{employer}</RoleName> : (employer || 'Ukjent arbeidsgiver')}
+          {groupRole
+            ? <RoleTitleWithInfo role={groupRole}>{employer}</RoleTitleWithInfo>
+            : (employer || 'Ukjent arbeidsgiver')}
         </div>
-        {groupRole && <RoleExplainer catalog={groupRole.catalog} />}
         {hasMultiple && (place || period) && (
           <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-2)' }}>
             {[place, period].filter(Boolean).join(' · ')}
@@ -1500,7 +1527,7 @@ function WorkExpGroup({ group, nameMap, deathYear }) {
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {sorted.map((e, i) => (
-            <WorkExpEntry key={e.id || i} entry={e} compact={hasMultiple} nameMap={nameMap} deathYear={deathYear} />
+            <WorkExpEntry key={e.id || i} entry={e} compact={hasMultiple} nameMap={nameMap} isLiving={isLiving} hidePlace={hasMultiple && !!place} />
           ))}
         </div>
       </div>
@@ -1526,14 +1553,14 @@ function renderWithPersonLinks(text, nameMap) {
   })
 }
 
-function WorkExpEntry({ entry, compact, nameMap = {}, deathYear }) {
+function WorkExpEntry({ entry, compact, nameMap = {}, isLiving, hidePlace = false }) {
   const [expanded, setExpanded] = useState(false)
   const TRUNCATE = 120
 
   const fromYear = entry.date_from ? String(parseInt(entry.date_from) || entry.date_from) : null
   const toYear   = entry.date_to   ? String(parseInt(entry.date_to)   || entry.date_to)   : null
-  const period   = formatRolePeriod(entry.date_from, entry.date_to, deathYear)
-  const duration = calcYears(entry.date_from, entry.date_to, deathYear)
+  const period   = formatRolePeriod(entry.date_from, entry.date_to, isLiving)
+  const duration = calcYears(entry.date_from, entry.date_to, isLiving)
 
   const notesTruncated = entry.notes && entry.notes.length > TRUNCATE
     ? entry.notes.slice(0, TRUNCATE).trimEnd() + '…'
@@ -1549,7 +1576,7 @@ function WorkExpEntry({ entry, compact, nameMap = {}, deathYear }) {
         </div>
       )}
       <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
-        {[entry.place, period, duration].filter(Boolean).join(' · ')}
+        {[hidePlace ? null : entry.place, period, duration].filter(Boolean).join(' · ')}
       </div>
       {entry._role && <RoleSourceNote role={entry._role} style={{ display: 'block' }} />}
       {entry.notes && (
@@ -1620,20 +1647,27 @@ function UtdannelseSection({ roles, facts }) {
   )
 }
 
+// Institusjonen er overskriften. Kildene blander: noen ganger står skolen i value (og byen i place),
+// andre ganger graden i value og skolen i place.
+const INSTITUTION_RE = /(akadem|schule|skole|skule|universit|høyskole|høgskole|hochschule|institut|college|gymnas|seminar|school|academy|kollegium|katedral)/i
+
 function UtdannelseCard({ role }) {
   const period = formatRolePeriod(role.date_from, role.date_to)
+  const placeIsInstitution = INSTITUTION_RE.test(role.place || '') && !INSTITUTION_RE.test(role.value || '')
+  const heading = placeIsInstitution ? role.place : (role.value || role.place)
+  const sub = placeIsInstitution ? role.value : (role.value ? role.place : null)
 
   return (
     <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
       <EduIcon />
       <div style={{ flex: 1, minWidth: 0 }}>
-        {role.place && (
+        {heading && (
           <div style={{ fontWeight: 700, fontSize: 'var(--text-base)', marginBottom: 'var(--space-1)' }}>
-            {role.place}
+            {heading}
           </div>
         )}
-        {role.value && (
-          <div style={{ fontSize: 'var(--text-sm)', marginBottom: 2 }}>{role.value}</div>
+        {sub && (
+          <div style={{ fontSize: 'var(--text-sm)', marginBottom: 2 }}>{sub}</div>
         )}
         {period && (
           <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>{period}</div>
@@ -2085,7 +2119,7 @@ function BuildingsSection({ buildings }) {
   )
 }
 
-function AddressesSection({ addresses, deathYear, coResidents = {} }) {
+function AddressesSection({ addresses, isLiving, coResidents = {} }) {
   function addrDateNum(v) {
     if (!v) return 0
     const s = String(v)
@@ -2159,9 +2193,8 @@ function AddressesSection({ addresses, deathYear, coResidents = {} }) {
     const next = sortedDbOnly.find(n =>
       RESIDENTIAL_TYPES.has(n.address_type) && n.date_from && addrDateNum(n.date_from) > myNum
     )
-    const effective_date_to = next?.date_from
-      ? String(next.date_from).slice(0, 4)
-      : deathYear ? String(deathYear) : null
+    // Slutt = neste bosted. Uten neste bosted er slutten ukjent (ikke dødsåret).
+    const effective_date_to = next?.date_from ? String(next.date_from).slice(0, 4) : null
     return { ...a, effective_date_to }
   })
 
@@ -2187,8 +2220,31 @@ function AddressesSection({ addresses, deathYear, coResidents = {} }) {
     }
   }
 
+  // Slå sammen rader for samme sted og samme startår (f.eks. Fødested + Bosted + Barndomshjem i Allégaten 27)
+  const merged = []
+  const byKey = new Map()
+  for (const a of deduped) {
+    const place = a.address_id || addrKey(a)
+    const key = place ? `${place}|${String(a.date_from || '').slice(0, 4)}` : null
+    const prev = key && byKey.get(key)
+    if (!prev) {
+      const row = { ...a, _types: [a.address_type] }
+      merged.push(row)
+      if (key) byKey.set(key, row)
+      continue
+    }
+    if (!prev._types.includes(a.address_type)) prev._types.push(a.address_type)
+    // Behold perioden (ikke hendelsen) som hovedtype, og den lengste slutten
+    if (!prev.date_to && a.date_to) prev.date_to = a.date_to
+    if (!prev.effective_date_to && a.effective_date_to) prev.effective_date_to = a.effective_date_to
+    if (EVENT_TYPES.has(prev.address_type) && !EVENT_TYPES.has(a.address_type)) prev.address_type = a.address_type
+    const notes = [prev.notes, a.notes].filter(Boolean)
+    prev.notes = [...new Set(notes)].join(' — ') || null
+    if (!prev.building_name && a.building_name) prev.building_name = a.building_name
+  }
+
   // Reverser til synkende rekkefølge for visning
-  const combined = deduped.reverse()
+  const combined = merged.reverse()
 
   if (!combined.length) return null
 
@@ -2197,7 +2253,7 @@ function AddressesSection({ addresses, deathYear, coResidents = {} }) {
       <h2 className="profile-section-header">Adresser og bosteder</h2>
       <div className="timeline">
         {combined.map((a, i) => (
-          <AddressItem key={a.id || a._id || i} addr={a} deathYear={deathYear} coResidents={coResidents[a.address_id] || []} />
+          <AddressItem key={a.id || a._id || i} addr={a} isLiving={isLiving} coResidents={coResidents[a.address_id] || []} />
         ))}
       </div>
     </div>
@@ -2313,16 +2369,18 @@ function ConfirmButton({ periodId, isConfirmed, onToggle }) {
   )
 }
 
-function AddressItem({ addr, deathYear, coResidents = [] }) {
+function AddressItem({ addr, isLiving, coResidents = [] }) {
   const [dateFrom, setDateFrom] = useState(addr.date_from)
   const [dateTo_, setDateTo_] = useState(addr.date_to)
   const [confirmed, setConfirmed] = useState(addr.is_confirmed)
 
-  const typeLabel = ADDR_TYPE_LABELS[addr.address_type] || addr.address_type || 'Bosted'
+  const types = addr._types?.length ? addr._types : [addr.address_type]
+  const typeLabel = [...new Set(types.map(t => ADDR_TYPE_LABELS[t] || t || 'Bosted'))].join(' · ')
   // Hendelsessteder (fødsel, dåp, død, grav, folketelling) er et tidspunkt, ikke en periode
-  const isBirthPlace = ['birth_place', 'baptism_place', 'death_place', 'burial_place', 'census_record'].includes(addr.address_type)
+  const POINT_TYPES = ['birth_place', 'baptism_place', 'death_place', 'burial_place', 'census_record']
+  const isBirthPlace = types.every(t => POINT_TYPES.includes(t))
   const dateTo = isBirthPlace ? null : (dateTo_ ?? addr.effective_date_to)
-  const duration  = isBirthPlace ? null : calcYears(dateFrom, dateTo, deathYear)
+  const duration  = isBirthPlace ? null : calcYears(dateFrom, dateTo, isLiving)
   const streetPart = addr.street_name ? `${addr.street_name} ${addr.street_number || ''}`.trim() : null
   const postalPart = [addr.postal_code, addr.city].filter(Boolean).join(' ')
   const cityFallback = addr.city
@@ -2738,14 +2796,42 @@ function FamilySection({ person, families, parentFamilies }) {
   )
 }
 
+/** Fødsels- og dødsår for en liste personer (til «(1829–1917)» i familiekortene). */
+async function fetchLifeYears(ids) {
+  if (!ids.length) return {}
+  const { data } = await supabase
+    .from('person_facts')
+    .select('person_id, fact_type, date_year')
+    .in('person_id', ids)
+    .in('fact_type', ['BIRT', 'DEAT'])
+  const out = {}
+  ;(data || []).forEach(f => {
+    if (!f.date_year) return
+    const o = out[f.person_id] || (out[f.person_id] = {})
+    if (f.fact_type === 'BIRT') o.b = f.date_year
+    else o.d = f.date_year
+  })
+  return out
+}
+
+function lifeSpanLabel(y) {
+  if (!y || (!y.b && !y.d)) return null
+  return `${y.b || '?'}–${y.d || ''}`
+}
+
+const byBirth = years => (a, b) => (years[a.id]?.b || 9999) - (years[b.id]?.b || 9999)
+
 function ParentFamilyCard({ family, personId, myAncestors }) {
   const [fatherName, setFatherName] = useState(null)
   const [motherName, setMotherName] = useState(null)
   const [siblings,   setSiblings]   = useState([])
+  const [years,      setYears]      = useState({})
 
   useEffect(() => {
     async function load() {
       const ids = [family.husband_id, family.wife_id].filter(Boolean)
+      const allIds = [...ids, ...(family.family_children || []).map(c => c.child_id).filter(id => id !== personId)]
+      fetchLifeYears(allIds).then(setYears)
       if (!ids.length) return
       const { data } = await supabase
         .from('person_names')
@@ -2784,16 +2870,16 @@ function ParentFamilyCard({ family, personId, myAncestors }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
       {family.husband_id && (
-        <RelativeLink id={family.husband_id} name={fatherName} label="Far" isAncestor={myAncestors?.has(family.husband_id)} />
+        <RelativeLink id={family.husband_id} name={fatherName} label="Far" years={years[family.husband_id]} isAncestor={myAncestors?.has(family.husband_id)} />
       )}
       {family.wife_id && (
-        <RelativeLink id={family.wife_id} name={motherName} label="Mor" isAncestor={myAncestors?.has(family.wife_id)} />
+        <RelativeLink id={family.wife_id} name={motherName} label="Mor" years={years[family.wife_id]} isAncestor={myAncestors?.has(family.wife_id)} />
       )}
       {siblings.length > 0 && (
         <>
           <div style={{ marginTop: 'var(--space-3)', marginBottom: 'var(--space-1)', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-text-light)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Søsken</div>
-          {siblings.map(s => (
-            <RelativeLink key={s.id} id={s.id} name={s.name} isAncestor={myAncestors?.has(s.id)} />
+          {[...siblings].sort(byBirth(years)).map(s => (
+            <RelativeLink key={s.id} id={s.id} name={s.name} years={years[s.id]} isAncestor={myAncestors?.has(s.id)} />
           ))}
         </>
       )}
@@ -2806,11 +2892,13 @@ function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
   const [spouseName, setSpouseName] = useState(null)
   const [childNames, setChildNames] = useState({})
   const [frille, setFrille] = useState(null) // 'spouse' | 'self' | null
+  const [years, setYears] = useState({})
   const children   = family.family_children || []
 
   useEffect(() => {
     async function load() {
       const ids = [spouseId, ...children.map(c => c.child_id)].filter(Boolean)
+      fetchLifeYears(ids).then(setYears)
       // Frilleforhold: vises ikke som ekteskap
       const pair = [spouseId, personId].filter(Boolean)
       if (pair.length) {
@@ -2847,7 +2935,7 @@ function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
           : (sex === 'M' ? 'Hustru' : 'Ektemann')}
       </h4>
       {spouseId ? (
-        <RelativeLink id={spouseId} name={spouseName} isAncestor={myAncestors?.has(spouseId)} />
+        <RelativeLink id={spouseId} name={spouseName} years={years[spouseId]} isAncestor={myAncestors?.has(spouseId)} />
       ) : (
         <p className="text-sm text-muted">Ukjent ektefelle</p>
       )}
@@ -2866,11 +2954,12 @@ function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
             {frille ? 'Barn utenfor ekteskap' : 'Barn'}
           </h5>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            {children.map(c => (
+            {children.map(c => ({ ...c, id: c.child_id })).sort(byBirth(years)).map(c => (
               <RelativeLink
                 key={c.child_id}
                 id={c.child_id}
                 name={childNames[c.child_id]}
+                years={years[c.child_id]}
                 isAncestor={myAncestors?.has(c.child_id)}
               />
             ))}
@@ -2881,8 +2970,9 @@ function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
   )
 }
 
-function RelativeLink({ id, name, label, isAncestor }) {
+function RelativeLink({ id, name, label, isAncestor, years }) {
   const displayName = name ? formatName(name) : id
+  const span = lifeSpanLabel(years)
 
   return (
     <Link
@@ -2902,6 +2992,7 @@ function RelativeLink({ id, name, label, isAncestor }) {
       )}
       <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
         <span style={{ fontWeight: 600 }}>{displayName}</span>
+        {span && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-light)', fontVariantNumeric: 'tabular-nums' }}>{span}</span>}
         {isAncestor && (
           <span title="Din direkte anelinje" style={{
             fontSize: '10px',
