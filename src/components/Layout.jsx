@@ -6,6 +6,7 @@ import { supabase } from '../supabase'
 
 const NAV_LINKS = [
   { to: '/',            label: 'Hjem' },
+  { to: '/min-slekt',   label: 'Min slekt' },
   { to: '/grener',      label: 'Slektsgrener' },
   { to: '/tre',         label: 'Familietre' },
   { to: '/steder',      label: 'Steder' },
@@ -102,9 +103,17 @@ export function Layout({ children }) {
       const idSets = tokenResults.map(rows => new Set(rows.map(r => r.person_id)))
       const matched = tokenResults[0].filter(r => idSets.every(s => s.has(r.person_id)))
 
+      // Skjul sammenslåtte/slettede personer
+      const matchedIds = [...new Set(matched.map(r => r.person_id))]
+      const { data: alive } = matchedIds.length
+        ? await supabase.from('persons').select('person_id').in('person_id', matchedIds).eq('is_deleted', false)
+        : { data: [] }
+      const activeIds = new Set((alive || []).map(p => p.person_id))
+
       // Dedupliser og begrens til 6
       const seen = new Set()
       const unique = matched.filter(r => {
+        if (!activeIds.has(r.person_id)) return false
         if (seen.has(r.person_id)) return false
         seen.add(r.person_id)
         return true
@@ -192,8 +201,8 @@ export function Layout({ children }) {
               <div style={{
                 position: 'absolute',
                 top: '100%',
-                left: 0,
                 right: 0,
+                width: 'min(360px, calc(100vw - 24px))',
                 background: 'var(--color-bg-card)',
                 border: '1px solid var(--color-border)',
                 borderRadius: 'var(--radius)',
@@ -201,7 +210,6 @@ export function Layout({ children }) {
                 zIndex: 200,
                 overflow: 'hidden',
                 marginTop: 4,
-                minWidth: 280,
               }}>
                 {suggestions.map(s => {
                   const lifespan = s.birth

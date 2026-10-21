@@ -19,6 +19,7 @@ import { DuplikatPage }     from './pages/DuplikatPage'
 import { StatistikkPage }   from './pages/StatistikkPage'
 import { RollerPage }       from './pages/RollerPage'
 import { RolePage }         from './pages/RolePage'
+import { MinSlektPage }      from './pages/MinSlektPage'
 
 export default function App() {
   return (
@@ -69,6 +70,9 @@ export default function App() {
           } />
           <Route path="/rolle/:id" element={
             <ProtectedRoute><RolePage /></ProtectedRoute>
+          } />
+          <Route path="/min-slekt" element={
+            <ProtectedRoute><MinSlektPage /></ProtectedRoute>
           } />
           <Route path="/statistikk" element={
             <ProtectedRoute><StatistikkPage /></ProtectedRoute>

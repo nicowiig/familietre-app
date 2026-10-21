@@ -485,26 +485,35 @@ export function TreePage() {
   }, [allNodes])
 
   // ─── Fit-to-screen ─────────────────────────────────────
-  useEffect(() => {
+  // Tilpass visningen: søsken/ektefeller utvides til siden og skal ikke presse treet ned i
+  // uleselig størrelse. Under MIN_FIT_SCALE sentreres fokuspersonen i stedet.
+  const fitView = useCallback(() => {
     if (!allNodes.length || !containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
     const W = rect.width  || 800
     const H = rect.height || 500
-
-    const xs = allNodes.map(n => n.x)
-    const ys = allNodes.map(n => n.y)
+    const MIN_FIT_SCALE = 0.45
+    const core = allNodes.filter(n => n.nodeType !== 'sibling' && n.nodeType !== 'spouse')
+    const fitNodes = core.length ? core : allNodes
+    const xs = fitNodes.map(n => n.x)
+    const ys = fitNodes.map(n => n.y)
     const minX  = Math.min(...xs)
     const minY  = Math.min(...ys)
     const treeW = Math.max(...xs) + NODE_W - minX
     const treeH = Math.max(...ys) + NODE_H - minY
-
-    const s = Math.min(1, (W - 48) / (treeW || 1), (H - 48) / (treeH || 1))
-    setPan({
-      x: (W - treeW * s) / 2 - minX * s,
-      y: (H - treeH * s) / 2 - minY * s,
-    })
+    const fit = Math.min(1, (W - 48) / (treeW || 1), (H - 48) / (treeH || 1))
+    if (fit >= MIN_FIT_SCALE) {
+      setPan({ x: (W - treeW * fit) / 2 - minX * fit, y: (H - treeH * fit) / 2 - minY * fit })
+      setScale(fit)
+      return
+    }
+    const focus = allNodes.find(n => n.id === personId) || fitNodes[0]
+    const s = MIN_FIT_SCALE
+    setPan({ x: W / 2 - (focus.x + NODE_W / 2) * s, y: H - 48 - (focus.y + NODE_H) * s })
     setScale(s)
-  }, [allNodes])
+  }, [allNodes, personId])
+
+  useEffect(() => { fitView() }, [fitView])
 
   // ─── Pan/zoom-hendlere ─────────────────────────────────
   const handleWheel = useCallback((e) => {
@@ -621,21 +630,7 @@ export function TreePage() {
     })
   }
 
-  function resetZoom() {
-    if (!allNodes.length || !containerRef.current) return
-    const rect = containerRef.current.getBoundingClientRect()
-    const W = rect.width  || 800
-    const H = rect.height || 500
-    const xs = allNodes.map(n => n.x)
-    const ys = allNodes.map(n => n.y)
-    const minX  = Math.min(...xs)
-    const minY  = Math.min(...ys)
-    const treeW = Math.max(...xs) + NODE_W - minX
-    const treeH = Math.max(...ys) + NODE_H - minY
-    const s = Math.min(1, (W - 48) / (treeW || 1), (H - 48) / (treeH || 1))
-    setPan({ x: (W - treeW * s) / 2 - minX * s, y: (H - treeH * s) / 2 - minY * s })
-    setScale(s)
-  }
+  function resetZoom() { fitView() }
 
   // ─── Fokusperson-info ───────────────────────────────────
   const focusInfo = graph?.infoMap?.get(personId)
