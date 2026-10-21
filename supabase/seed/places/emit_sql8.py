@@ -15,7 +15,7 @@ OVR = {
  'Vilniaus arkikatedra': ('Vilnius-katedralen, Vilnius', None, 'Litauen', None),
  'Ryde og senere Nakskov': ('Ryde, Lolland', 'Maribo', 'Danmark', 'Senere flyttet til Nakskov.'),
  'kapellet under koret': ('Strandby kirke, Vesthimmerland', 'Aalborg', 'Danmark', 'Gravkapellet under koret (sannsynlig – avledet av fødested og dødssted i Strandby).'),
- 'Aalum opsl 35/183': ('Aalum', 'Viborg', 'Danmark', 'Kirkebok: opslag 35/183. NB: motstridende årstall – død 1683 (finnholbek.dk), gravlagt 1693.'),
+ 'Aalum opsl 35/183': ('Aalum', 'Viborg', 'Danmark', 'Kirkebok: opslag 35/183.'),
  'Gården Fosseli': ('Fosseli, Øyestad', 'Aust-Agder', NOR, None),
  'Midtschoug,': ('Midtskogen, Grue Finnskog', 'Hedmark', NOR, None),
  'Ris kirkegård': ('Ris kirkegård, Oslo', 'Akershus', NOR, None),
@@ -78,6 +78,11 @@ ON CONFLICT (name_variant) DO UPDATE SET address_id = EXCLUDED.address_id, canon
 INSERT INTO person_audit_log (person_id, changed_by, change_type, table_name, note)
 SELECT DISTINCT f.person_id, 'claude', 'update', 'person_facts', 'Sted koblet etter manuell gjennomgang: «' || f.place_raw || '» → ' || coalesce(a.name_display, a.name_short)
 FROM person_facts f JOIN _m m ON m.raw = f.place_raw JOIN addresses a ON a.id = m.target;
+
+-- Maren Pedersdatter: kirkebokas gravlegging 24.12.1693 (med side-henvisning) veier tyngre enn 1683 fra finnholbek.dk
+UPDATE person_facts SET date_text = 'DEC 1693', date_year = 1693, date_month = 12, date_day = NULL,
+  notes = 'Rettet tilbake til 1693: gravlagt 24.12.1693 i Aalum ifølge kirkeboka (opslag 35/183). finnholbek.dk oppgir 1683, trolig skrivefeil.'
+WHERE person_id = 'I502041' AND fact_type = 'DEAT';
 
 -- Hjemmevielse i Stavern (Carl Ditlev Eberhardt og Anne Farup, 1774)
 INSERT INTO person_audit_log (person_id, changed_by, change_type, table_name, note) VALUES

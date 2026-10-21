@@ -127,7 +127,7 @@ INSERT INTO _m VALUES
 ('Østre Bön, Tøcksmark',515,NULL,NULL,NULL,NULL,NULL),
 ('Ryk',NULL,'Ryk','Bohuslän','Sverige','Ryk, Bohuslän, Sverige',NULL),
 ('''Morvik,',NULL,'Morvik','Hordaland','Norge','Morvik',NULL),
-('Aalum opsl 35/183',NULL,'Aalum','Viborg','Danmark','Aalum, Viborg, Danmark','Kirkebok: opslag 35/183. NB: motstridende årstall – død 1683 (finnholbek.dk), gravlagt 1693.'),
+('Aalum opsl 35/183',NULL,'Aalum','Viborg','Danmark','Aalum, Viborg, Danmark','Kirkebok: opslag 35/183.'),
 ('Alslevgaard',NULL,'Alslevgaard','Holstein','Tyskland','Alslevgaard, Holstein, Tyskland',NULL),
 ('Granselv',NULL,'Granselv','Hordaland','Norge','Granselv',NULL),
 ('Gården Fosseli',NULL,'Fosseli, Øyestad','Aust-Agder','Norge','Fosseli, Øyestad',NULL),
@@ -178,6 +178,11 @@ ON CONFLICT (name_variant) DO UPDATE SET address_id = EXCLUDED.address_id, canon
 INSERT INTO person_audit_log (person_id, changed_by, change_type, table_name, note)
 SELECT DISTINCT f.person_id, 'claude', 'update', 'person_facts', 'Sted koblet etter manuell gjennomgang: «' || f.place_raw || '» → ' || coalesce(a.name_display, a.name_short)
 FROM person_facts f JOIN _m m ON m.raw = f.place_raw JOIN addresses a ON a.id = m.target;
+
+-- Maren Pedersdatter: kirkebokas gravlegging 24.12.1693 (med side-henvisning) veier tyngre enn 1683 fra finnholbek.dk
+UPDATE person_facts SET date_text = 'DEC 1693', date_year = 1693, date_month = 12, date_day = NULL,
+  notes = 'Rettet tilbake til 1693: gravlagt 24.12.1693 i Aalum ifølge kirkeboka (opslag 35/183). finnholbek.dk oppgir 1683, trolig skrivefeil.'
+WHERE person_id = 'I502041' AND fact_type = 'DEAT';
 
 -- Hjemmevielse i Stavern (Carl Ditlev Eberhardt og Anne Farup, 1774)
 INSERT INTO person_audit_log (person_id, changed_by, change_type, table_name, note) VALUES
