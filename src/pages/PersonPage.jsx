@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { RoleName, RoleSourceNote, RoleExplainer, AcquiredBadge } from '../components/RoleInfo'
 import { ROLE_CATALOG_SELECT } from '../lib/roles'
+import { placeLabel, placeShort, historicalContext, isRedundantPlaceNote, placeMapsUrl, PLACE_SELECT } from '../lib/places'
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { LinkPreview } from '../components/LinkPreview'
@@ -63,7 +64,7 @@ export function PersonPage() {
       ] = await Promise.all([
         supabase.from('persons').select('*').eq('person_id', personId).eq('is_deleted', false).maybeSingle(),
         supabase.from('person_names').select('*').eq('person_id', personId).order('is_preferred', { ascending: false }),
-        supabase.from('person_facts').select('*').eq('person_id', personId).order('date_year'),
+        supabase.from('person_facts').select(`*, place:place_id(${PLACE_SELECT})`).eq('person_id', personId).order('date_year'),
         supabase.from('address_periods').select('*, addresses(*, place_articles(id, title))').eq('entity_type', 'person').eq('entity_id', personId).order('date_from'),
         supabase.from('person_biography').select('*').eq('person_id', personId).maybeSingle(),
         supabase.from('person_roles').select(ROLE_CATALOG_SELECT).eq('person_id', personId).order('date_from'),
@@ -101,6 +102,8 @@ export function PersonPage() {
         postal_code:  p.addresses?.postal_code  || null,
         place_raw:    p.addresses?.place_raw    || null,
         display_name: p.addresses?.display_name || null,
+        name_display: p.addresses?.name_display || null,
+        place:        p.addresses || null,
         granularity:  p.addresses?.granularity  || 'unknown',
         building_name: p.addresses?.building_name || null,
         address_id:   p.address_id,
@@ -164,7 +167,7 @@ export function PersonPage() {
       // Hent familier der personen er ektefelle
       const [famAsSpouse, famAsChild] = await Promise.all([
         supabase.from('families')
-          .select('*, family_children(child_id)')
+          .select(`*, family_children(child_id), marr_place:marr_place_id(${PLACE_SELECT})`)
           .or(`husband_id.eq.${personId},wife_id.eq.${personId}`),
         supabase.from('family_children').select('family_id').eq('child_id', personId),
       ])
@@ -367,10 +370,10 @@ export function PersonPage() {
               {birth && birthDisplay && (
                 <span>
                   f.{' '}
-                  {birth.place_raw
-                    ? <a href={mapsUrl(birth.place_raw)} target="_blank" rel="noreferrer">
+                  {(birth.place || birth.place_raw)
+                    ? <a href={placeMapsUrl(birth.place, birth.place_raw)} target="_blank" rel="noreferrer" title={[placeLabel(birth.place, birth.place_raw), historicalContext(birth.place, birth.date_year)].filter(Boolean).join(' – ')}>
                         {birthDateText}
-                        {birth.place_city && ` · ${birth.place_city}`}
+                        {placeShort(birth.place, birth.place_city) && ` · ${placeShort(birth.place, birth.place_city)}`}
                       </a>
                     : birthDateText
                   }
@@ -380,10 +383,10 @@ export function PersonPage() {
               {death && (
                 <span>
                   d.{' '}
-                  {death.place_raw
-                    ? <a href={mapsUrl(death.place_raw)} target="_blank" rel="noreferrer">
+                  {(death.place || death.place_raw)
+                    ? <a href={placeMapsUrl(death.place, death.place_raw)} target="_blank" rel="noreferrer" title={[placeLabel(death.place, death.place_raw), historicalContext(death.place, death.date_year)].filter(Boolean).join(' – ')}>
                         {formatDateText(death.date_text, death.date_year, death.date_month, death.date_day)}
-                        {death.place_city && ` · ${death.place_city}`}
+                        {placeShort(death.place, death.place_city) && ` · ${placeShort(death.place, death.place_city)}`}
                       </a>
                     : formatDateText(death.date_text, death.date_year, death.date_month, death.date_day)
                   }
@@ -1054,12 +1057,13 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles
     const type = normFact(f.fact_type)
     if (TIMELINE_SKIP_TYPES.has(type)) return
 
-    const place = f.place_city || f.place_raw
+    const place = placeLabel(f.place, f.place_city || f.place_raw)
     const source = getFactSource(type)
 
     let label = FACT_LABELS[type] || f.fact_type
-    let note = f.notes || null
+    let note = isRedundantPlaceNote(f.notes) ? null : (f.notes || null)
     let eventPlace = place || null
+    const placeContext = historicalContext(f.place, f.date_year)
 
     // Census: vis som "Registrert i Folketelling" med sted som vanlig place
     if (type === 'CENS') {
@@ -1075,13 +1079,15 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles
       label,
       note,
       place: eventPlace,
+      placeObj: f.place || null,
+      placeContext,
       source,
     })
   })
 
   // Fra families: vigsel-hendelser
   families.forEach(fam => {
-    if (!fam.marr_date && !fam.marr_place_raw) return
+    if (!fam.marr_date && !fam.marr_place_raw && !fam.marr_place) return
     const { year, month, day } = parseFamilyDateParts(fam.marr_date)
     const spouseInfo = spouseNamesMap?.[fam.family_id]
     const spouseName = spouseInfo?.name
@@ -1093,7 +1099,9 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles
       day,
       label,
       note: null,
-      place: fam.marr_place_raw || null,
+      place: placeLabel(fam.marr_place, fam.marr_place_raw),
+      placeObj: fam.marr_place || null,
+      placeContext: historicalContext(fam.marr_place, year),
       source: 'Vigselbok',
       eventPersonId: spouseInfo?.personId || null,
     })
@@ -1231,7 +1239,7 @@ function TimelineSection({ facts, families, spouseNamesMap, childBirths, roles }
 }
 
 function TimelineEventRow({ event }) {
-  const { month, day, label, note, place, source, eventPersonId } = event
+  const { month, day, label, note, place, placeObj, placeContext, source, eventPersonId } = event
 
   // Datoprefix: "23. september" eller "september" eller ingenting
   let dateStr = null
@@ -1272,9 +1280,10 @@ function TimelineEventRow({ event }) {
         {place && (
           <span style={{ color: 'var(--color-text-muted)' }}>
             {' '}·{' '}
-            <a href={mapsUrl(place)} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>
+            <a href={placeMapsUrl(placeObj, place)} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>
               {place}
             </a>
+            {placeContext && <span className="place-context"> ({placeContext})</span>}
           </span>
         )}
         {note && isContextualNote(note) && (
@@ -2307,8 +2316,11 @@ function AddressItem({ addr, deathYear, coResidents = [] }) {
     : null
   const display   = streetPart
     ? [streetPart, postalPart].filter(Boolean).join(', ')
-    : addr.place_raw || (addr.address_type === 'census_record' ? addr.notes : null) || cityFallback
-  const noteText = addr.notes || (streetPart && addr.place_raw ? addr.place_raw : null)
+    : addr.name_display || addr.place_raw || (addr.address_type === 'census_record' ? addr.notes : null) || cityFallback
+  const noteText = isRedundantPlaceNote(addr.notes) ? null
+    : addr.notes || (streetPart && addr.place_raw && !addr.name_display ? addr.place_raw : null)
+  const fromYear = parseInt(String(dateFrom || '').slice(0, 4), 10) || null
+  const addrContext = historicalContext(addr.place, fromYear)
 
   // Filtrer samboere som har tidsmessig overlapp med denne perioden
   const overlapping = coResidents.filter(cr => {
@@ -2369,7 +2381,9 @@ function AddressItem({ addr, deathYear, coResidents = [] }) {
           {addr.building_name}
         </div>
       )}
-      <div className="timeline-place" style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>{typeLabel}</div>
+      <div className="timeline-place" style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
+        {typeLabel}{addrContext && <span className="place-context"> · {addrContext}</span>}
+      </div>
       {addr.employer && (
         <div className="timeline-place">{addr.employer}{addr.department ? ` · ${addr.department}` : ''}</div>
       )}
@@ -2826,7 +2840,7 @@ function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
       {family.marr_date && !frille && (
         <p className="text-sm text-muted mt-2">
           {family.family_type === 'divorced' ? 'Gift (senere skilt)' : 'Gift'}: {parseFamilyDate(family.marr_date)}
-          {family.marr_place_raw && ` · ${family.marr_place_raw}`}
+          {placeLabel(family.marr_place, family.marr_place_raw) && ` · ${placeLabel(family.marr_place, family.marr_place_raw)}`}
         </p>
       )}
 

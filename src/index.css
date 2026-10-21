@@ -1254,3 +1254,6 @@ html, body { overflow-x: hidden; }
   .pedigree-row { grid-template-columns: 1fr auto; }
   .pedigree-track { grid-column: 1 / -1; order: 3; }
 }
+
+/* Historisk kontekst for steder */
+.place-context { color: var(--color-text-light); font-style: italic; font-size: 0.95em; }
