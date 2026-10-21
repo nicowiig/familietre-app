@@ -440,7 +440,6 @@ export function PersonPage() {
             <BuildingsSection buildings={buildings} />
             <AddressesSection
               addresses={addresses}
-              deathYear={deathYear}
               isLiving={isLiving}
               coResidents={coResidents}
             />
@@ -2120,7 +2119,7 @@ function BuildingsSection({ buildings }) {
   )
 }
 
-function AddressesSection({ addresses, deathYear, isLiving, coResidents = {} }) {
+function AddressesSection({ addresses, isLiving, coResidents = {} }) {
   function addrDateNum(v) {
     if (!v) return 0
     const s = String(v)
