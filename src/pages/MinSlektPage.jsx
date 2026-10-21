@@ -142,7 +142,7 @@ export function MinSlektPage() {
                       <span className="pedigree-track"><span className="pedigree-fill" style={{ width: `${Math.max(pct, 0.5)}%` }} /></span>
                       <span className="pedigree-count">
                         {g.known.toLocaleString('nb-NO')} av {g.possible.toLocaleString('nb-NO')}
-                        <span className="text-light"> · {pct >= 10 ? Math.round(pct) : pct.toFixed(pct >= 1 ? 1 : 2)} %</span>
+                        <span className="text-light"> · {pct >= 10 ? Math.round(pct) : pct >= 0.01 ? pct.toLocaleString('nb-NO', { maximumFractionDigits: pct >= 1 ? 1 : 2 }) : '< 0,01'} %</span>
                       </span>
                     </div>
                   )

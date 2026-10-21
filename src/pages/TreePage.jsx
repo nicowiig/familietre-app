@@ -491,7 +491,8 @@ export function TreePage() {
     if (!allNodes.length || !containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
     const W = rect.width  || 800
-    const H = rect.height || 500
+    // Synlig høyde: beholderen kan strekke seg under skjermkanten
+    const H = Math.min(rect.height || 500, (window.innerHeight - Math.max(rect.top, 0)) || 500)
     const MIN_FIT_SCALE = 0.45
     const core = allNodes.filter(n => n.nodeType !== 'sibling' && n.nodeType !== 'spouse')
     const fitNodes = core.length ? core : allNodes
@@ -507,9 +508,13 @@ export function TreePage() {
       setScale(fit)
       return
     }
+    // For bredt: hold lesbar størrelse, sentrer fokuspersonen vannrett og hele høyden loddrett om mulig
     const focus = allNodes.find(n => n.id === personId) || fitNodes[0]
     const s = MIN_FIT_SCALE
-    setPan({ x: W / 2 - (focus.x + NODE_W / 2) * s, y: H - 48 - (focus.y + NODE_H) * s })
+    const y = treeH * s <= H - 48
+      ? (H - treeH * s) / 2 - minY * s
+      : H - 48 - (focus.y + NODE_H) * s
+    setPan({ x: W / 2 - (focus.x + NODE_W / 2) * s, y })
     setScale(s)
   }, [allNodes, personId])
 
