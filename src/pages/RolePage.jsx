@@ -54,7 +54,7 @@ export function RolePage() {
       if (!personIds.length) { setHolders([]); setLoading(false); return }
 
       const [namesRes, factsRes, personsRes] = await Promise.all([
-        supabase.from('person_names').select('person_id, given_name, middle_name, surname, is_preferred, name_type').in('person_id', personIds),
+        supabase.from('person_names').select('person_id, given_name, middle_name, surname, prefix, is_preferred, name_type').in('person_id', personIds),
         supabase.from('person_facts').select('person_id, fact_type, date_year').in('person_id', personIds).in('fact_type', ['BIRT', 'DEAT']),
         supabase.from('persons').select('person_id, is_living, is_deleted').in('person_id', personIds),
       ])

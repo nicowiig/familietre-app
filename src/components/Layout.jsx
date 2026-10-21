@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { formatName } from '../lib/persons'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../supabase'
 
@@ -90,7 +91,7 @@ export function Layout({ children }) {
       async function fetchToken(token) {
         const { data } = await supabase
           .from('person_names')
-          .select('person_id, given_name, surname, middle_name')
+          .select('person_id, given_name, surname, middle_name, prefix')
           .or(`given_name.ilike.%${token}%,surname.ilike.%${token}%,middle_name.ilike.%${token}%`)
           .eq('is_preferred', true)
           .limit(50)
@@ -224,7 +225,7 @@ export function Layout({ children }) {
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-hover)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
-                      <span>{[s.given_name, s.middle_name, s.surname].filter(Boolean).join(' ')}</span>
+                      <span>{formatName(s)}</span>
                       {lifespan && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', flexShrink: 0, marginLeft: 'var(--space-3)' }}>{lifespan}</span>}
                     </Link>
                   )

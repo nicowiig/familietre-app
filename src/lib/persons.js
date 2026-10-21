@@ -1,6 +1,7 @@
 /**
  * Personnavnformatering og persondata-hjelpere
  */
+import { getDisplayTitle } from './titles'
 
 /**
  * Hent foretrukket navn for en person fra person_names-listen
@@ -10,17 +11,40 @@ export function getPreferredName(names) {
   return names.find(n => n.is_preferred) || names[0]
 }
 
+/** Adelspartikler som står foran etternavnet (von Schmettow, af Morgenstierne). */
+const PARTICLES = new Set(['von', 'af', 'av', 'de', 'de la', 'du', 'zu', 'von der', 'van', 'van der', 'di', 'da', 'le', 'la'])
+
+/** Prefiks som er en partikkel, normalisert til små bokstaver – ellers null. */
+export function surnameParticle(prefix) {
+  const p = (prefix || '').trim().toLowerCase()
+  return PARTICLES.has(p) ? p : null
+}
+
 /**
- * Sett sammen fullt navn fra navneobjekt
+ * Sett sammen fullt navn fra navneobjekt.
+ *
+ * - Partikkel i prefix vises foran etternavnet («Carl von Schmettow»),
+ *   med mindre etternavnet allerede har den («Munthe af Morgenstierne»).
+ * - Høyeste kongelige/fyrstelige/adelige tittel vises foran navnet
+ *   («grevinne Amalie Trampe») når personId er kjent. Slå av med { title: false }.
  */
-export function formatName(nameObj) {
+export function formatName(nameObj, { title = true, personId } = {}) {
   if (!nameObj) return 'Ukjent'
   const parts = []
   if (nameObj.given_name) parts.push(nameObj.given_name)
   if (nameObj.middle_name) parts.push(nameObj.middle_name)
-  if (nameObj.surname) parts.push(nameObj.surname)
+  if (nameObj.surname) {
+    const particle = surnameParticle(nameObj.prefix)
+    const surname = nameObj.surname
+    // Etternavn som allerede inneholder en partikkel («Munthe af Morgenstierne») får ikke en til
+    const hasParticle = /(^|\s)(von|af|av|de|du|zu|van)(\s|$)/i.test(surname)
+    parts.push(particle && !hasParticle ? `${particle} ${surname}` : surname)
+  }
   if (parts.length === 0 && nameObj.prefix) return nameObj.prefix
-  return parts.join(' ') || 'Ukjent'
+  const name = parts.join(' ') || 'Ukjent'
+  if (!title) return name
+  const t = getDisplayTitle(personId || nameObj.person_id)
+  return t ? `${t} ${name}` : name
 }
 
 /**

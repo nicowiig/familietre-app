@@ -125,12 +125,12 @@ export function PersonPage() {
           const coIds = [...new Set(coRes.map(r => r.entity_id))]
           const { data: coNames } = await supabase
             .from('person_names')
-            .select('person_id, given_name, surname, is_preferred')
+            .select('person_id, given_name, middle_name, surname, prefix, is_preferred')
             .in('person_id', coIds)
           const nameMap = {}
           ;(coNames || []).forEach(n => {
             if (!nameMap[n.person_id] || n.is_preferred) {
-              nameMap[n.person_id] = [n.given_name, n.surname].filter(Boolean).join(' ')
+              nameMap[n.person_id] = formatName(n)
             }
           })
           // Grupper per address_id
@@ -188,12 +188,12 @@ export function PersonPage() {
       const [spouseNamesRes, childNamesRes, childBirthFactsRes, childPersonsRes] = await Promise.all([
         allSpouseIds.length > 0
           ? supabase.from('person_names')
-              .select('person_id, given_name, surname, middle_name, is_preferred')
+              .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
               .in('person_id', allSpouseIds)
           : { data: [] },
         allChildIds.length > 0
           ? supabase.from('person_names')
-              .select('person_id, given_name, surname, is_preferred')
+              .select('person_id, given_name, middle_name, surname, prefix, is_preferred')
               .in('person_id', allChildIds)
           : { data: [] },
         allChildIds.length > 0
@@ -1442,7 +1442,7 @@ function CareerSection({ roles = [], workExp = [], deathYear }) {
     })
     if (ids.size === 0) return
     supabase.from('person_names')
-      .select('person_id, given_name, surname, is_preferred')
+      .select('person_id, given_name, middle_name, surname, prefix, is_preferred')
       .in('person_id', [...ids])
       .then(({ data }) => {
         const map = {}
@@ -1526,7 +1526,7 @@ function renderWithPersonLinks(text, nameMap) {
   return parts.map((part, i) => {
     const n = /^I\d{6}$/.test(part) && nameMap[part]
     if (n) {
-      const name = [n.given_name, n.surname].filter(Boolean).join(' ')
+      const name = formatName(n, { personId: part })
       return (
         <LinkPreview key={i} to={`/person/${part}`}>
           {name}
@@ -2751,7 +2751,7 @@ function ParentFamilyCard({ family, personId, myAncestors }) {
       if (!ids.length) return
       const { data } = await supabase
         .from('person_names')
-        .select('person_id, given_name, surname, middle_name, is_preferred')
+        .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
         .in('person_id', ids)
       if (data) {
         const byId = {}
@@ -2769,7 +2769,7 @@ function ParentFamilyCard({ family, personId, myAncestors }) {
       if (siblingIds.length > 0) {
         const { data: sibNames } = await supabase
           .from('person_names')
-          .select('person_id, given_name, surname, middle_name, is_preferred')
+          .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
           .in('person_id', siblingIds)
         if (sibNames) {
           const sibById = {}
@@ -2815,7 +2815,7 @@ function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
       if (!ids.length) return
       const { data } = await supabase
         .from('person_names')
-        .select('person_id, given_name, surname, middle_name, is_preferred')
+        .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
         .in('person_id', ids)
       if (data) {
         const byId = {}

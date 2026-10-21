@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { formatName } from '../lib/persons'
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { LinkPreview } from '../components/LinkPreview'
@@ -244,13 +245,12 @@ export function PlacePage() {
       if (personIds.length > 0) {
         const { data: nameRows } = await supabase
           .from('person_names')
-          .select('person_id, given_name, surname, middle_name, is_preferred')
+          .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
           .in('person_id', personIds)
         const nameMap = {}
         ;(nameRows || []).forEach(n => {
           if (!nameMap[n.person_id] || n.is_preferred) {
-            const parts = [n.given_name, n.middle_name, n.surname].filter(Boolean)
-            nameMap[n.person_id] = parts.join(' ')
+            nameMap[n.person_id] = formatName(n)
           }
         })
         setPersonNames(nameMap)

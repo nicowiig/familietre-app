@@ -130,7 +130,7 @@ function ArticlesFeed() {
       if (bios?.length) {
         const ids = bios.map(b => b.person_id)
         const [namesRes, photosRes] = await Promise.all([
-          supabase.from('person_names').select('person_id, given_name, middle_name, surname, is_preferred').in('person_id', ids),
+          supabase.from('person_names').select('person_id, given_name, middle_name, surname, prefix, is_preferred').in('person_id', ids),
           supabase.from('person_photos').select('person_id, drive_url').in('person_id', ids).eq('is_primary', true),
         ])
         const nameMap = {}
@@ -328,14 +328,14 @@ function MyProfile({ personId }) {
   useEffect(() => {
     async function load() {
       const [namesRes, photoRes] = await Promise.all([
-        supabase.from('person_names').select('given_name, middle_name, surname')
+        supabase.from('person_names').select('given_name, middle_name, surname, prefix')
           .eq('person_id', personId).eq('is_preferred', true).maybeSingle(),
         supabase.from('person_photos').select('drive_url')
           .eq('person_id', personId).eq('is_primary', true).limit(1),
       ])
       if (namesRes.data) {
         const n = namesRes.data
-        setName([n.given_name, n.middle_name, n.surname].filter(Boolean).join(' '))
+        setName(formatName(n, { personId }))
       }
       const path = photoRes.data?.[0]?.drive_url
       if (path) {
@@ -488,7 +488,7 @@ function DailyEvents({ type }) {
         setItems(facts)
         const ids = facts.map(f => f.person_id)
         const { data: nameRows } = await supabase
-          .from('person_names').select('person_id, given_name, surname, middle_name, is_preferred').in('person_id', ids)
+          .from('person_names').select('person_id, given_name, surname, middle_name, prefix, is_preferred').in('person_id', ids)
         const map = {}
         ;(nameRows || []).forEach(n => { if (!map[n.person_id] || n.is_preferred) map[n.person_id] = n })
         setNames(map)
@@ -551,7 +551,7 @@ function RecentActivity() {
         setItems(data)
         const ids = data.map(d => d.person_id)
         const { data: nameRows } = await supabase
-          .from('person_names').select('person_id, given_name, surname, middle_name, is_preferred').in('person_id', ids)
+          .from('person_names').select('person_id, given_name, surname, middle_name, prefix, is_preferred').in('person_id', ids)
         const map = {}
         ;(nameRows || []).forEach(n => { if (!map[n.person_id] || n.is_preferred) map[n.person_id] = n })
         const formatted = {}
