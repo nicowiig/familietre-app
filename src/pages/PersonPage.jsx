@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { RoleName, RoleSourceNote, RoleExplainer, AcquiredBadge } from '../components/RoleInfo'
 import { ROLE_CATALOG_SELECT } from '../lib/roles'
-import { placeLabel, placeShort, historicalContext, isRedundantPlaceNote, placeMapsUrl, PLACE_SELECT } from '../lib/places'
+import { placeAt, placeShortAt, isRedundantPlaceNote, placeMapsUrl, PLACE_SELECT, usePlaceMode, PLACE_MODES } from '../lib/places'
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { LinkPreview } from '../components/LinkPreview'
@@ -27,6 +27,7 @@ delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl })
 
 export function PersonPage() {
+  usePlaceMode()
   const { id } = useParams()
   const { personId: myPersonId } = useAuth()
   const navigate = useNavigate()
@@ -371,9 +372,9 @@ export function PersonPage() {
                 <span>
                   f.{' '}
                   {(birth.place || birth.place_raw)
-                    ? <a href={placeMapsUrl(birth.place, birth.place_raw)} target="_blank" rel="noreferrer" title={[placeLabel(birth.place, birth.place_raw), historicalContext(birth.place, birth.date_year)].filter(Boolean).join(' – ')}>
+                    ? <a href={placeMapsUrl(birth.place, birth.place_raw)} target="_blank" rel="noreferrer" title={[placeAt(birth.place, birth.date_year, birth.place_raw).label, placeAt(birth.place, birth.date_year).context].filter(Boolean).join(' – ')}>
                         {birthDateText}
-                        {placeShort(birth.place, birth.place_city) && ` · ${placeShort(birth.place, birth.place_city)}`}
+                        {placeShortAt(birth.place, birth.date_year, birth.place_city) && ` · ${placeShortAt(birth.place, birth.date_year, birth.place_city)}`}
                       </a>
                     : birthDateText
                   }
@@ -384,9 +385,9 @@ export function PersonPage() {
                 <span>
                   d.{' '}
                   {(death.place || death.place_raw)
-                    ? <a href={placeMapsUrl(death.place, death.place_raw)} target="_blank" rel="noreferrer" title={[placeLabel(death.place, death.place_raw), historicalContext(death.place, death.date_year)].filter(Boolean).join(' – ')}>
+                    ? <a href={placeMapsUrl(death.place, death.place_raw)} target="_blank" rel="noreferrer" title={[placeAt(death.place, death.date_year, death.place_raw).label, placeAt(death.place, death.date_year).context].filter(Boolean).join(' – ')}>
                         {formatDateText(death.date_text, death.date_year, death.date_month, death.date_day)}
-                        {placeShort(death.place, death.place_city) && ` · ${placeShort(death.place, death.place_city)}`}
+                        {placeShortAt(death.place, death.date_year, death.place_city) && ` · ${placeShortAt(death.place, death.date_year, death.place_city)}`}
                       </a>
                     : formatDateText(death.date_text, death.date_year, death.date_month, death.date_day)
                   }
@@ -1057,13 +1058,15 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles
     const type = normFact(f.fact_type)
     if (TIMELINE_SKIP_TYPES.has(type)) return
 
-    const place = placeLabel(f.place, f.place_city || f.place_raw)
+    const pl = placeAt(f.place, f.date_year, f.place_city || f.place_raw)
+    const place = pl.label
     const source = getFactSource(type)
 
     let label = FACT_LABELS[type] || f.fact_type
     let note = isRedundantPlaceNote(f.notes) ? null : (f.notes || null)
     let eventPlace = place || null
-    const placeContext = historicalContext(f.place, f.date_year)
+    const placeContext = pl.context
+    const placeTitle = pl.title
 
     // Census: vis som "Registrert i Folketelling" med sted som vanlig place
     if (type === 'CENS') {
@@ -1081,6 +1084,7 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles
       place: eventPlace,
       placeObj: f.place || null,
       placeContext,
+      placeTitle,
       source,
     })
   })
@@ -1099,9 +1103,10 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles
       day,
       label,
       note: null,
-      place: placeLabel(fam.marr_place, fam.marr_place_raw),
+      place: placeAt(fam.marr_place, year, fam.marr_place_raw).label,
       placeObj: fam.marr_place || null,
-      placeContext: historicalContext(fam.marr_place, year),
+      placeContext: placeAt(fam.marr_place, year).context,
+      placeTitle: placeAt(fam.marr_place, year).title,
       source: 'Vigselbok',
       eventPersonId: spouseInfo?.personId || null,
     })
@@ -1176,7 +1181,10 @@ function TimelineSection({ facts, families, spouseNamesMap, childBirths, roles }
 
   return (
     <div className="profile-section">
-      <h2 className="profile-section-header">Tidslinje</h2>
+      <div className="profile-section-header" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+        <h2 style={{ margin: 0, font: 'inherit' }}>Tidslinje</h2>
+        <PlaceModeToggle />
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
         {years.map(year => (
           <div key={year} style={{ display: 'flex', gap: 'var(--space-4)' }}>
@@ -1239,7 +1247,7 @@ function TimelineSection({ facts, families, spouseNamesMap, childBirths, roles }
 }
 
 function TimelineEventRow({ event }) {
-  const { month, day, label, note, place, placeObj, placeContext, source, eventPersonId } = event
+  const { month, day, label, note, place, placeObj, placeContext, placeTitle, source, eventPersonId } = event
 
   // Datoprefix: "23. september" eller "september" eller ingenting
   let dateStr = null
@@ -1283,7 +1291,7 @@ function TimelineEventRow({ event }) {
             <a href={placeMapsUrl(placeObj, place)} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>
               {place}
             </a>
-            {placeContext && <span className="place-context"> ({placeContext})</span>}
+            {placeContext && <span className="place-context" title={placeTitle || undefined}> ({placeContext})</span>}
           </span>
         )}
         {note && isContextualNote(note) && (
@@ -2320,7 +2328,8 @@ function AddressItem({ addr, deathYear, coResidents = [] }) {
   const noteText = isRedundantPlaceNote(addr.notes) ? null
     : addr.notes || (streetPart && addr.place_raw && !addr.name_display ? addr.place_raw : null)
   const fromYear = parseInt(String(dateFrom || '').slice(0, 4), 10) || null
-  const addrContext = historicalContext(addr.place, fromYear)
+  const addrPlace = addr.place && !streetPart ? placeAt(addr.place, fromYear) : null
+  const addrContext = addr.place ? placeAt(addr.place, fromYear).context : null
 
   // Filtrer samboere som har tidsmessig overlapp med denne perioden
   const overlapping = coResidents.filter(cr => {
@@ -2372,7 +2381,7 @@ function AddressItem({ addr, deathYear, coResidents = [] }) {
             rel="noreferrer"
             style={{ color: 'var(--color-accent)', textDecoration: 'underline', textDecorationColor: 'var(--color-border)', textUnderlineOffset: 3 }}
           >
-            {display}
+            {addrPlace?.label || display}
           </a>
         </div>
       )}
@@ -2840,7 +2849,7 @@ function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
       {family.marr_date && !frille && (
         <p className="text-sm text-muted mt-2">
           {family.family_type === 'divorced' ? 'Gift (senere skilt)' : 'Gift'}: {parseFamilyDate(family.marr_date)}
-          {placeLabel(family.marr_place, family.marr_place_raw) && ` · ${placeLabel(family.marr_place, family.marr_place_raw)}`}
+          {placeAt(family.marr_place, parseFamilyDateParts(family.marr_date).year, family.marr_place_raw).label && ` · ${placeAt(family.marr_place, parseFamilyDateParts(family.marr_date).year, family.marr_place_raw).label}`}
         </p>
       )}
 
@@ -2905,5 +2914,20 @@ function RelativeLink({ id, name, label, isAncestor }) {
         <path d="m9 18 6-6-6-6"/>
       </svg>
     </Link>
+  )
+}
+
+/* ===== Valg av stedsnavn: historisk / begge / dagens ===== */
+function PlaceModeToggle() {
+  const [mode, setMode] = usePlaceMode()
+  return (
+    <div className="place-mode-toggle" role="group" aria-label="Stedsnavn">
+      <span className="text-xs text-muted">Stedsnavn:</span>
+      {PLACE_MODES.map(m => (
+        <button key={m.id} type="button" className={mode === m.id ? 'active' : ''} onClick={() => setMode(m.id)}>
+          {m.label}
+        </button>
+      ))}
+    </div>
   )
 }

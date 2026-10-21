@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from './AuthContext'
 import { loadDisplayTitles } from '../lib/titles'
+import { loadPlaceTimeData } from '../lib/places'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 
 /**
@@ -14,7 +15,7 @@ export function TitlesProvider({ children }) {
   useEffect(() => {
     if (!isApproved || loadedFor) return
     let cancelled = false
-    loadDisplayTitles().finally(() => { if (!cancelled) setLoadedFor(true) })
+    Promise.all([loadDisplayTitles(), loadPlaceTimeData()]).finally(() => { if (!cancelled) setLoadedFor(true) })
     return () => { cancelled = true }
   }, [isApproved, loadedFor])
 
