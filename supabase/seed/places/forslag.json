@@ -1,0 +1,2274 @@
+[
+{
+"antall": 7,
+"raw": "Alesund,",
+"forslag": "Ålesund, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 558,
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500477, I500478, I501502, I502010",
+"aar": 1913,
+"struct": {
+"name": "Ålesund",
+"region": "Møre og Romsdal",
+"country": "Norge"
+}
+},
+{
+"antall": 6,
+"raw": "Solheim,",
+"forslag": "Solheim, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 657,
+"begrunnelse": "finnes i stedsregisteret; familien 100 % i Norge (Hordaland)",
+"personer": "I500061, I500062, I500064, I500065",
+"aar": 1910,
+"struct": null
+},
+{
+"antall": 4,
+"raw": "Fussingø",
+"forslag": "Fussingø, Randers, Viborg, Danmark",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 474,
+"begrunnelse": "kjent sted; NB familien ellers i Norge",
+"personer": "I501874, I502042, I502043, I502044",
+"aar": 1707,
+"struct": {
+"name": "Fussingø, Randers",
+"region": "Viborg",
+"country": "Danmark"
+}
+},
+{
+"antall": 2,
+"raw": "Broby (L), Friggatofta",
+"forslag": "Broby, Friggatofta, Skåne, Sverige",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 939,
+"begrunnelse": "kjent sted; NB familien ellers i Norge",
+"personer": "I500963",
+"aar": 1829,
+"struct": {
+"name": "Broby, Friggatofta",
+"region": "Skåne",
+"country": "Sverige"
+}
+},
+{
+"antall": 2,
+"raw": "Fodslette, Langeland",
+"forslag": "Fodslette, Langeland, Danmark",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 639,
+"begrunnelse": "finnes i stedsregisteret; familien 100 % i Danmark (København)",
+"personer": "I502255",
+"aar": 1890,
+"struct": null
+},
+{
+"antall": 2,
+"raw": "Ledegård, Nysogn S. Hind H. Ringkøbing A.",
+"forslag": "Ledegård, Ringkøbing, Danmark",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 213,
+"begrunnelse": "finnes i stedsregisteret; familien 100 % i Danmark (Ringkøbing)",
+"personer": "I500299",
+"aar": 1675,
+"struct": null
+},
+{
+"antall": 2,
+"raw": "Rømskog",
+"forslag": "Rømskog, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 561,
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500551",
+"aar": 1982,
+"struct": {
+"name": "Rømskog",
+"region": "Østfold",
+"country": "Norge"
+}
+},
+{
+"antall": 2,
+"raw": "Słońsk",
+"forslag": "Słońsk, Lebus, Polen",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 821,
+"begrunnelse": "kjent sted; NB familien ellers i Tyskland",
+"personer": "I501813, I501814",
+"aar": 1611,
+"struct": {
+"name": "Słońsk",
+"region": "Lebus",
+"country": "Polen"
+}
+},
+{
+"antall": 2,
+"raw": "Velling",
+"forslag": "Velling, Midtjylland, Danmark",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 453,
+"begrunnelse": "finnes i stedsregisteret; familien 94 % i Danmark (Viborg)",
+"personer": "I501871",
+"aar": 1782,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "'Straume, Mo sokn, Modalen'",
+"forslag": "Straume, Mo, Modalen, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501629",
+"aar": 1749,
+"struct": {
+"name": "Straume, Mo, Modalen",
+"region": "Hordaland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Aalborg Budolfi",
+"forslag": "Budolfi kirke, Aalborg, Aalborg, Danmark",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Danmark",
+"personer": "I501865",
+"aar": 1758,
+"struct": {
+"name": "Budolfi kirke, Aalborg",
+"region": "Aalborg",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Altenburg, Sachsen-Altenburg, Thüringen",
+"forslag": "Altenburg, Thüringen, Tyskland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 791,
+"begrunnelse": "kjent sted; familien bodde i Tyskland",
+"personer": "I501477",
+"aar": 1668,
+"struct": {
+"name": "Altenburg",
+"region": "Thüringen",
+"country": "Tyskland"
+}
+},
+{
+"antall": 1,
+"raw": "Amundebyn, Östervallskog",
+"forslag": "Amundebyn, Östervallskog, Värmland, Sverige",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 834,
+"begrunnelse": "kjent sted; NB familien ellers i Norge",
+"personer": "I502003",
+"aar": 1856,
+"struct": {
+"name": "Amundebyn, Östervallskog",
+"region": "Värmland",
+"country": "Sverige"
+}
+},
+{
+"antall": 1,
+"raw": "Amundsrød, Østervallskog / Tøcksmark",
+"forslag": "Amundsrød, Östervallskog, Värmland, Sverige",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 849,
+"begrunnelse": "kjent sted",
+"personer": "I502232",
+"aar": 1768,
+"struct": {
+"name": "Amundsrød, Östervallskog",
+"region": "Värmland",
+"country": "Sverige"
+}
+},
+{
+"antall": 1,
+"raw": "Annaborg, Hillerød, Lynge Frederiksborg",
+"forslag": "Annaborg, Hillerød, Frederiksborg, Danmark",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Danmark",
+"personer": "I501455",
+"aar": 1809,
+"struct": {
+"name": "Annaborg, Hillerød",
+"region": "Frederiksborg",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Arum",
+"forslag": "Arum, Friesland, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 463,
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501918",
+"aar": 1908,
+"struct": {
+"name": "Arum",
+"region": "Friesland",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Bengalen, Indien",
+"forslag": "Bengal, India",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 850,
+"begrunnelse": "kjent sted; NB familien ellers i Danmark",
+"personer": "I502256",
+"aar": 1824,
+"struct": {
+"name": "Bengal",
+"region": null,
+"country": "India"
+}
+},
+{
+"antall": 1,
+"raw": "Berg Sogn, Brundlaugnæs",
+"forslag": "Berg, Brunlanes, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500373",
+"aar": 1878,
+"struct": {
+"name": "Berg, Brunlanes",
+"region": "Vestfold",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Berg Sogn, Brunlaugnæs",
+"forslag": "Berg, Brunlanes, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500058",
+"aar": 1876,
+"struct": {
+"name": "Berg, Brunlanes",
+"region": "Vestfold",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Bergum",
+"forslag": "Bergum, Friesland, Nederland",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501907",
+"aar": 1963,
+"struct": {
+"name": "Bergum",
+"region": "Friesland",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Bjerke Brandbu",
+"forslag": "Bjerke, Brandbu, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501775",
+"aar": 1875,
+"struct": {
+"name": "Bjerke, Brandbu",
+"region": "Oppland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Bodo Trondhjeim, Noruega",
+"forslag": "Bodø, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501698",
+"aar": 1831,
+"struct": {
+"name": "Bodø",
+"region": "Nordland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Bolsward",
+"forslag": "Bolsward, Friesland, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 468,
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501924",
+"aar": 1904,
+"struct": {
+"name": "Bolsward",
+"region": "Friesland",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Bordeaux",
+"forslag": "Bordeaux, Frankrike",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 747,
+"begrunnelse": "kjent sted; NB familien ellers i Norge",
+"personer": "I500882",
+"aar": 1870,
+"struct": {
+"name": "Bordeaux",
+"region": null,
+"country": "Frankrike"
+}
+},
+{
+"antall": 1,
+"raw": "Brandben",
+"forslag": "Brandben, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 426,
+"begrunnelse": "finnes i stedsregisteret; familien 100 % i Norge (Oppland)",
+"personer": "I501686",
+"aar": 1903,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Bratislava, Bratislava, Czechoslovkia",
+"forslag": "Bratislava, Slovakia",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; NB familien ellers i Østerrike",
+"personer": "I502270, I502271",
+"aar": "",
+"struct": {
+"name": "Bratislava",
+"region": null,
+"country": "Slovakia"
+}
+},
+{
+"antall": 1,
+"raw": "Bårdsgarden, Innfjorden",
+"forslag": "Bårdsgarden, Innfjorden, Rauma, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501898",
+"aar": 1885,
+"struct": {
+"name": "Bårdsgarden, Innfjorden, Rauma",
+"region": "Møre og Romsdal",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Cementerio de la Capilla de Lade Kirke en Tromheim, Noruega",
+"forslag": "Lade kirkegård, Trondheim, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501697",
+"aar": "",
+"struct": {
+"name": "Lade kirkegård, Trondheim",
+"region": "Sør-Trøndelag",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Cementerio de la Capilla de Lade Kirke, en Tromheim, Noruega",
+"forslag": "Lade kirkegård, Trondheim, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500259",
+"aar": "",
+"struct": {
+"name": "Lade kirkegård, Trondheim",
+"region": "Sør-Trøndelag",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Den Haag, Südholland, Niederlande",
+"forslag": "Haag, Sør-Holland, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 740,
+"begrunnelse": "kjent sted; NB familien ellers i Polen",
+"personer": "I500708",
+"aar": 1711,
+"struct": {
+"name": "Haag",
+"region": "Sør-Holland",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Dikemark jernværk",
+"forslag": "Dikemark jernverk, Asker, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501509",
+"aar": 1742,
+"struct": {
+"name": "Dikemark jernverk, Asker",
+"region": "Akershus",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Dongjum",
+"forslag": "Dongjum, Friesland, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 467,
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501923",
+"aar": 1902,
+"struct": {
+"name": "Dongjum",
+"region": "Friesland",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Ellingsrudhjemmet",
+"forslag": "Ellingsrudhjemmet, Oslo, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I502159",
+"aar": 2017,
+"struct": {
+"name": "Ellingsrudhjemmet, Oslo",
+"region": "Akershus",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Elsterwerda",
+"forslag": "Elsterwerda, Brandenburg, Tyskland",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Tyskland",
+"personer": "I500684, I500685",
+"aar": "",
+"struct": {
+"name": "Elsterwerda",
+"region": "Brandenburg",
+"country": "Tyskland"
+}
+},
+{
+"antall": 1,
+"raw": "Esslingen am Neckar",
+"forslag": "Esslingen am Neckar, Baden-Württemberg, Tyskland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 170,
+"begrunnelse": "kjent sted; NB familien ellers i Østerrike",
+"personer": "I502270",
+"aar": "",
+"struct": {
+"name": "Esslingen am Neckar",
+"region": "Baden-Württemberg",
+"country": "Tyskland"
+}
+},
+{
+"antall": 1,
+"raw": "Farstrup,",
+"forslag": "Farstrup, Nordjylland, Danmark",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 452,
+"begrunnelse": "finnes i stedsregisteret; familien 100 % i Danmark (Aalborg)",
+"personer": "I501870",
+"aar": 1725,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Fosse, Meland",
+"forslag": "Fosse, Meland, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500940",
+"aar": 1899,
+"struct": {
+"name": "Fosse, Meland",
+"region": "Hordaland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Fredriksvern Båtsmannsgården",
+"forslag": "Båtsmannsgården, Stavern, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500075",
+"aar": 1889,
+"struct": {
+"name": "Båtsmannsgården, Stavern",
+"region": "Vestfold",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Frongner",
+"forslag": "Frogner, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500777",
+"aar": 1924,
+"struct": {
+"name": "Frogner",
+"region": null,
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Gausdal",
+"forslag": "Gausdal, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 301,
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500798",
+"aar": 1852,
+"struct": {
+"name": "Gausdal",
+"region": "Oppland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Gerkesklooster",
+"forslag": "Gerkesklooster, Friesland, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 621,
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501907",
+"aar": "",
+"struct": {
+"name": "Gerkesklooster",
+"region": "Friesland",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Glatz",
+"forslag": "Kłodzko, Schlesien, Polen",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Polen",
+"personer": "I500725, I500730",
+"aar": "",
+"struct": {
+"name": "Kłodzko",
+"region": "Schlesien",
+"country": "Polen"
+}
+},
+{
+"antall": 1,
+"raw": "Glücksburg",
+"forslag": "Glücksburg, Slesvig-Holsten, Tyskland",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; NB familien ellers i Danmark",
+"personer": "I501341, I502386",
+"aar": "",
+"struct": {
+"name": "Glücksburg",
+"region": "Slesvig-Holsten",
+"country": "Tyskland"
+}
+},
+{
+"antall": 1,
+"raw": "Gressvik",
+"forslag": "Gressvik, Onsøy, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 296,
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500761",
+"aar": 1897,
+"struct": {
+"name": "Gressvik, Onsøy",
+"region": "Østfold",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Göteborg",
+"forslag": "Göteborg, Västra Götaland, Sverige",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 479,
+"begrunnelse": "kjent sted; familien bodde i Sverige",
+"personer": "I502060",
+"aar": 1837,
+"struct": {
+"name": "Göteborg",
+"region": "Västra Götaland",
+"country": "Sverige"
+}
+},
+{
+"antall": 1,
+"raw": "Hakadal / Nittedal",
+"forslag": "Hakadal, Nittedal, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I502167",
+"aar": "",
+"struct": {
+"name": "Hakadal, Nittedal",
+"region": "Akershus",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Hardegarijp",
+"forslag": "Hardegarijp, Friesland, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 464,
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501919",
+"aar": 1895,
+"struct": {
+"name": "Hardegarijp",
+"region": "Friesland",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Haugom",
+"forslag": "Haugom, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 525,
+"begrunnelse": "finnes i stedsregisteret; familien 100 % i Norge (Akershus)",
+"personer": "I502318",
+"aar": 1834,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Haugum, Overhalla",
+"forslag": "Haugum, Overhalla, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500337",
+"aar": 1823,
+"struct": {
+"name": "Haugum, Overhalla",
+"region": "Nord-Trøndelag",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Hesteflotene",
+"forslag": "Hesteflotene, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 840,
+"begrunnelse": "finnes i stedsregisteret; familien 100 % i Norge (Møre og Romsdal)",
+"personer": "I502085",
+"aar": 1899,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Hol",
+"forslag": "Hol, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 480,
+"begrunnelse": "kjent sted; NB familien ellers i Sverige",
+"personer": "I502061",
+"aar": 1880,
+"struct": {
+"name": "Hol",
+"region": "Buskerud",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Hoogeveen",
+"forslag": "Hoogeveen, Drenthe, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 830,
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501927",
+"aar": 1999,
+"struct": {
+"name": "Hoogeveen",
+"region": "Drenthe",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Høvåg, Agerøen",
+"forslag": "Agerøen, Høvåg, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501996",
+"aar": 1826,
+"struct": {
+"name": "Agerøen, Høvåg",
+"region": "Aust-Agder",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Klegod nysogn",
+"forslag": "Klegod, Nysogn, Ringkøbing, Danmark",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Danmark",
+"personer": "I500291",
+"aar": 1804,
+"struct": {
+"name": "Klegod, Nysogn",
+"region": "Ringkøbing",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Klöxhult, Stenbrohult, G",
+"forslag": "Klöxhult, Stenbrohult, Kronoberg, Sverige",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Sverige",
+"personer": "I500972",
+"aar": 1914,
+"struct": {
+"name": "Klöxhult, Stenbrohult",
+"region": "Kronoberg",
+"country": "Sverige"
+}
+},
+{
+"antall": 1,
+"raw": "Komárom (now Komárno in Slovakia), Kingdom of Ungarn",
+"forslag": "Komárno, Slovakia",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; NB familien ellers i Ungarn",
+"personer": "I502273",
+"aar": 1440,
+"struct": {
+"name": "Komárno",
+"region": null,
+"country": "Slovakia"
+}
+},
+{
+"antall": 1,
+"raw": "Konigsberg, Ostpreußen",
+"forslag": "Kaliningrad, Ostpreußen, Russland",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; NB familien ellers i Tyskland",
+"personer": "I500688",
+"aar": 1776,
+"struct": {
+"name": "Kaliningrad",
+"region": "Ostpreußen",
+"country": "Russland"
+}
+},
+{
+"antall": 1,
+"raw": "Kooten",
+"forslag": "Kootstertille, Friesland, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 462,
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501905",
+"aar": 1847,
+"struct": {
+"name": "Kootstertille",
+"region": "Friesland",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Košice, Košice I, Košický, Slovakia",
+"forslag": "Košice, Slovakia",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 602,
+"begrunnelse": "kjent sted; NB familien ellers i Tyskland",
+"personer": "I501545",
+"aar": 1623,
+"struct": {
+"name": "Košice",
+"region": null,
+"country": "Slovakia"
+}
+},
+{
+"antall": 1,
+"raw": "Kramer, Bottineau, North Dakota, USA of America",
+"forslag": "Kramer, North Dakota, USA",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 628,
+"begrunnelse": "kjent sted; NB familien ellers i Norge",
+"personer": "I502065",
+"aar": 1950,
+"struct": {
+"name": "Kramer",
+"region": "North Dakota",
+"country": "USA"
+}
+},
+{
+"antall": 1,
+"raw": "Kville",
+"forslag": "Kville, Västra Götaland, Sverige",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 509,
+"begrunnelse": "finnes i stedsregisteret; familien 100 % i Sverige (Bohuslän)",
+"personer": "I502190",
+"aar": 1785,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Købehavn",
+"forslag": "København, Danmark",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Danmark",
+"personer": "I501527",
+"aar": 1714,
+"struct": {
+"name": "København",
+"region": null,
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Køyen Grue",
+"forslag": "Køyen, Grue, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I502321",
+"aar": 1800,
+"struct": {
+"name": "Køyen, Grue",
+"region": "Hedmark",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Langelsheim, 38685",
+"forslag": "Langelsheim, Niedersachsen, Tyskland",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Tyskland",
+"personer": "I500688, I500748",
+"aar": "",
+"struct": {
+"name": "Langelsheim",
+"region": "Niedersachsen",
+"country": "Tyskland"
+}
+},
+{
+"antall": 1,
+"raw": "Larvik ?",
+"forslag": "Larvik, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501323",
+"aar": 1695,
+"struct": {
+"name": "Larvik",
+"region": "Vestfold",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Laurvig, Noorwegen",
+"forslag": "Larvik, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; NB familien ellers i Tyskland",
+"personer": "I501466",
+"aar": 1686,
+"struct": {
+"name": "Larvik",
+"region": "Vestfold",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Leeuwarden",
+"forslag": "Leeuwarden, Friesland, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 829,
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501918",
+"aar": 1977,
+"struct": {
+"name": "Leeuwarden",
+"region": "Friesland",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Lier",
+"forslag": "Lier, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 354,
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501260",
+"aar": 1840,
+"struct": {
+"name": "Lier",
+"region": "Buskerud",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Liverpool",
+"forslag": "Liverpool, England",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; NB familien ellers i Norge",
+"personer": "I500120",
+"aar": "",
+"struct": {
+"name": "Liverpool",
+"region": null,
+"country": "England"
+}
+},
+{
+"antall": 1,
+"raw": "Ljungbytorp",
+"forslag": "Ljungbytorp, Värmland, Sverige",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 510,
+"begrunnelse": "finnes i stedsregisteret; familien 100 % i Sverige (Bohuslän)",
+"personer": "I502191",
+"aar": 1781,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Lovisenberg sykehus",
+"forslag": "Lovisenberg sykehus, Oslo, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500793",
+"aar": 1975,
+"struct": {
+"name": "Lovisenberg sykehus, Oslo",
+"region": "Akershus",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Lynderupgaard, Lynderup sogn",
+"forslag": "Lynderupgaard, Lynderup, Viborg, Danmark",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Danmark",
+"personer": "I501866",
+"aar": 1760,
+"struct": {
+"name": "Lynderupgaard, Lynderup",
+"region": "Viborg",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Meckelborgland i Bril",
+"forslag": "Meckelborgland, Nederland",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; NB familien ellers i Norge",
+"personer": "I501931",
+"aar": "",
+"struct": {
+"name": "Meckelborgland",
+"region": null,
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Modum Prestegård, Modum",
+"forslag": "Modum prestegård, Modum, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501253",
+"aar": 1839,
+"struct": {
+"name": "Modum prestegård, Modum",
+"region": "Buskerud",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Mysen",
+"forslag": "Mysen, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 569,
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500921",
+"aar": "",
+"struct": {
+"name": "Mysen",
+"region": "Østfold",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Mückenberg",
+"forslag": "Mückenberg (Lauchhammer), Brandenburg, Tyskland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 759,
+"begrunnelse": "kjent sted; familien bodde i Tyskland",
+"personer": "I501067",
+"aar": 1776,
+"struct": {
+"name": "Mückenberg (Lauchhammer)",
+"region": "Brandenburg",
+"country": "Tyskland"
+}
+},
+{
+"antall": 1,
+"raw": "Nesmoen Grue",
+"forslag": "Nesmoen, Grue, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I502320",
+"aar": 1794,
+"struct": {
+"name": "Nesmoen, Grue",
+"region": "Hedmark",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Neustadt in Oberschlesien",
+"forslag": "Prudnik, Schlesien, Polen",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Polen",
+"personer": "I500706",
+"aar": 1668,
+"struct": {
+"name": "Prudnik",
+"region": "Schlesien",
+"country": "Polen"
+}
+},
+{
+"antall": 1,
+"raw": "Norderhaug",
+"forslag": "Norderhaug, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 363,
+"begrunnelse": "finnes i stedsregisteret; familien 100 % i Norge (Hordaland)",
+"personer": "I501289",
+"aar": 1847,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Norrunga",
+"forslag": "Norrunga, Värmland, Sverige",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 330,
+"begrunnelse": "finnes i stedsregisteret; familien 100 % i Sverige (Alvsborg)",
+"personer": "I501060",
+"aar": 1784,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Oslo fylke, Oslo domkirke/Vår Frelser menighed",
+"forslag": "Oslo domkirke, Oslo, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501276",
+"aar": 1840,
+"struct": {
+"name": "Oslo domkirke, Oslo",
+"region": "Akershus",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Petruskirken Oslo",
+"forslag": "Petruskirken, Oslo, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I502167, I502168",
+"aar": "",
+"struct": {
+"name": "Petruskirken, Oslo",
+"region": "Akershus",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Provstgaard, Nysogn S., Hind H., r",
+"forslag": "Provstgaard, Nysogn, Ringkøbing, Danmark",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Danmark",
+"personer": "I500293",
+"aar": 1827,
+"struct": {
+"name": "Provstgaard, Nysogn",
+"region": "Ringkøbing",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Rossinggården, Tolga",
+"forslag": "Rossinggården, Tolga, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500528",
+"aar": 1841,
+"struct": {
+"name": "Rossinggården, Tolga",
+"region": "Hedmark",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "S Hauge Gravlund, Haugesund",
+"forslag": "Søndre Hauge gravlund, Haugesund, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted",
+"personer": "I501650",
+"aar": 1939,
+"struct": {
+"name": "Søndre Hauge gravlund, Haugesund",
+"region": "Rogaland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Sakskøbing",
+"forslag": "Sakskøbing, Maribo, Danmark",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 516,
+"begrunnelse": "kjent sted; familien bodde i Danmark",
+"personer": "I502254",
+"aar": 1778,
+"struct": {
+"name": "Sakskøbing",
+"region": "Maribo",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Schloß Neuhaus, an der Elbe",
+"forslag": "Neuhaus an der Elbe, Niedersachsen, Tyskland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 798,
+"begrunnelse": "kjent sted; familien bodde i Tyskland",
+"personer": "I501578",
+"aar": 1629,
+"struct": {
+"name": "Neuhaus an der Elbe",
+"region": "Niedersachsen",
+"country": "Tyskland"
+}
+},
+{
+"antall": 1,
+"raw": "Sct. Croix, De Dansk Vestindiske Øer",
+"forslag": "St. Croix, Dansk Vestindia, Danmark",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Danmark",
+"personer": "I500402",
+"aar": 1765,
+"struct": {
+"name": "St. Croix",
+"region": "Dansk Vestindia",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Seattle, King, Washington",
+"forslag": "Seattle, Washington, USA",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 757,
+"begrunnelse": "kjent sted; NB familien ellers i Norge",
+"personer": "I501042",
+"aar": 1929,
+"struct": {
+"name": "Seattle",
+"region": "Washington",
+"country": "USA"
+}
+},
+{
+"antall": 1,
+"raw": "Seim gamle kyrkjegard",
+"forslag": "Seim gamle kyrkjegard, Lindås, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501485",
+"aar": "",
+"struct": {
+"name": "Seim gamle kyrkjegard, Lindås",
+"region": "Hordaland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Sexbierum",
+"forslag": "Sexbierum, Friesland, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 466,
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501922",
+"aar": 1901,
+"struct": {
+"name": "Sexbierum",
+"region": "Friesland",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Skaanevik",
+"forslag": "Skånevik, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501288",
+"aar": 1842,
+"struct": {
+"name": "Skånevik",
+"region": "Hordaland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Skar Øier",
+"forslag": "Skar, Øyer, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501817",
+"aar": 1879,
+"struct": {
+"name": "Skar, Øyer",
+"region": "Oppland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Skaramyra Grue",
+"forslag": "Skaramyra, Grue, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I502319",
+"aar": 1843,
+"struct": {
+"name": "Skaramyra, Grue",
+"region": "Hedmark",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Solbjerg",
+"forslag": "Gl. Viffertsholm, Solbjerg, Aalborg, Danmark",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 493,
+"begrunnelse": "finnes i stedsregisteret; familien 95 % i Danmark (Aalborg)",
+"personer": "I502125",
+"aar": "",
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Stiens",
+"forslag": "Stiens, Friesland, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 465,
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501921",
+"aar": 1899,
+"struct": {
+"name": "Stiens",
+"region": "Friesland",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Storkvikne Orkdalen Sör Tröndelag",
+"forslag": "Storkvikne, Orkdal, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500645",
+"aar": 1777,
+"struct": {
+"name": "Storkvikne, Orkdal",
+"region": "Sør-Trøndelag",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Strandby (Gislum",
+"forslag": "Strandby, Gislum, Aalborg, Danmark",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Danmark",
+"personer": "I501864",
+"aar": 1750,
+"struct": {
+"name": "Strandby, Gislum",
+"region": "Aalborg",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Styrkesnes Indre I Sørfold",
+"forslag": "Indre Styrkesnes, Sørfold, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500929",
+"aar": 1738,
+"struct": {
+"name": "Indre Styrkesnes, Sørfold",
+"region": "Nordland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Sønder Alslev Kirke",
+"forslag": "Sønder Alslev kirke, Maribo, Danmark",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Danmark",
+"personer": "I500403",
+"aar": 1852,
+"struct": {
+"name": "Sønder Alslev kirke",
+"region": "Maribo",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Sørskogsbygda, Hedemark",
+"forslag": "Sørskogbygda, Elverum, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 818,
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I501780",
+"aar": 1974,
+"struct": {
+"name": "Sørskogbygda, Elverum",
+"region": "Hedmark",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Trondheim katedralskole",
+"forslag": "Trondheim katedralskole, Trondheim, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500260",
+"aar": 1903,
+"struct": {
+"name": "Trondheim katedralskole, Trondheim",
+"region": "Sør-Trøndelag",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Ungar.-Hradisch",
+"forslag": "Uherské Hradiště, Mähren, Tsjekkia",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; NB familien ellers i Polen",
+"personer": "I500718",
+"aar": 1585,
+"struct": {
+"name": "Uherské Hradiště",
+"region": "Mähren",
+"country": "Tsjekkia"
+}
+},
+{
+"antall": 1,
+"raw": "Ungarisch-Ostra",
+"forslag": "Uherský Ostroh, Mähren, Tsjekkia",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; NB familien ellers i Polen",
+"personer": "I500718, I500719",
+"aar": "",
+"struct": {
+"name": "Uherský Ostroh",
+"region": "Mähren",
+"country": "Tsjekkia"
+}
+},
+{
+"antall": 1,
+"raw": "Utrecht, The Nederland",
+"forslag": "Utrecht, Utrecht, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 804,
+"begrunnelse": "kjent sted; NB familien ellers i Tyskland",
+"personer": "I501654",
+"aar": 1732,
+"struct": {
+"name": "Utrecht",
+"region": "Utrecht",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Vardal",
+"forslag": "Vardal, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 422,
+"begrunnelse": "kjent sted",
+"personer": "I501647",
+"aar": 1850,
+"struct": {
+"name": "Vardal",
+"region": "Oppland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Vennergaard, Velling",
+"forslag": "Vennergaard, Velling, Ringkøbing, Danmark",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Danmark",
+"personer": "I501871",
+"aar": 1740,
+"struct": {
+"name": "Vennergaard, Velling",
+"region": "Ringkøbing",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Vestre Fredrikstad",
+"forslag": "Vestre Fredrikstad, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500493",
+"aar": 1875,
+"struct": {
+"name": "Vestre Fredrikstad",
+"region": "Østfold",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Viker Asmaløy Hvaler Østfold",
+"forslag": "Viker, Asmaløy, Hvaler, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500491",
+"aar": 1843,
+"struct": {
+"name": "Viker, Asmaløy, Hvaler",
+"region": "Østfold",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Vilniaus arkikatedra",
+"forslag": "Vilnius katedral, Vilnius, Litauen",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; NB familien ellers i Polen",
+"personer": "I502137",
+"aar": "",
+"struct": {
+"name": "Vilnius katedral, Vilnius",
+"region": null,
+"country": "Litauen"
+}
+},
+{
+"antall": 1,
+"raw": "Weißenfels, Trondheim, D",
+"forslag": "Weißenfels, Sachsen-Anhalt, Tyskland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 742,
+"begrunnelse": "kjent sted; familien bodde i Tyskland",
+"personer": "I500744",
+"aar": 1774,
+"struct": {
+"name": "Weißenfels",
+"region": "Sachsen-Anhalt",
+"country": "Tyskland"
+}
+},
+{
+"antall": 1,
+"raw": "Ytstereitane (1-9), Dravlaus",
+"forslag": "Ytstereitane, Dravlaus, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I502086",
+"aar": 1801,
+"struct": {
+"name": "Ytstereitane, Dravlaus",
+"region": null,
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Zuidlaren",
+"forslag": "Zuidlaren, Drenthe, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 828,
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501915",
+"aar": 1914,
+"struct": {
+"name": "Zuidlaren",
+"region": "Drenthe",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "Zwaagwesteinde",
+"forslag": "Zwaagwesteinde, Friesland, Nederland",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 469,
+"begrunnelse": "kjent sted; familien bodde i Nederland",
+"personer": "I501925",
+"aar": 1905,
+"struct": {
+"name": "Zwaagwesteinde",
+"region": "Friesland",
+"country": "Nederland"
+}
+},
+{
+"antall": 1,
+"raw": "ringkoebing, Hind, Nysogn, Synder Lyngvig, 2",
+"forslag": "Søndre Lyngvig, Nysogn, Ringkøbing, Danmark",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Danmark",
+"personer": "I500144",
+"aar": 1801,
+"struct": {
+"name": "Søndre Lyngvig, Nysogn",
+"region": "Ringkøbing",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Øiestad",
+"forslag": "Øyestad, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500062",
+"aar": 1881,
+"struct": {
+"name": "Øyestad",
+"region": "Aust-Agder",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Øiestad kirkegård",
+"forslag": "Øyestad, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; NB familien ellers i Sverige",
+"personer": "I501998",
+"aar": "",
+"struct": {
+"name": "Øyestad",
+"region": "Aust-Agder",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Øksnes",
+"forslag": "Øksnes, Norge",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 487,
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I502101",
+"aar": 1729,
+"struct": {
+"name": "Øksnes",
+"region": "Nordland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Ørkedalen",
+"forslag": "Orkdal, Norge",
+"sikkerhet": "høy",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "kjent sted; familien bodde i Norge",
+"personer": "I500365",
+"aar": 1830,
+"struct": {
+"name": "Orkdal",
+"region": "Sør-Trøndelag",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Østre Bön, Tøcksmark",
+"forslag": "Östra Bön, Töcksmark, Värmland, Sverige",
+"sikkerhet": "høy",
+"handling": "koble",
+"koble_til_id": 515,
+"begrunnelse": "kjent sted",
+"personer": "I502226",
+"aar": 1745,
+"struct": {
+"name": "Östra Bön, Töcksmark",
+"region": "Värmland",
+"country": "Sverige"
+}
+},
+{
+"antall": 3,
+"raw": "Ryk",
+"forslag": "Ryk, Bohuslän, Sverige",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Sverige, mest Bohuslän",
+"personer": "I502190, I502191, I502192",
+"aar": 1817,
+"struct": {
+"name": "Ryk",
+"region": "Bohuslän",
+"country": "Sverige"
+}
+},
+{
+"antall": 1,
+"raw": "'Morvik,",
+"forslag": "Morvik, Hordaland, Norge",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Hordaland",
+"personer": "I501628",
+"aar": 1758,
+"struct": {
+"name": "Morvik",
+"region": "Hordaland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Aalum opsl 35/183",
+"forslag": "Aalum opsl 35, Viborg, Danmark",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 90 % av hendelsene til personen, foreldre, søsken og barn i Danmark, mest Viborg",
+"personer": "I502041",
+"aar": 1693,
+"struct": {
+"name": "Aalum opsl 35",
+"region": "Viborg",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Alslevgaard",
+"forslag": "Alslevgaard, Holstein, Tyskland",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 77 % av hendelsene til personen, foreldre, søsken og barn i Tyskland, mest Holstein",
+"personer": "I501189",
+"aar": 1630,
+"struct": {
+"name": "Alslevgaard",
+"region": "Holstein",
+"country": "Tyskland"
+}
+},
+{
+"antall": 1,
+"raw": "Granselv",
+"forslag": "Granselv, Hordaland, Norge",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Hordaland",
+"personer": "I501051",
+"aar": 1750,
+"struct": {
+"name": "Granselv",
+"region": "Hordaland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Gården Fosseli",
+"forslag": "Gården Fosseli, Aust-Agder, Norge",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Aust-Agder",
+"personer": "I501995, I501996",
+"aar": "",
+"struct": {
+"name": "Gården Fosseli",
+"region": "Aust-Agder",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Indre Fet",
+"forslag": "Indre Fet, Hordaland, Norge",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Hordaland",
+"personer": "I500780",
+"aar": 1836,
+"struct": {
+"name": "Indre Fet",
+"region": "Hordaland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Midtschoug,",
+"forslag": "Midtschoug, Hedmark, Norge",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 92 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Hedmark",
+"personer": "I502331",
+"aar": 1709,
+"struct": {
+"name": "Midtschoug",
+"region": "Hedmark",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Nordreaasplads,",
+"forslag": "Nordreaasplads, Akershus, Norge",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Akershus",
+"personer": "I500547",
+"aar": 1875,
+"struct": {
+"name": "Nordreaasplads",
+"region": "Akershus",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Ousby",
+"forslag": "Ousby, Kristianstad, Sverige",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 85 % av hendelsene til personen, foreldre, søsken og barn i Sverige, mest Kristianstad",
+"personer": "I500972",
+"aar": 1836,
+"struct": {
+"name": "Ousby",
+"region": "Kristianstad",
+"country": "Sverige"
+}
+},
+{
+"antall": 1,
+"raw": "Ris kirkegård",
+"forslag": "Ris kirkegård, Hordaland, Norge",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Hordaland",
+"personer": "I500946",
+"aar": "",
+"struct": {
+"name": "Ris kirkegård",
+"region": "Hordaland",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Rud Høland Akershus 03.02.",
+"forslag": "Rud Høland Akershus 03.02., Akershus, Norge",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Akershus",
+"personer": "I500608",
+"aar": 1718,
+"struct": {
+"name": "Rud Høland Akershus 03.02.",
+"region": "Akershus",
+"country": "Norge"
+}
+},
+{
+"antall": 1,
+"raw": "Ryk Mellangård",
+"forslag": "Ryk Mellangård, Bohuslän, Sverige",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Sverige, mest Bohuslän",
+"personer": "I502192",
+"aar": 1892,
+"struct": {
+"name": "Ryk Mellangård",
+"region": "Bohuslän",
+"country": "Sverige"
+}
+},
+{
+"antall": 1,
+"raw": "Skanderborg S.- Hjelmslev H.- Skanderborg A.",
+"forslag": "Skanderborg S.- Hjelmslev H.- Skanderborg A., Frederiksborg, Danmark",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 94 % av hendelsene til personen, foreldre, søsken og barn i Danmark, mest Frederiksborg",
+"personer": "I501406",
+"aar": 1619,
+"struct": {
+"name": "Skanderborg S.- Hjelmslev H.- Skanderborg A.",
+"region": "Frederiksborg",
+"country": "Danmark"
+}
+},
+{
+"antall": 1,
+"raw": "Valberget",
+"forslag": "Valberget, Värmland, Sverige",
+"sikkerhet": "middels",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Sverige, mest Värmland",
+"personer": "I502334",
+"aar": "",
+"struct": {
+"name": "Valberget",
+"region": "Värmland",
+"country": "Sverige"
+}
+},
+{
+"antall": 2,
+"raw": "Helle",
+"forslag": "Helle, Värmland, Sverige",
+"sikkerhet": "lav",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 57 % av hendelsene til personen, foreldre, søsken og barn i Sverige, mest Värmland",
+"personer": "I501997, I501998",
+"aar": 1891,
+"struct": {
+"name": "Helle",
+"region": "Värmland",
+"country": "Sverige"
+}
+},
+{
+"antall": 1,
+"raw": "Bosatt på Elofsbyn",
+"forslag": "",
+"sikkerhet": "lav",
+"handling": "manuell",
+"koble_til_id": "",
+"begrunnelse": "Elofsbyn (Sverige?) – flytt «bosatt på» til notat",
+"personer": "I502003, I502004",
+"aar": "",
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Forlis på reise til/fra Trondheim",
+"forslag": "",
+"sikkerhet": "lav",
+"handling": "manuell",
+"koble_til_id": "",
+"begrunnelse": "dødsårsak/omstendighet – flytt til notat",
+"personer": "I500184",
+"aar": 1814,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Frivillig i fransk krigstjeneste i Alger",
+"forslag": "",
+"sikkerhet": "lav",
+"handling": "manuell",
+"koble_til_id": "",
+"begrunnelse": "livshendelse – flytt til notat (sted: Alger, Algerie)",
+"personer": "I501150",
+"aar": "",
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Hjemme",
+"forslag": "",
+"sikkerhet": "lav",
+"handling": "manuell",
+"koble_til_id": "",
+"begrunnelse": "ikke et sted – flytt til notat",
+"personer": "I501012, I501013",
+"aar": "",
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Jylland?, Danmark?",
+"forslag": "",
+"sikkerhet": "lav",
+"handling": "manuell",
+"koble_til_id": "",
+"begrunnelse": "usikkert – bare «Jylland, Danmark»",
+"personer": "I501852",
+"aar": 1610,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "King of Polen",
+"forslag": "",
+"sikkerhet": "lav",
+"handling": "manuell",
+"koble_til_id": "",
+"begrunnelse": "tittel, ikke sted – fjern",
+"personer": "I502139",
+"aar": "",
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Lostorp",
+"forslag": "Lostorp, Kristianstad, Sverige",
+"sikkerhet": "lav",
+"handling": "opprett",
+"koble_til_id": "",
+"begrunnelse": "land fra familien: 65 % av hendelsene til personen, foreldre, søsken og barn i Sverige, mest Kristianstad",
+"personer": "I500954, I500955",
+"aar": "",
+"struct": {
+"name": "Lostorp",
+"region": "Kristianstad",
+"country": "Sverige"
+}
+},
+{
+"antall": 1,
+"raw": "Ryde og senere Nakskov",
+"forslag": "",
+"sikkerhet": "lav",
+"handling": "manuell",
+"koble_til_id": "",
+"begrunnelse": "to steder – del i to hendelser",
+"personer": "I501529",
+"aar": 1811,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Sunnmøre",
+"forslag": "",
+"sikkerhet": "lav",
+"handling": "manuell",
+"koble_til_id": "",
+"begrunnelse": "bare region – Sunnmøre, Møre og Romsdal",
+"personer": "I500676",
+"aar": 1567,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Vestindien",
+"forslag": "",
+"sikkerhet": "lav",
+"handling": "manuell",
+"koble_til_id": "",
+"begrunnelse": "Dansk Vestindia (Danmark) – ufullstendig",
+"personer": "I500197",
+"aar": 1823,
+"struct": null
+},
+{
+"antall": 1,
+"raw": "kapellet under koret",
+"forslag": "",
+"sikkerhet": "lav",
+"handling": "manuell",
+"koble_til_id": "",
+"begrunnelse": "del av kirke – trenger kirkenavn",
+"personer": "I501864",
+"aar": "",
+"struct": null
+},
+{
+"antall": 1,
+"raw": "Ã",
+"forslag": "",
+"sikkerhet": "lav",
+"handling": "manuell",
+"koble_til_id": "",
+"begrunnelse": "tegnfeil – fjern",
+"personer": "I500463, I500464",
+"aar": "",
+"struct": null
+}
+]

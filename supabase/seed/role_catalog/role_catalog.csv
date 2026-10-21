@@ -31,7 +31,7 @@ Riksfriherre,title,Titulert adel,Baron,,41,til 1806,Det tysk-romerske rike,"Frih
 Riksgreve,title,Titulert adel,Greve,,52,til 1806,Det tysk-romerske rike,"Greve i Det tysk-romerske rike (Reichsgraf), utnevnt av keiseren. Ble båret videre også av slekter som slo seg ned i Danmark-Norge, f.eks. Schmettow."
 Riksgrevinne,title,Titulert adel,Grevinne,Riksgreve,52,til 1806,Det tysk-romerske rike,"Gift med en riksgreve, eller datter i et riksgrevelig hus."
 Klosterfrøken,title,Utitulert adel,,,,1700-tallet–,Danmark-Norge,"Ugift adelig kvinne med plass (og forsørgelse) ved et adelig jomfrukloster, f.eks. Vallø eller Vemmetofte."
-Elskerinne (kongelig),other,Hoff,,,,,,"Kongens eller fyrstens elskerinne. Ofte en kjent og nesten offisiell posisjon, og barna kunne bli adlet (f.eks. Gyldenløve-slekten)."
+Frille,other,Hoff,,,,,,"Kongens eller en høytstående manns elskerinne utenfor ekteskap – en kjent og nærmest offisiell posisjon. Barna ble ofte anerkjent, fikk navn som Gyldenløve og kunne bli adlet."
 Hoffdame,title,Hoff,,,,,,"Adelig kvinne i tjeneste ved hoffet, typisk som selskap for dronningen eller prinsessene."
 Hoffrøken,title,Hoff,Hoffdame,,,,,Ugift hoffdame.
 Kabinettskammerherre,title,Hoff,Kammerherre,,,1800-tallet,Sverige-Norge,Kammerherre knyttet til kongens kabinett for utenrikssaker i Sverige-Norge. Både hoffstilling og embete.
@@ -112,6 +112,7 @@ Underfogd,position,Sivile embetsmenn,Fogd,,40,,Danmark-Norge,Fogdens fullmektig 
 Visepresident i landsretten,position,Sivile embetsmenn,,,60,1700-tallet,Danmark-Norge,Nest øverste dommer i en landsrett.
 Auditør,position,Offiserer,,,,,Danmark-Norge,Militær jurist; aktor og rådgiver i krigsretten.
 Feltskjær,occupation,Offiserer,,,,1600-/1700-tallet,,"Militær kirurg (feltskjærer, «feltserer»). Behandlet sår, brudd og amputasjoner; håndverkspreget utdanning, ikke universitet."
+Fenrik,military_rank,Offiserer,Løytnant,,25,1600-tallet–,Danmark-Norge,Laveste offisersgrad; bar opprinnelig kompaniets fane (fenrik = fanebærer). Under sekondløytnant.
 General,military_rank,Offiserer,,,100,,,Høyeste ordinære offisersgrad.
 Generaladjutant,position,Offiserer,,,,,Danmark-Norge,Stabsoffiser og nær rådgiver for kongen eller øverstkommanderende.
 Generalauditør,position,Offiserer,Auditør,,,1600-/1700-tallet,Danmark-Norge,Øverste militærjuridiske embetsmann i hæren; tilsyn med krigsrettene.

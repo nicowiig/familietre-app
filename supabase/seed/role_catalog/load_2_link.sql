@@ -72,7 +72,7 @@ INSERT INTO _rmap VALUES
   ($q$Eier$q$, 1, $q$Eier$q$, NULL, NULL),
   ($q$Eier av Løgismose$q$, 1, $q$Godseier$q$, $q$Løgismose$q$, NULL),
   ($q$Elektroingeniør$q$, 1, $q$Elektroingeniør$q$, NULL, NULL),
-  ($q$Elskerinde$q$, 1, $q$Elskerinne (kongelig)$q$, NULL, NULL),
+  ($q$Elskerinde$q$, 1, $q$Frille$q$, NULL, NULL),
   ($q$Embetsmann$q$, 1, $q$Embetsmann$q$, NULL, NULL),
   ($q$Erkebiskop$q$, 1, $q$Erkebiskop$q$, NULL, NULL),
   ($q$Erkehertugesse$q$, 1, $q$Erkehertuginne$q$, NULL, NULL),

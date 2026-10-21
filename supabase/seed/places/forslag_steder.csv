@@ -1,0 +1,149 @@
+sikkerhet,antall,raw,forslag,handling,koble_til_id,begrunnelse,personer,aar
+høy,7,"Alesund,","Ålesund, Norge",koble,558,kjent sted; familien bodde i Norge,"I500477, I500478, I501502, I502010",1913
+høy,6,"Solheim,","Solheim, Norge",koble,657,finnes i stedsregisteret; familien 100 % i Norge (Hordaland),"I500061, I500062, I500064, I500065",1910
+høy,4,Fussingø,"Fussingø, Randers, Viborg, Danmark",koble,474,kjent sted; NB familien ellers i Norge,"I501874, I502042, I502043, I502044",1707
+høy,2,"Broby (L), Friggatofta","Broby, Friggatofta, Skåne, Sverige",koble,939,kjent sted; NB familien ellers i Norge,I500963,1829
+høy,2,"Fodslette, Langeland","Fodslette, Langeland, Danmark",koble,639,finnes i stedsregisteret; familien 100 % i Danmark (København),I502255,1890
+høy,2,"Ledegård, Nysogn S. Hind H. Ringkøbing A.","Ledegård, Ringkøbing, Danmark",koble,213,finnes i stedsregisteret; familien 100 % i Danmark (Ringkøbing),I500299,1675
+høy,2,Rømskog,"Rømskog, Norge",koble,561,kjent sted; familien bodde i Norge,I500551,1982
+høy,2,Słońsk,"Słońsk, Lebus, Polen",koble,821,kjent sted; NB familien ellers i Tyskland,"I501813, I501814",1611
+høy,2,Velling,"Velling, Midtjylland, Danmark",koble,453,finnes i stedsregisteret; familien 94 % i Danmark (Viborg),I501871,1782
+høy,1,"'Straume, Mo sokn, Modalen'","Straume, Mo, Modalen, Norge",opprett,,kjent sted; familien bodde i Norge,I501629,1749
+høy,1,Aalborg Budolfi,"Budolfi kirke, Aalborg, Aalborg, Danmark",opprett,,kjent sted; familien bodde i Danmark,I501865,1758
+høy,1,"Altenburg, Sachsen-Altenburg, Thüringen","Altenburg, Thüringen, Tyskland",koble,791,kjent sted; familien bodde i Tyskland,I501477,1668
+høy,1,"Amundebyn, Östervallskog","Amundebyn, Östervallskog, Värmland, Sverige",koble,834,kjent sted; NB familien ellers i Norge,I502003,1856
+høy,1,"Amundsrød, Østervallskog / Tøcksmark","Amundsrød, Östervallskog, Värmland, Sverige",koble,849,kjent sted,I502232,1768
+høy,1,"Annaborg, Hillerød, Lynge Frederiksborg","Annaborg, Hillerød, Frederiksborg, Danmark",opprett,,kjent sted; familien bodde i Danmark,I501455,1809
+høy,1,Arum,"Arum, Friesland, Nederland",koble,463,kjent sted; familien bodde i Nederland,I501918,1908
+høy,1,"Bengalen, Indien","Bengal, India",koble,850,kjent sted; NB familien ellers i Danmark,I502256,1824
+høy,1,"Berg Sogn, Brundlaugnæs","Berg, Brunlanes, Norge",opprett,,kjent sted; familien bodde i Norge,I500373,1878
+høy,1,"Berg Sogn, Brunlaugnæs","Berg, Brunlanes, Norge",opprett,,kjent sted; familien bodde i Norge,I500058,1876
+høy,1,Bergum,"Bergum, Friesland, Nederland",opprett,,kjent sted; familien bodde i Nederland,I501907,1963
+høy,1,Bjerke Brandbu,"Bjerke, Brandbu, Norge",opprett,,kjent sted; familien bodde i Norge,I501775,1875
+høy,1,"Bodo Trondhjeim, Noruega","Bodø, Norge",opprett,,kjent sted; familien bodde i Norge,I501698,1831
+høy,1,Bolsward,"Bolsward, Friesland, Nederland",koble,468,kjent sted; familien bodde i Nederland,I501924,1904
+høy,1,Bordeaux,"Bordeaux, Frankrike",koble,747,kjent sted; NB familien ellers i Norge,I500882,1870
+høy,1,Brandben,"Brandben, Norge",koble,426,finnes i stedsregisteret; familien 100 % i Norge (Oppland),I501686,1903
+høy,1,"Bratislava, Bratislava, Czechoslovkia","Bratislava, Slovakia",opprett,,kjent sted; NB familien ellers i Østerrike,"I502270, I502271",
+høy,1,"Bårdsgarden, Innfjorden","Bårdsgarden, Innfjorden, Rauma, Norge",opprett,,kjent sted; familien bodde i Norge,I501898,1885
+høy,1,"Cementerio de la Capilla de Lade Kirke en Tromheim, Noruega","Lade kirkegård, Trondheim, Norge",opprett,,kjent sted; familien bodde i Norge,I501697,
+høy,1,"Cementerio de la Capilla de Lade Kirke, en Tromheim, Noruega","Lade kirkegård, Trondheim, Norge",opprett,,kjent sted; familien bodde i Norge,I500259,
+høy,1,"Den Haag, Südholland, Niederlande","Haag, Sør-Holland, Nederland",koble,740,kjent sted; NB familien ellers i Polen,I500708,1711
+høy,1,Dikemark jernværk,"Dikemark jernverk, Asker, Norge",opprett,,kjent sted; familien bodde i Norge,I501509,1742
+høy,1,Dongjum,"Dongjum, Friesland, Nederland",koble,467,kjent sted; familien bodde i Nederland,I501923,1902
+høy,1,Ellingsrudhjemmet,"Ellingsrudhjemmet, Oslo, Norge",opprett,,kjent sted; familien bodde i Norge,I502159,2017
+høy,1,Elsterwerda,"Elsterwerda, Brandenburg, Tyskland",opprett,,kjent sted; familien bodde i Tyskland,"I500684, I500685",
+høy,1,Esslingen am Neckar,"Esslingen am Neckar, Baden-Württemberg, Tyskland",koble,170,kjent sted; NB familien ellers i Østerrike,I502270,
+høy,1,"Farstrup,","Farstrup, Nordjylland, Danmark",koble,452,finnes i stedsregisteret; familien 100 % i Danmark (Aalborg),I501870,1725
+høy,1,"Fosse, Meland","Fosse, Meland, Norge",opprett,,kjent sted; familien bodde i Norge,I500940,1899
+høy,1,Fredriksvern Båtsmannsgården,"Båtsmannsgården, Stavern, Norge",opprett,,kjent sted; familien bodde i Norge,I500075,1889
+høy,1,Frongner,"Frogner, Norge",opprett,,kjent sted; familien bodde i Norge,I500777,1924
+høy,1,Gausdal,"Gausdal, Norge",koble,301,kjent sted; familien bodde i Norge,I500798,1852
+høy,1,Gerkesklooster,"Gerkesklooster, Friesland, Nederland",koble,621,kjent sted; familien bodde i Nederland,I501907,
+høy,1,Glatz,"Kłodzko, Schlesien, Polen",opprett,,kjent sted; familien bodde i Polen,"I500725, I500730",
+høy,1,Glücksburg,"Glücksburg, Slesvig-Holsten, Tyskland",opprett,,kjent sted; NB familien ellers i Danmark,"I501341, I502386",
+høy,1,Gressvik,"Gressvik, Onsøy, Norge",koble,296,kjent sted; familien bodde i Norge,I500761,1897
+høy,1,Göteborg,"Göteborg, Västra Götaland, Sverige",koble,479,kjent sted; familien bodde i Sverige,I502060,1837
+høy,1,Hakadal / Nittedal,"Hakadal, Nittedal, Norge",opprett,,kjent sted; familien bodde i Norge,I502167,
+høy,1,Hardegarijp,"Hardegarijp, Friesland, Nederland",koble,464,kjent sted; familien bodde i Nederland,I501919,1895
+høy,1,Haugom,"Haugom, Norge",koble,525,finnes i stedsregisteret; familien 100 % i Norge (Akershus),I502318,1834
+høy,1,"Haugum, Overhalla","Haugum, Overhalla, Norge",opprett,,kjent sted; familien bodde i Norge,I500337,1823
+høy,1,Hesteflotene,"Hesteflotene, Norge",koble,840,finnes i stedsregisteret; familien 100 % i Norge (Møre og Romsdal),I502085,1899
+høy,1,Hol,"Hol, Norge",koble,480,kjent sted; NB familien ellers i Sverige,I502061,1880
+høy,1,Hoogeveen,"Hoogeveen, Drenthe, Nederland",koble,830,kjent sted; familien bodde i Nederland,I501927,1999
+høy,1,"Høvåg, Agerøen","Agerøen, Høvåg, Norge",opprett,,kjent sted; familien bodde i Norge,I501996,1826
+høy,1,Klegod nysogn,"Klegod, Nysogn, Ringkøbing, Danmark",opprett,,kjent sted; familien bodde i Danmark,I500291,1804
+høy,1,"Klöxhult, Stenbrohult, G","Klöxhult, Stenbrohult, Kronoberg, Sverige",opprett,,kjent sted; familien bodde i Sverige,I500972,1914
+høy,1,"Komárom (now Komárno in Slovakia), Kingdom of Ungarn","Komárno, Slovakia",opprett,,kjent sted; NB familien ellers i Ungarn,I502273,1440
+høy,1,"Konigsberg, Ostpreußen","Kaliningrad, Ostpreußen, Russland",opprett,,kjent sted; NB familien ellers i Tyskland,I500688,1776
+høy,1,Kooten,"Kootstertille, Friesland, Nederland",koble,462,kjent sted; familien bodde i Nederland,I501905,1847
+høy,1,"Košice, Košice I, Košický, Slovakia","Košice, Slovakia",koble,602,kjent sted; NB familien ellers i Tyskland,I501545,1623
+høy,1,"Kramer, Bottineau, North Dakota, USA of America","Kramer, North Dakota, USA",koble,628,kjent sted; NB familien ellers i Norge,I502065,1950
+høy,1,Kville,"Kville, Västra Götaland, Sverige",koble,509,finnes i stedsregisteret; familien 100 % i Sverige (Bohuslän),I502190,1785
+høy,1,Købehavn,"København, Danmark",opprett,,kjent sted; familien bodde i Danmark,I501527,1714
+høy,1,Køyen Grue,"Køyen, Grue, Norge",opprett,,kjent sted; familien bodde i Norge,I502321,1800
+høy,1,"Langelsheim, 38685","Langelsheim, Niedersachsen, Tyskland",opprett,,kjent sted; familien bodde i Tyskland,"I500688, I500748",
+høy,1,Larvik ?,"Larvik, Norge",opprett,,kjent sted; familien bodde i Norge,I501323,1695
+høy,1,"Laurvig, Noorwegen","Larvik, Norge",opprett,,kjent sted; NB familien ellers i Tyskland,I501466,1686
+høy,1,Leeuwarden,"Leeuwarden, Friesland, Nederland",koble,829,kjent sted; familien bodde i Nederland,I501918,1977
+høy,1,Lier,"Lier, Norge",koble,354,kjent sted; familien bodde i Norge,I501260,1840
+høy,1,Liverpool,"Liverpool, England",opprett,,kjent sted; NB familien ellers i Norge,I500120,
+høy,1,Ljungbytorp,"Ljungbytorp, Värmland, Sverige",koble,510,finnes i stedsregisteret; familien 100 % i Sverige (Bohuslän),I502191,1781
+høy,1,Lovisenberg sykehus,"Lovisenberg sykehus, Oslo, Norge",opprett,,kjent sted; familien bodde i Norge,I500793,1975
+høy,1,"Lynderupgaard, Lynderup sogn","Lynderupgaard, Lynderup, Viborg, Danmark",opprett,,kjent sted; familien bodde i Danmark,I501866,1760
+høy,1,Meckelborgland i Bril,"Meckelborgland, Nederland",opprett,,kjent sted; NB familien ellers i Norge,I501931,
+høy,1,"Modum Prestegård, Modum","Modum prestegård, Modum, Norge",opprett,,kjent sted; familien bodde i Norge,I501253,1839
+høy,1,Mysen,"Mysen, Norge",koble,569,kjent sted; familien bodde i Norge,I500921,
+høy,1,Mückenberg,"Mückenberg (Lauchhammer), Brandenburg, Tyskland",koble,759,kjent sted; familien bodde i Tyskland,I501067,1776
+høy,1,Nesmoen Grue,"Nesmoen, Grue, Norge",opprett,,kjent sted; familien bodde i Norge,I502320,1794
+høy,1,Neustadt in Oberschlesien,"Prudnik, Schlesien, Polen",opprett,,kjent sted; familien bodde i Polen,I500706,1668
+høy,1,Norderhaug,"Norderhaug, Norge",koble,363,finnes i stedsregisteret; familien 100 % i Norge (Hordaland),I501289,1847
+høy,1,Norrunga,"Norrunga, Värmland, Sverige",koble,330,finnes i stedsregisteret; familien 100 % i Sverige (Alvsborg),I501060,1784
+høy,1,"Oslo fylke, Oslo domkirke/Vår Frelser menighed","Oslo domkirke, Oslo, Norge",opprett,,kjent sted; familien bodde i Norge,I501276,1840
+høy,1,Petruskirken Oslo,"Petruskirken, Oslo, Norge",opprett,,kjent sted; familien bodde i Norge,"I502167, I502168",
+høy,1,"Provstgaard, Nysogn S., Hind H., r","Provstgaard, Nysogn, Ringkøbing, Danmark",opprett,,kjent sted; familien bodde i Danmark,I500293,1827
+høy,1,"Rossinggården, Tolga","Rossinggården, Tolga, Norge",opprett,,kjent sted; familien bodde i Norge,I500528,1841
+høy,1,"S Hauge Gravlund, Haugesund","Søndre Hauge gravlund, Haugesund, Norge",opprett,,kjent sted,I501650,1939
+høy,1,Sakskøbing,"Sakskøbing, Maribo, Danmark",koble,516,kjent sted; familien bodde i Danmark,I502254,1778
+høy,1,"Schloß Neuhaus, an der Elbe","Neuhaus an der Elbe, Niedersachsen, Tyskland",koble,798,kjent sted; familien bodde i Tyskland,I501578,1629
+høy,1,"Sct. Croix, De Dansk Vestindiske Øer","St. Croix, Dansk Vestindia, Danmark",opprett,,kjent sted; familien bodde i Danmark,I500402,1765
+høy,1,"Seattle, King, Washington","Seattle, Washington, USA",koble,757,kjent sted; NB familien ellers i Norge,I501042,1929
+høy,1,Seim gamle kyrkjegard,"Seim gamle kyrkjegard, Lindås, Norge",opprett,,kjent sted; familien bodde i Norge,I501485,
+høy,1,Sexbierum,"Sexbierum, Friesland, Nederland",koble,466,kjent sted; familien bodde i Nederland,I501922,1901
+høy,1,Skaanevik,"Skånevik, Norge",opprett,,kjent sted; familien bodde i Norge,I501288,1842
+høy,1,Skar Øier,"Skar, Øyer, Norge",opprett,,kjent sted; familien bodde i Norge,I501817,1879
+høy,1,Skaramyra Grue,"Skaramyra, Grue, Norge",opprett,,kjent sted; familien bodde i Norge,I502319,1843
+høy,1,Solbjerg,"Gl. Viffertsholm, Solbjerg, Aalborg, Danmark",koble,493,finnes i stedsregisteret; familien 95 % i Danmark (Aalborg),I502125,
+høy,1,Stiens,"Stiens, Friesland, Nederland",koble,465,kjent sted; familien bodde i Nederland,I501921,1899
+høy,1,Storkvikne Orkdalen Sör Tröndelag,"Storkvikne, Orkdal, Norge",opprett,,kjent sted; familien bodde i Norge,I500645,1777
+høy,1,Strandby (Gislum,"Strandby, Gislum, Aalborg, Danmark",opprett,,kjent sted; familien bodde i Danmark,I501864,1750
+høy,1,Styrkesnes Indre I Sørfold,"Indre Styrkesnes, Sørfold, Norge",opprett,,kjent sted; familien bodde i Norge,I500929,1738
+høy,1,Sønder Alslev Kirke,"Sønder Alslev kirke, Maribo, Danmark",opprett,,kjent sted; familien bodde i Danmark,I500403,1852
+høy,1,"Sørskogsbygda, Hedemark","Sørskogbygda, Elverum, Norge",koble,818,kjent sted; familien bodde i Norge,I501780,1974
+høy,1,Trondheim katedralskole,"Trondheim katedralskole, Trondheim, Norge",opprett,,kjent sted; familien bodde i Norge,I500260,1903
+høy,1,Ungar.-Hradisch,"Uherské Hradiště, Mähren, Tsjekkia",opprett,,kjent sted; NB familien ellers i Polen,I500718,1585
+høy,1,Ungarisch-Ostra,"Uherský Ostroh, Mähren, Tsjekkia",opprett,,kjent sted; NB familien ellers i Polen,"I500718, I500719",
+høy,1,"Utrecht, The Nederland","Utrecht, Utrecht, Nederland",koble,804,kjent sted; NB familien ellers i Tyskland,I501654,1732
+høy,1,Vardal,"Vardal, Norge",koble,422,kjent sted,I501647,1850
+høy,1,"Vennergaard, Velling","Vennergaard, Velling, Ringkøbing, Danmark",opprett,,kjent sted; familien bodde i Danmark,I501871,1740
+høy,1,Vestre Fredrikstad,"Vestre Fredrikstad, Norge",opprett,,kjent sted; familien bodde i Norge,I500493,1875
+høy,1,Viker Asmaløy Hvaler Østfold,"Viker, Asmaløy, Hvaler, Norge",opprett,,kjent sted; familien bodde i Norge,I500491,1843
+høy,1,Vilniaus arkikatedra,"Vilnius katedral, Vilnius, Litauen",opprett,,kjent sted; NB familien ellers i Polen,I502137,
+høy,1,"Weißenfels, Trondheim, D","Weißenfels, Sachsen-Anhalt, Tyskland",koble,742,kjent sted; familien bodde i Tyskland,I500744,1774
+høy,1,"Ytstereitane (1-9), Dravlaus","Ytstereitane, Dravlaus, Norge",opprett,,kjent sted; familien bodde i Norge,I502086,1801
+høy,1,Zuidlaren,"Zuidlaren, Drenthe, Nederland",koble,828,kjent sted; familien bodde i Nederland,I501915,1914
+høy,1,Zwaagwesteinde,"Zwaagwesteinde, Friesland, Nederland",koble,469,kjent sted; familien bodde i Nederland,I501925,1905
+høy,1,"ringkoebing, Hind, Nysogn, Synder Lyngvig, 2","Søndre Lyngvig, Nysogn, Ringkøbing, Danmark",opprett,,kjent sted; familien bodde i Danmark,I500144,1801
+høy,1,Øiestad,"Øyestad, Norge",opprett,,kjent sted; familien bodde i Norge,I500062,1881
+høy,1,Øiestad kirkegård,"Øyestad, Norge",opprett,,kjent sted; NB familien ellers i Sverige,I501998,
+høy,1,Øksnes,"Øksnes, Norge",koble,487,kjent sted; familien bodde i Norge,I502101,1729
+høy,1,Ørkedalen,"Orkdal, Norge",opprett,,kjent sted; familien bodde i Norge,I500365,1830
+høy,1,"Østre Bön, Tøcksmark","Östra Bön, Töcksmark, Värmland, Sverige",koble,515,kjent sted,I502226,1745
+middels,3,Ryk,"Ryk, Bohuslän, Sverige",opprett,,"land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Sverige, mest Bohuslän","I502190, I502191, I502192",1817
+middels,1,"'Morvik,","Morvik, Hordaland, Norge",opprett,,"land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Hordaland",I501628,1758
+middels,1,Aalum opsl 35/183,"Aalum opsl 35, Viborg, Danmark",opprett,,"land fra familien: 90 % av hendelsene til personen, foreldre, søsken og barn i Danmark, mest Viborg",I502041,1693
+middels,1,Alslevgaard,"Alslevgaard, Holstein, Tyskland",opprett,,"land fra familien: 77 % av hendelsene til personen, foreldre, søsken og barn i Tyskland, mest Holstein",I501189,1630
+middels,1,Granselv,"Granselv, Hordaland, Norge",opprett,,"land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Hordaland",I501051,1750
+middels,1,Gården Fosseli,"Gården Fosseli, Aust-Agder, Norge",opprett,,"land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Aust-Agder","I501995, I501996",
+middels,1,Indre Fet,"Indre Fet, Hordaland, Norge",opprett,,"land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Hordaland",I500780,1836
+middels,1,"Midtschoug,","Midtschoug, Hedmark, Norge",opprett,,"land fra familien: 92 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Hedmark",I502331,1709
+middels,1,"Nordreaasplads,","Nordreaasplads, Akershus, Norge",opprett,,"land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Akershus",I500547,1875
+middels,1,Ousby,"Ousby, Kristianstad, Sverige",opprett,,"land fra familien: 85 % av hendelsene til personen, foreldre, søsken og barn i Sverige, mest Kristianstad",I500972,1836
+middels,1,Ris kirkegård,"Ris kirkegård, Hordaland, Norge",opprett,,"land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Hordaland",I500946,
+middels,1,Rud Høland Akershus 03.02.,"Rud Høland Akershus 03.02., Akershus, Norge",opprett,,"land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Norge, mest Akershus",I500608,1718
+middels,1,Ryk Mellangård,"Ryk Mellangård, Bohuslän, Sverige",opprett,,"land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Sverige, mest Bohuslän",I502192,1892
+middels,1,Skanderborg S.- Hjelmslev H.- Skanderborg A.,"Skanderborg S.- Hjelmslev H.- Skanderborg A., Frederiksborg, Danmark",opprett,,"land fra familien: 94 % av hendelsene til personen, foreldre, søsken og barn i Danmark, mest Frederiksborg",I501406,1619
+middels,1,Valberget,"Valberget, Värmland, Sverige",opprett,,"land fra familien: 100 % av hendelsene til personen, foreldre, søsken og barn i Sverige, mest Värmland",I502334,
+lav,2,Helle,"Helle, Värmland, Sverige",opprett,,"land fra familien: 57 % av hendelsene til personen, foreldre, søsken og barn i Sverige, mest Värmland","I501997, I501998",1891
+lav,1,Bosatt på Elofsbyn,,manuell,,Elofsbyn (Sverige?) – flytt «bosatt på» til notat,"I502003, I502004",
+lav,1,Forlis på reise til/fra Trondheim,,manuell,,dødsårsak/omstendighet – flytt til notat,I500184,1814
+lav,1,Frivillig i fransk krigstjeneste i Alger,,manuell,,"livshendelse – flytt til notat (sted: Alger, Algerie)",I501150,
+lav,1,Hjemme,,manuell,,ikke et sted – flytt til notat,"I501012, I501013",
+lav,1,"Jylland?, Danmark?",,manuell,,"usikkert – bare «Jylland, Danmark»",I501852,1610
+lav,1,King of Polen,,manuell,,"tittel, ikke sted – fjern",I502139,
+lav,1,Lostorp,"Lostorp, Kristianstad, Sverige",opprett,,"land fra familien: 65 % av hendelsene til personen, foreldre, søsken og barn i Sverige, mest Kristianstad","I500954, I500955",
+lav,1,Ryde og senere Nakskov,,manuell,,to steder – del i to hendelser,I501529,1811
+lav,1,Sunnmøre,,manuell,,"bare region – Sunnmøre, Møre og Romsdal",I500676,1567
+lav,1,Vestindien,,manuell,,Dansk Vestindia (Danmark) – ufullstendig,I500197,1823
+lav,1,kapellet under koret,,manuell,,del av kirke – trenger kirkenavn,I501864,
+lav,1,Ã,,manuell,,tegnfeil – fjern,"I500463, I500464",
