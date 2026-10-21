@@ -24,9 +24,32 @@ INSERT INTO families (family_id, husband_id, wife_id, marr_date, marr_place_raw,
   ('F502010','I501498',NULL,NULL,NULL,'married'),                      -- Anders Aarsæter + ukjent første kone
   ('F502011',NULL,'I501986',NULL,NULL,'married'),                      -- ukjent Gran + Else Akkermann (Jens Grans foreldre)
   ('F502012',NULL,'I502324',NULL,NULL,'married'),                      -- Berte Hansdatter + ukjent annen mann
-  ('F502013',NULL,'I502086','24 JUN 1830',NULL,'married'),             -- Randi Reite + ukjent Peder
-  ('F502014','I500098',NULL,NULL,NULL,'married')                       -- Frederik Christopher Trampe + ukjent mor
+  ('F502013',NULL,'I502086','24 JUN 1830',NULL,'married')              -- Randi Reite + ukjent Peder
 ON CONFLICT DO NOTHING;
+
+-- ---------- Hveding: magistrat Jens Christensen Hveding (1691–1758) og Elisabeth Marie Herdal (vestraat.net)
+INSERT INTO persons (person_id, sex, is_living) VALUES ('I502389','M',false), ('I502390','F',false) ON CONFLICT DO NOTHING;
+INSERT INTO person_names (person_id, name_type, given_name, middle_name, surname, is_preferred)
+  SELECT * FROM (VALUES ('I502389','birth','Jens','Christensen','Hveding',true),
+                        ('I502390','birth','Elisabeth Marie','Pedersdatter','Herdal',true)) v(a,b,c,d,e,f)
+  WHERE NOT EXISTS (SELECT 1 FROM person_names WHERE person_id IN ('I502389','I502390'));
+INSERT INTO person_facts (person_id, fact_type, date_text, date_year, place_raw)
+  SELECT * FROM (VALUES ('I502389','BIRT','1691',1691,'Hamarøy, Nordland'), ('I502389','DEAT','1758',1758,'Trondheim')) v(a,b,c,d,e)
+  WHERE NOT EXISTS (SELECT 1 FROM person_facts WHERE person_id = 'I502389');
+INSERT INTO families (family_id, husband_id, wife_id, marr_date, family_type)
+  VALUES ('F502015','I502389','I502390','17 JUL 1720','married') ON CONFLICT DO NOTHING;
+-- født 1691 på Hamarøy: sønn av Christen Jensen Hveding (d. 1696 på Hamarøy)
+INSERT INTO family_children (family_id, child_id)
+  SELECT family_id, 'I502389' FROM families WHERE husband_id = 'I501370' ORDER BY family_id LIMIT 1
+  ON CONFLICT DO NOTHING;
+INSERT INTO person_roles (person_id, role_type, value, place, source)
+  SELECT 'I502389', 'position', 'Magistrat', 'Trondheim', 'vestraat.net (Etterkommere etter Christen Jensen Hveding)'
+  WHERE NOT EXISTS (SELECT 1 FROM person_roles WHERE person_id = 'I502389');
+UPDATE person_facts SET date_text = '31 JAN 1731', date_year = 1731, date_month = 1, date_day = 31,
+  notes = 'Rettet 2026-10-21 fra 30 JAN 1730 (vestraat.net).'
+  WHERE person_id = 'I501382' AND fact_type = 'BIRT';
+UPDATE person_facts SET notes = coalesce(notes || ' ', '') || '[Døpt 30.1.1736 i Trondhjem (vestraat.net).]'
+  WHERE person_id = 'I501383' AND fact_type = 'BIRT';
 
 -- ---------- Flytt barn
 INSERT INTO _mv VALUES
@@ -70,7 +93,15 @@ INSERT INTO _mv VALUES
   ('I501531','F500559','F502013','Pedersøn født 1830 – far er en Peder; Nils Hesteflot var 13'),
   ('I502087','F500559','F502013','Pedersdatter født 1833 – far er en Peder'),
   -- Trampe: Cathinka født 1812 i Trondheim, mens Frederik Christopher Trampe var stiftamtmann der; Frederikke Heinrich døde 1807
-  ('I501695','F500454','F502014','Født 1812 i Trondheim – Frederikke Heinrich døde 1807; trolig datter av Frederik Christopher Trampe med ukjent mor');
+  ('I501695','F500454','F500030','Født 1812 i Trondheim – Frederikke Heinrich døde 1807; Trampe giftet seg 1810 med Amalia Schmettau, stiftamtmann i Trondheim fra 1810'),
+  -- Cloumann: Elisabeth (1753) er datter av andre kone Elisabeth Holtermann; Elisabeth Fayes barn var Ole (ca. 1746), Peder Jørgen (1747) og Karen (1748)
+  ('I500269','F500244','F500246','Født 1753 – Elisabeth Faye døde 1748; mor er andre kone Elisabeth Holtermann (oppkalt etter den første kona)'),
+  -- Hveding: barna fra 1721 er magistrat Jens Christensen Hvedings, ikke Jens Danielsens (barn 1710–1716)
+  ('I501380','F500321','F502015','Anne Bendicte (døpt 9.8.1721) – datter av Jens Christensen Hveding og Elisabeth Marie Herdal'),
+  ('I501069','F500321','F502015','Golla/Gudlaug (1722) – datter av Jens Christensen Hveding og Elisabeth Marie Herdal'),
+  ('I501381','F500321','F502015','Fredrikke (ca. 1724) – datter av Jens Christensen Hveding og Elisabeth Marie Herdal'),
+  ('I501382','F500321','F502015','Christen (31.1.1731) – sønn av Jens Christensen Hveding og Elisabeth Marie Herdal'),
+  ('I501383','F500321','F502015','Jacob (døpt 30.1.1736) – sønn av Jens Christensen Hveding og Elisabeth Marie Herdal');
 UPDATE family_children fc SET family_id = m.to_f FROM _mv m WHERE fc.child_id = m.c AND fc.family_id = m.from_f;
 INSERT INTO person_audit_log(person_id, changed_by, change_type, table_name, field_name, old_value, new_value, note)
   SELECT c, 'claude', 'update', 'family_children', 'family_id', from_f, to_f, why FROM _mv;
@@ -152,12 +183,21 @@ INSERT INTO person_audit_log(person_id, changed_by, change_type, table_name, not
 UPDATE person_facts SET date_text = NULL, date_year = NULL,
   notes = coalesce(notes || ' ', '') || '[Rettet 2026-10-21: fødselsår «1799» fjernet – hun ble gift 1806 og fikk barn fra 1806.]'
   WHERE person_id = 'I500897' AND fact_type = 'BIRT' AND date_year = 1799;
-UPDATE person_facts SET date_text = 'BEF 1749', date_year = 1748,
-  notes = coalesce(notes || ' ', '') || '[Rettet 2026-10-21 fra 1753: moren Elisabeth Faye døde 1748 – trolig født samme år og oppkalt etter henne.]'
-  WHERE person_id = 'I500269' AND fact_type = 'BIRT' AND date_year = 1753;
-UPDATE person_facts SET date_text = 'BEF 1746', date_year = 1745,
-  notes = coalesce(notes || ' ', '') || '[Rettet 2026-10-21 fra 1750: faren døde 1745 og moren ville vært 58.]'
-  WHERE person_id = 'I501051' AND fact_type = 'BIRT' AND date_year = 1750;
+-- Cloumann: vielsesdatoen 9.12.1744 hører til ekteskapet med Elisabeth Faye, ikke Holtermann
+UPDATE families SET marr_date = NULL WHERE family_id = 'F500246' AND marr_date = '9 DEC 1744';
+-- Trampe: gift med Amalia Schmettau 1810 (Wikipedia)
+UPDATE families SET marr_date = '1810' WHERE family_id = 'F500030' AND marr_date IS NULL;
+-- Wurff: Maren Pedersdatter døde 1683 i Ålum (finnholbek.dk); fødselsåret ca. 1610 ga henne sønn som 61-åring
+UPDATE person_facts SET date_text = '1683', date_year = 1683, notes = 'Rettet 2026-10-21 fra 1693 (finnholbek.dk).'
+  WHERE person_id = 'I502041' AND fact_type = 'DEAT';
+UPDATE person_facts SET date_text = NULL, date_year = NULL,
+  notes = '[Rettet 2026-10-21: «ca. 1610» fjernet – sønnen Jens er født 1671.]'
+  WHERE person_id = 'I502041' AND fact_type = 'BIRT';
+-- Juel: Niels Peter (von) Juul, oberst, oppgis født 1750 også på Geni. Da kan ikke Peder Jensen Juel (d. 1745) og
+-- Anna Catharina Bruun (f. 1692) være foreldrene – koblingen merkes, men brytes ikke før det er kildebelagt.
+UPDATE person_facts SET notes = coalesce(notes || ' ', '') ||
+  '[2026-10-21: Foreldrekoblingen er tvilsom – faren døde 1745 og moren var født 1692. Bør sjekkes mot kilde.]'
+  WHERE person_id = 'I501051' AND fact_type = 'BIRT';
 -- Henrik Jørgensen Bull: én kone, Ane Andersdatter Holm, mor til alle barna fra ca. 1655 (vestraat.net).
 -- Fødselsåret 1647 og vielsen «ca. 1661» er derfor feil.
 UPDATE person_facts SET date_text = NULL, date_year = NULL,
@@ -195,6 +235,18 @@ SELECT * FROM (VALUES
  ('I502387','Geneanet (Arvid Østbye)','Johan Martens (1769–1844)','https://gw.geneanet.org/arvidostbye?lang=fr&n=martens&p=johan','family_history','2026-10-21','Claude',
   'Første kone til Johan Martens; mor til Johan (1793–95), Hans (1794–1814), Johan (1796–1876), Cathrine Marie (1797–1837) og Didrik Bergmann (1799–1812).')
 ,
+ ('I500433','Wikipedia','Fredrik Glad Balchen','https://en.wikipedia.org/wiki/Fredrik_Glad_Balchen','encyclopedia','2026-10-21','Claude',
+  'Fredrik Glad Balchen født 6.4.1815 i Bergen, sønn av kapellan Johan Peter Balchen (1783–1827) og Christiane Wilhelmine Gulbrandsen (1789–1819).'),
+ ('I500098','Wikipedia','Frederich Christopher Trampe, Count of Trampe','https://en.wikipedia.org/wiki/Frederich_Christopher_Trampe,_Count_of_Trampe','encyclopedia','2026-10-21','Claude',
+  'Gift 1797 Sophie Frederikke Heinrich (1764–1807), 1808 Anna Dorothea Colbjørnsen (1792–1808), 1810 Amalia Ulrica Frederike Schmettau (1790–1856). Stiftamtmann i Søndre Trondhjems amt 1810–1832.'),
+ ('I501874','finnholbek.dk','Jens Mortensen Wurff (1671–1735)','https://finnholbek.dk/getperson.php?personID=I24787&tree=2','family_history','2026-10-21','Claude',
+  'Foreldre Morten Wurff og Maren Pedersdatter (d. 1683, Ålum). Gift 19.8.1704 med Kathrine Olesdatter Clodig (d. apr. 1708): Charlotte Amalie 1705, Christian Ludvig 1707. Gift før 1712 med Anne Hansdatter Mossin (1678–1773): Charlotte Amalie 1716, Hans 1720.'),
+ ('I500998','Hemneslekt','Claus Pedersen Cloumann (1717–1783)','https://hemneslekt.net/getperson.php?personID=I99656&tree=Hemne','family_history','2026-10-21','Claude',
+  'Gift 9.12.1744 med Elisabeth Faye (1714–1748): Ole ca. 1746, Peder Jørgen 1747, Karen 1748. Andre kone Elisabeth Carstensdatter Holtermann (1716–1808).'),
+ ('I502389','vestraat.net','Etterkommere etter Christen Jensen Hveding','https://vestraat.net/ettersl/hveding0001.htm','family_history','2026-10-21','Claude',
+  'Jens Christensen Hveding, f. 1691 Hamarøy, d. 1758, magistrat i Trondheim. Gift 17.7.1720 med Elisabeth Marie Pedersdatter Herdal. 12 barn 1721–1736, bl.a. Anne Bendicte, Golla, Fredrikke, Christen (1731) og Jacob (1736).'),
+ ('I501168','vestraat.net','Etterkommere etter Christen Jensen Hveding','https://vestraat.net/ettersl/hveding0001.htm','family_history','2026-10-21','Claude',
+  'Jens Danielsen Hveding gift ca. 1710 med Dorothea Andersdatter Brønlund. Barn: Jens Andreas ca. 1710, Birgitthe 1711, Maren 1713, Riborg 1714, Margaretha ca. 1716.'),
  ('I500647','vestraat.net','Etterkommere etter Jens Andersen Bull','https://vestraat.net/ettersl/bull0001.htm','family_history','2026-10-21','Claude',
   'Gift med Ane Andersdatter Holm. Barn: Anna (d. 1702), Dorothea (ca. 1655–1726), Elen (ca. 1660–1696), Anders (1663–1735), Margrete (ca. 1665), Martha (ca. 1670–ca. 1718).'),
  ('I500631','vestraat.net','Etterkommere etter Jens Andersen Bull','https://vestraat.net/ettersl/bull0001.htm','family_history','2026-10-21','Claude',
