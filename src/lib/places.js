@@ -107,7 +107,8 @@ export function placeAt(place, year, fallback, mode = currentMode) {
   const replaced = hist ? replaceName(modern, hist.modern, hist.name) : null
   let label = replaced || modern
   // Når det gamle navnet ikke står i teksten (f.eks. en bydel), nevnes det i konteksten i stedet
-  const histInContext = hist && !replaced
+  // …men ikke når navnet allerede står i teksten («Aasen, Aker» trenger ikke «den gang Aker»)
+  const histInContext = hist && !replaced && !new RegExp(`(^|, )${hist.name}(,|$)`).test(modern)
   if (mode === 'historisk') {
     if (pol) {
       label = isNorway ? `${label}, ${pol.name}` : (label.endsWith(place.country) ? label.slice(0, -place.country.length) + pol.name : `${label}, ${pol.name}`)

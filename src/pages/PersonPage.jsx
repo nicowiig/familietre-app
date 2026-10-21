@@ -290,7 +290,9 @@ export function PersonPage() {
   const nickname    = preferred?.nickname || getNickname(names)
   const signedName  = names.find(n => n.name_type === 'signed')
   const { birth, death, christening, burial } = extractBirthDeath(facts)
-  const primaryPhoto = photos.find(p => p.is_primary) || photos[0]
+  // Gruppebilder (bryllup o.l.) blir aldri profilbilde med mindre de er eksplisitt valgt
+  const primaryPhoto = photos.find(p => p.is_primary) || photos.find(p => !p.is_group)
+  const galleryPhotos = photos.filter(p => p !== primaryPhoto)
 
   const birthYear  = birth?.date_year
   const deathYear  = death?.date_year
@@ -455,7 +457,7 @@ export function PersonPage() {
               families={families}
               parentFamilies={children}
             />
-            {photos.length > 1 && <PhotosSection photos={photos} fullName={fullName} />}
+            {galleryPhotos.length > 0 && <PhotosSection photos={primaryPhoto ? photos : galleryPhotos} fullName={fullName} />}
           </div>
         </div>
       </div>
@@ -639,12 +641,19 @@ function Lightbox({ photos, initial, onClose }) {
         onClick={e => { e.stopPropagation(); prev() }}
         style={{ position: 'absolute', left: 24, color: '#fff', background: 'none', border: 'none', fontSize: 32, cursor: 'pointer' }}
       >‹</button>
-      <img
-        src={photo.signedUrl}
-        alt=""
-        style={{ maxHeight: '90vh', maxWidth: '90vw', objectFit: 'contain' }}
-        onClick={e => e.stopPropagation()}
-      />
+      <figure style={{ margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }} onClick={e => e.stopPropagation()}>
+        <img
+          src={photo.signedUrl}
+          alt={photo.caption || ''}
+          style={{ maxHeight: photo.caption ? '80vh' : '90vh', maxWidth: '90vw', objectFit: 'contain' }}
+        />
+        {photo.caption && (
+          <figcaption style={{ color: '#e8e2d6', fontSize: 'var(--text-sm)', maxWidth: 'min(90vw, 760px)', textAlign: 'center', lineHeight: 1.5 }}>
+            {photo.caption}
+            {photo.date_taken && <span style={{ opacity: 0.7 }}> · {photo.date_taken}</span>}
+          </figcaption>
+        )}
+      </figure>
       <button
         onClick={e => { e.stopPropagation(); next() }}
         style={{ position: 'absolute', right: 24, color: '#fff', background: 'none', border: 'none', fontSize: 32, cursor: 'pointer' }}
@@ -664,7 +673,21 @@ function PhotosSection({ photos, fullName }) {
     <div className="profile-section mt-6">
       <h3 className="profile-section-header">Bilder</h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-        {photos.map((p, i) => (
+        {photos.map((p, i) => p.is_group ? (
+          <figure key={p.id} style={{ gridColumn: '1 / -1', margin: 0 }}>
+            <img
+              src={p.signedUrl}
+              alt={p.caption || fullName}
+              style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: 'var(--radius)', cursor: 'zoom-in', filter: 'sepia(30%) contrast(1.05)' }}
+              onClick={() => setLightbox(i)}
+            />
+            {p.caption && (
+              <figcaption className="text-xs text-muted" style={{ marginTop: 4, lineHeight: 1.4 }}>
+                {p.caption.length > 110 ? p.caption.slice(0, 110).trimEnd() + '…' : p.caption}
+              </figcaption>
+            )}
+          </figure>
+        ) : (
           <img
             key={p.id}
             src={p.signedUrl}
@@ -1505,8 +1528,9 @@ function WorkExpGroup({ group, nameMap, isLiving }) {
   const ongoing  = isLiving && entries.some(e => e.date_from && !e.date_to)
   const minYear  = fromNums.length ? Math.min(...fromNums) : null
   const maxYear  = toNums.length   ? Math.max(...toNums)   : null
+  const openEnded = !isLiving && entries.some(e => e.date_from && !e.date_to)
   const period   = minYear
-    ? (ongoing ? `${minYear}–nå` : maxYear && maxYear !== minYear ? `${minYear}–${maxYear}` : String(minYear))
+    ? (ongoing ? `${minYear}–nå` : openEnded ? `fra ${minYear}` : maxYear && maxYear !== minYear ? `${minYear}–${maxYear}` : String(minYear))
     : null
 
   const sorted = [...entries].sort((a, b) => (yr(a.date_from) || 0) - (yr(b.date_from) || 0))
@@ -1814,7 +1838,7 @@ function RolesSection({ roles, title = 'Titler og roller' }) {
       if (!acc[key]) {
         acc[key] = { ...r, value: expandedValue, _periods: [] }
       }
-      const period = [r.date_from, r.date_to].filter(Boolean).join(' – ')
+      const period = formatRolePeriod(r.date_from, r.date_to)
       if (period) acc[key]._periods.push(period)
       return acc
     }, {})
@@ -1837,7 +1861,7 @@ function RoleItem({ role }) {
   const displayValue = expandRoleValue(role.value)
   const periods      = role._periods?.length > 0
     ? role._periods.join(', ')
-    : [role.date_from, role.date_to].filter(Boolean).join(' – ')
+    : formatRolePeriod(role.date_from, role.date_to)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -2224,7 +2248,8 @@ function AddressesSection({ addresses, isLiving, coResidents = {} }) {
   const merged = []
   const byKey = new Map()
   for (const a of deduped) {
-    const place = a.address_id || addrKey(a)
+    // Samme sted: samme gate+nr, ellers samme visningsnavn (adresse-ID kan være ulik for samme sted)
+    const place = (addrKey(a) || a.name_display || a.address_id || '').toString().toLowerCase().replace(/,\s*norge$/, '').trim() || null
     const key = place ? `${place}|${String(a.date_from || '').slice(0, 4)}` : null
     const prev = key && byKey.get(key)
     if (!prev) {
@@ -2238,8 +2263,10 @@ function AddressesSection({ addresses, isLiving, coResidents = {} }) {
     if (!prev.date_to && a.date_to) prev.date_to = a.date_to
     if (!prev.effective_date_to && a.effective_date_to) prev.effective_date_to = a.effective_date_to
     if (EVENT_TYPES.has(prev.address_type) && !EVENT_TYPES.has(a.address_type)) prev.address_type = a.address_type
-    const notes = [prev.notes, a.notes].filter(Boolean)
-    prev.notes = [...new Set(notes)].join(' — ') || null
+    // Notater: ta bare med tekst som ikke allerede står der
+    if (a.notes && !(prev.notes || '').includes(a.notes)) {
+      prev.notes = prev.notes && !a.notes.includes(prev.notes) ? `${prev.notes} — ${a.notes}` : a.notes
+    }
     if (!prev.building_name && a.building_name) prev.building_name = a.building_name
   }
 

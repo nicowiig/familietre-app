@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { formatName, searchTokens } from '../lib/persons'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../supabase'
@@ -16,6 +16,9 @@ const NAV_LINKS = [
 ]
 
 export function Layout({ children }) {
+  // Ny side (f.eks. klikk på en slektning nederst i familiekortet) skal starte øverst
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
   const { user, isAdmin, signOut, personId: myPersonId } = useAuth()
   const [navSearch, setNavSearch]       = useState('')
   const [menuOpen,  setMenuOpen]        = useState(false)
