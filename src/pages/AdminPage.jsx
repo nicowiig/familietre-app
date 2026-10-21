@@ -93,7 +93,7 @@ function AccessTab() {
     if (personIds.length) {
       const { data: names } = await supabase
         .from('person_names')
-        .select('person_id, given_name, middle_name, surname')
+        .select('person_id, given_name, epithet, middle_name, surname')
         .in('person_id', personIds)
         .eq('is_preferred', true)
       ;(names || []).forEach(n => {
@@ -286,7 +286,7 @@ function PersonLinkSearch({ user, onLink }) {
     if (!tokens.length) { setSuggestions([]); return }
     async function fetchToken(t) {
       const { data } = await supabase.from('person_names')
-        .select('person_id, given_name, surname, middle_name')
+        .select('person_id, given_name, epithet, surname, middle_name')
         .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%,middle_name.ilike.%${t}%`)
         .eq('is_preferred', true).limit(50)
       return data || []
@@ -313,7 +313,7 @@ function PersonLinkSearch({ user, onLink }) {
     const tokens = val.trim().split(/\s+/)
     async function ft(t) {
       const { data } = await supabase.from('person_names')
-        .select('person_id, given_name, surname, middle_name')
+        .select('person_id, given_name, epithet, surname, middle_name')
         .or(`given_name.ilike.%${t}%,surname.ilike.%${t}%,middle_name.ilike.%${t}%`)
         .eq('is_preferred', true).limit(30)
       return data || []
@@ -651,7 +651,7 @@ function AuditLogTab() {
   async function fetchNames(ids) {
     if (!ids.length) return {}
     const { data } = await supabase.from('person_names')
-      .select('person_id, given_name, surname')
+      .select('person_id, given_name, epithet, surname')
       .in('person_id', ids).eq('is_preferred', true)
     const map = {}
     for (const n of (data || []))

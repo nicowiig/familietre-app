@@ -250,7 +250,7 @@ export function StederPage() {
       supabase.from('person_facts').select('person_id, date_year, date_month').eq('fact_type', 'BIRT'),
       supabase.from('person_facts').select('person_id, date_year').eq('fact_type', 'DEAT'),
       supabase.from('persons').select('person_id, sex'),
-      supabase.from('person_names').select('given_name, surname').eq('is_preferred', true),
+      supabase.from('person_names').select('given_name, epithet, surname').eq('is_preferred', true),
       supabase.from('families').select('family_id, children'),
     ])
 

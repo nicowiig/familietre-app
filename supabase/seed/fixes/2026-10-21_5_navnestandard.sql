@@ -6,7 +6,8 @@
 --     (fødselsrike; regenter: riket de styrte). Dynastiet lagres separat i persons.dynasty
 --     og vises som «Huset X». Danmark-Norges konger står uten territorium (Christian IV).
 --  2. Norske eksonymer (Sachsen, Polen, Böhmen, Østerrike, Braunschweig), aldri engelsk.
---  3. Tilnavn og kallenavn i kallenavnfeltet (norsk der det finnes etablert form).
+--  3. Kjente tilnavn (den skjeggete, Hårfagre) i nytt felt person_names.epithet og vises i navnet:
+--     «Hertug Georg den skjeggete av Sachsen». Familiekallenavn (Greta, Nikken) i nickname, vises ikke i navnet.
 --  4. Romertall for ordenstall. Navnebrødre skilles med årstall, ikke tall i navnet.
 --  5. Gammel form bevares som alternativt navn (søkbart, ikke vist som hovednavn).
 --  Titulert adel med ekte slektsnavn (Schmettow, Trampe, Løvendal, Gyldenløve) beholder etternavnet.
@@ -14,6 +15,8 @@
 BEGIN;
 
 ALTER TABLE public.persons ADD COLUMN IF NOT EXISTS dynasty text;
+ALTER TABLE public.person_names ADD COLUMN IF NOT EXISTS epithet text;
+COMMENT ON COLUMN public.person_names.epithet IS 'Historisk tilnavn som er del av navnet (Hårfagre, den skjeggete). Vises etter fornavnet.';
 COMMENT ON COLUMN public.persons.dynasty IS 'Fyrstehus/dynasti (Oldenburg, Wettin …) for personer uten etternavn. Vises som «Huset X».';
 
 CREATE TEMP TABLE _nm (pid text, given text, middle text, prefix text, surname text, nickname text, dynasty text) ON COMMIT DROP;
@@ -155,8 +158,11 @@ SELECT n.person_id, 'claude', 'update', 'person_names', 'navn',
   'Navnestandard: fornavn + «av» territorium for fyrstelige, tilnavn til kallenavnfelt'
 FROM person_names n JOIN _nm m ON m.pid = n.person_id WHERE n.is_preferred;
 
+-- Fyrstelige (med dynasti): tilnavnet blir en del av navnet. Andre: familiekallenavn.
 UPDATE person_names n SET given_name = m.given, middle_name = m.middle, prefix = m.prefix, surname = m.surname,
-  nickname = coalesce(m.nickname, n.nickname)
+  epithet  = CASE WHEN m.dynasty IS NOT NULL THEN m.nickname ELSE n.epithet END,
+  nickname = CASE WHEN m.dynasty IS NOT NULL THEN CASE WHEN n.nickname = m.nickname THEN NULL ELSE n.nickname END
+                  ELSE coalesce(m.nickname, n.nickname) END
 FROM _nm m WHERE n.person_id = m.pid AND n.is_preferred;
 
 UPDATE persons p SET dynasty = m.dynasty FROM _nm m WHERE p.person_id = m.pid AND m.dynasty IS NOT NULL;
@@ -169,7 +175,7 @@ DELETE FROM person_roles WHERE person_id = 'I502302' AND value = 'Konge';
 
 COMMIT;
 
-SELECT n.person_id, concat_ws(' ', n.given_name, n.middle_name, n.prefix, n.surname) AS navn, n.nickname, p.dynasty
+SELECT n.person_id, concat_ws(' ', n.given_name, n.middle_name, n.epithet, n.prefix, n.surname) AS navn, n.nickname, p.dynasty
 FROM person_names n JOIN persons p USING (person_id)
 WHERE n.is_preferred AND n.person_id IN ('I502131','I502132','I502142','I501384','I501421','I501786','I502270','I500135')
 ORDER BY 1;

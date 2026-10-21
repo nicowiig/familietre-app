@@ -23,6 +23,8 @@ export function surnameParticle(prefix) {
 /**
  * Sett sammen fullt navn fra navneobjekt.
  *
+ * - Tilnavn (epithet) står etter fornavnet: «Georg den skjeggete av Sachsen», «Harald Hårfagre».
+ *   Familiekallenavn (nickname) er ikke en del av navnet.
  * - Partikkel i prefix vises foran etternavnet («Carl von Schmettow»),
  *   med mindre etternavnet allerede har den («Munthe af Morgenstierne»).
  * - Høyeste kongelige/fyrstelige/adelige tittel vises foran navnet
@@ -33,6 +35,7 @@ export function formatName(nameObj, { title = true, personId } = {}) {
   const parts = []
   if (nameObj.given_name) parts.push(nameObj.given_name)
   if (nameObj.middle_name) parts.push(nameObj.middle_name)
+  if (nameObj.epithet) parts.push(nameObj.epithet)
   if (nameObj.surname) {
     const particle = surnameParticle(nameObj.prefix)
     const surname = nameObj.surname
@@ -89,4 +92,14 @@ export function genderLabel(sex) {
  */
 export function formatRelation(relationText) {
   return relationText || null
+}
+
+/** Navnepartikler som ikke skal kreve treff i et navnefelt ved søk («Georg av Sachsen»). */
+export const SEARCH_STOPWORDS = new Set(['av', 'af', 'von', 'van', 'de', 'la', 'le', 'du', 'zu', 'der', 'den', 'di', 'da'])
+
+/** Del et søk i ord, uten navnepartikler. Faller tilbake på alle ord hvis bare partikler er igjen. */
+export function searchTokens(q) {
+  const all = q.trim().slice(0, 100).split(/\s+/).filter(Boolean)
+  const real = all.filter(t => !SEARCH_STOPWORDS.has(t.toLowerCase()))
+  return (real.length ? real : all).slice(0, 5)
 }

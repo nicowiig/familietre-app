@@ -67,7 +67,7 @@ function TabPersons() {
         supabase.from('person_biography').select('person_id'),
         supabase.from('person_photos').select('person_id').eq('is_primary', true),
         supabase.from('address_periods').select('entity_id').eq('entity_type', 'person'),
-        supabase.from('person_names').select('person_id, given_name, surname, middle_name').eq('is_preferred', true),
+        supabase.from('person_names').select('person_id, given_name, epithet, surname, middle_name').eq('is_preferred', true),
       ])
 
       const birtSet    = new Set((birtFacts    || []).map(r => r.person_id))
@@ -246,7 +246,7 @@ function TabUnnormalized() {
       if (personIds.length > 0) {
         const { data: names } = await supabase
           .from('person_names')
-          .select('person_id, given_name, surname, middle_name')
+          .select('person_id, given_name, epithet, surname, middle_name')
           .in('person_id', personIds)
           .eq('is_preferred', true)
         const nm = {}
@@ -318,7 +318,7 @@ function TabNoFamily() {
         supabase.from('persons').select('person_id').eq('is_deleted', false),
         supabase.from('families').select('husband_id, wife_id'),
         supabase.from('family_children').select('child_id'),
-        supabase.from('person_names').select('person_id, given_name, middle_name, surname').eq('is_preferred', true),
+        supabase.from('person_names').select('person_id, given_name, epithet, middle_name, surname').eq('is_preferred', true),
       ])
 
       const spouseSet = new Set([
@@ -477,7 +477,7 @@ function TabDuplicates() {
         { data: allFacts },
         { data: ignoredRows },
       ] = await Promise.all([
-        supabase.from('person_names').select('person_id, given_name, middle_name, surname').eq('is_preferred', true),
+        supabase.from('person_names').select('person_id, given_name, epithet, middle_name, surname').eq('is_preferred', true),
         supabase.from('person_facts').select('person_id, fact_type, date_year, date_month, date_day, place_city').in('fact_type', ['BIRT', 'DEAT']),
         supabase.from('duplicate_ignores').select('person_id_a, person_id_b'),
       ])

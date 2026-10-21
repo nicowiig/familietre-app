@@ -71,7 +71,7 @@ async function loadGraph() {
       fetchAll('families', 'family_id, husband_id, wife_id'),
       fetchAll('family_children', 'family_id, child_id'),
       fetchAll('persons', 'person_id, sex'),
-      fetchAll('person_names', 'person_id, given_name, surname, prefix, is_preferred'),
+      fetchAll('person_names', 'person_id, given_name, epithet, surname, prefix, is_preferred'),
       fetchBirthDeathFacts(),
     ])
 
@@ -111,7 +111,7 @@ async function loadGraph() {
       }
       const info = infoMap.get(n.person_id)
       if (n.is_preferred || !info.givenName) {
-        if (n.given_name) info.givenName = n.given_name
+        if (n.given_name) info.givenName = [n.given_name, n.epithet].filter(Boolean).join(' ')
         if (n.surname) info.surname = surnameWithParticle(n.prefix, n.surname)
       }
     }

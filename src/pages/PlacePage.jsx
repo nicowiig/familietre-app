@@ -245,7 +245,7 @@ export function PlacePage() {
       if (personIds.length > 0) {
         const { data: nameRows } = await supabase
           .from('person_names')
-          .select('person_id, given_name, surname, middle_name, prefix, is_preferred')
+          .select('person_id, given_name, epithet, surname, middle_name, prefix, is_preferred')
           .in('person_id', personIds)
         const nameMap = {}
         ;(nameRows || []).forEach(n => {
