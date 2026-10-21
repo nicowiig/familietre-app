@@ -1,0 +1,305 @@
+name,category,social_group,parent,gender_variant_of,rank_order,period,context,description
+Dronning,title,Kongelig og fyrstelig,,Konge,90,,,Enten regjerende monark eller – oftest – gift med kongen (dronning konsort). Se «oppnådd ved» for hvilken av delene.
+Erkehertuginne,title,Kongelig og fyrstelig,Hertuginne,,75,,Habsburg / Østerrike,Tittel for kvinner i huset Habsburg; rang over vanlig hertuginne.
+Erkekammerer,title,Kongelig og fyrstelig,,,,ca. 1300–1806,Det tysk-romerske rike,"Et av riksembetene i Det tysk-romerske rike, knyttet til kurfyrsten av Brandenburg. Seremonielt, men et tegn på kurfyrstens rang."
+Fyrste,title,Kongelig og fyrstelig,,,60,,Det tysk-romerske rike,"Regjerende eller titulert fyrste (Fürst), rang under hertug."
+Fyrstinne,title,Kongelig og fyrstelig,,Fyrste,60,,Det tysk-romerske rike,"Gift med en fyrste, eller fyrstinne i egen rett."
+Hertug,title,Kongelig og fyrstelig,,,70,,,"Høyeste fyrstetittel under konge/kurfyrste. I Det tysk-romerske rike ofte regjerende over et eget hertugdømme (f.eks. Sachsen, Pommern, Holstein-Gottorp)."
+Hertuginne,title,Kongelig og fyrstelig,,Hertug,70,,,Regjerende hertuginne eller – vanligst – gift med en hertug.
+Keiser,title,Kongelig og fyrstelig,,,100,800–1806,Det tysk-romerske rike,"Overhode for Det tysk-romerske rike, valgt av kurfyrstene. Hadde høyest formell rang i Europa, men begrenset makt over de enkelte fyrstedømmene."
+Konge,title,Kongelig og fyrstelig,,,90,,,Monark og statsoverhode. I Danmark-Norge eneveldig fra 1660 til 1814 (Danmark til 1849).
+Kronprins,title,Kongelig og fyrstelig,Prins,,85,,,Tronarving; den prinsen som etter arvefølgen skal overta tronen.
+Kurfyrste,title,Kongelig og fyrstelig,,,78,1356–1806,Det tysk-romerske rike,"Fyrste med stemmerett ved keiservalget i Det tysk-romerske rike – blant de mektigste i riket (f.eks. Brandenburg, Sachsen, Pfalz)."
+Kurfyrstinne,title,Kongelig og fyrstelig,,Kurfyrste,78,1356–1806,Det tysk-romerske rike,Gift med en kurfyrste.
+Kurprinsesse,title,Kongelig og fyrstelig,Prinsesse,,76,,Det tysk-romerske rike,"Gift med kurprinsen, altså arvingen til en kurfyrstetittel."
+Landgreve,title,Kongelig og fyrstelig,,,64,,Det tysk-romerske rike,Regjerende fyrstetittel i bl.a. Hessen; rang omtrent som markgreve.
+Landgrevinne,title,Kongelig og fyrstelig,,Landgreve,64,,Det tysk-romerske rike,"Gift med en landgreve, eller datter i et landgrevelig hus."
+Markgreve,title,Kongelig og fyrstelig,,,65,,Det tysk-romerske rike,"Opprinnelig greve over et grenseområde (mark). I Brandenburg, Ansbach og Bayreuth en regjerende fyrstetittel."
+Markgrevinne,title,Kongelig og fyrstelig,,Markgreve,65,,Det tysk-romerske rike,"Gift med en markgreve, eller datter i et markgrevelig hus."
+Prins,title,Kongelig og fyrstelig,,,80,,,"Sønn av en konge eller regjerende fyrste, eller gift med en regjerende dronning (prins konsort)."
+Prinsesse,title,Kongelig og fyrstelig,,Prins,80,,,"Datter av en konge eller regjerende fyrste, eller gift med en prins."
+Storhertug,title,Kongelig og fyrstelig,,,82,,Litauen m.fl.,"Regjerende fyrste over et storhertugdømme, f.eks. Litauen. Rang mellom konge og hertug."
+Storhertuginne,title,Kongelig og fyrstelig,,Storhertug,82,,Litauen m.fl.,Regjerende storhertuginne eller gift med en storhertug.
+Baron,title,Titulert adel,,,40,,,Adelstittel under greve. I Danmark-Norge innført 1671; tilsvarer friherre.
+Baronesse,title,Titulert adel,,Baron,40,,,"Gift med en baron, eller datter i en friherrelig slekt (tysk: Freiin)."
+Greve,title,Titulert adel,,,50,,,"Adelstittel. I Danmark-Norge innført 1671 under Christian V; i Det tysk-romerske rike mye eldre. Gikk i arv til eldste sønn, mens døtrene ble komtesser."
+Grevinne,title,Titulert adel,,Greve,50,,,"Gift med en greve (inngiftet), eller grevinne i egen rett."
+Komtesse,title,Titulert adel,,,48,,,Ugift datter av en greve. Tittelen fikk man ved fødsel.
+Lensbaron,title,Titulert adel,Baron,,42,1671–1919,Danmark-Norge,"Baron som eide et baroni (len), f.eks. Rosendal. Tilsvarer lensgreve, ett trinn lavere."
+Lensgreve,title,Titulert adel,Greve,,54,1671–1919,Danmark-Norge,"Greve som eide et grevskap (len), f.eks. Laurvig (Larvik) eller Jarlsberg. Grevskapet fulgte tittelen og kunne ikke deles."
+Riksfriherre,title,Titulert adel,Baron,,41,til 1806,Det tysk-romerske rike,"Friherre (baron) i Det tysk-romerske rike (Reichsfreiherr), utnevnt av keiseren."
+Riksgreve,title,Titulert adel,Greve,,52,til 1806,Det tysk-romerske rike,"Greve i Det tysk-romerske rike (Reichsgraf), utnevnt av keiseren. Ble båret videre også av slekter som slo seg ned i Danmark-Norge, f.eks. Schmettow."
+Riksgrevinne,title,Titulert adel,Grevinne,Riksgreve,52,til 1806,Det tysk-romerske rike,"Gift med en riksgreve, eller datter i et riksgrevelig hus."
+Klosterfrøken,title,Utitulert adel,,,,1700-tallet–,Danmark-Norge,"Ugift adelig kvinne med plass (og forsørgelse) ved et adelig jomfrukloster, f.eks. Vallø eller Vemmetofte."
+Elskerinne (kongelig),other,Hoff,,,,,,"Kongens eller fyrstens elskerinne. Ofte en kjent og nesten offisiell posisjon, og barna kunne bli adlet (f.eks. Gyldenløve-slekten)."
+Hoffdame,title,Hoff,,,,,,"Adelig kvinne i tjeneste ved hoffet, typisk som selskap for dronningen eller prinsessene."
+Hoffrøken,title,Hoff,Hoffdame,,,,,Ugift hoffdame.
+Kabinettskammerherre,title,Hoff,Kammerherre,,,1800-tallet,Sverige-Norge,Kammerherre knyttet til kongens kabinett for utenrikssaker i Sverige-Norge. Både hoffstilling og embete.
+Kammerherre,title,Hoff,,,,,,"Høy hofftittel. Opprinnelig en hoffmann med ansvar for kongens private gemakker, senere stort sett en æres- og rangtittel."
+Administrator av bispedømme,position,Geistlige,Biskop,,45,1500-/1600-tallet,Det tysk-romerske rike,Verdslig fyrste (ofte en fyrstesønn) som styrte et protestantisk bispedømme uten å være ordinert biskop.
+Biskop,position,Geistlige,Prest,,50,,,Leder for et bispedømme (stift).
+Diakonisse,occupation,Geistlige,,,,1800-tallet–,,Kvinne i et kirkelig sykepleie- og omsorgsfellesskap (diakonissehus).
+Domkirkesanger,occupation,Geistlige,Kirkesanger,,,,,Kirkesanger ved en domkirke.
+Erkebiskop,position,Geistlige,Biskop,,60,,,"Biskop over en kirkeprovins med flere bispedømmer, f.eks. Gniezno eller Magdeburg."
+Garnisonsprest,position,Geistlige,Prest,,25,,,Prest for soldatene i en garnison eller festning.
+Huskapellan,position,Geistlige,Kapellan,,5,,,"Kapellan lønnet av og boende hos sognepresten selv, ofte første steg etter teologisk eksamen."
+Kapellan,position,Geistlige,Prest,,10,,,Hjelpeprest under sognepresten.
+Kirkesanger,occupation,Geistlige,,,,,,"Ledet salmesangen i gudstjenesten, ofte kombinert med lærer- eller klokkerjobb."
+Misjonær,occupation,Geistlige,,,,,,"Utsendt for å forkynne kristendom, ofte av en misjonsorganisasjon."
+Prest,occupation,Geistlige,,,,,,"Ordinert prest i kirken. Etter reformasjonen (1536) lutherske embetsmenn med både kirkelige og verdslige oppgaver: folkeregistrering, opplysning og kunngjøringer."
+Prestekone,title,Geistlige,,,,,,"Gift med en prest. Prestekona hadde en anerkjent rolle i bygda, og titler som dette ble brukt i kilder i stedet for eget yrke."
+Prost,position,Geistlige,Prest,,40,,,Sogneprest som i tillegg hadde tilsyn med prestene i et prosti (flere prestegjeld).
+Prostdatter,other,Geistlige,,,,,,Datter av en prost; brukt som standsbetegnelse i kilder.
+Prostinne,title,Geistlige,Prestekone,,,,Danmark-Norge,"Gift med en prost («provstinde», «prostfrue»)."
+Residerende kapellan,position,Geistlige,Kapellan,,20,,,Fast ansatt kapellan med eget bosted (residens) i prestegjeldet. Mer selvstendig og bedre stilt enn en vanlig kapellan.
+Sogneprest,position,Geistlige,Prest,,30,,,Prest med ansvar for et prestegjeld; et kongelig embete med prestegård og inntekter fra tiende og offer.
+Amtmann,position,Sivile embetsmenn,,,70,1671–1918,Danmark-Norge,"Leder for et amt, tilsvarende senere fylkesmann."
+Amtshauptmann,position,Sivile embetsmenn,,,70,,Det tysk-romerske rike,Leder for et amt i et tysk fyrstedømme; omtrent som amtmann.
+Arkivar,occupation,Sivile embetsmenn,,,,,,Hadde ansvar for et arkiv.
+Assessor,position,Sivile embetsmenn,,,,,,Bisittende dommer i en kollegial rett eller et kollegium.
+Ballinspektør,position,Sivile embetsmenn,Inspektør,,,1700-tallet,,Trolig ansvarlig for ballene (selskapelighetene) i et selskap eller en klubb; usikkert.
+Befalingsmann,position,Sivile embetsmenn,,,75,1500-/1600-tallet,Danmark-Norge,"Kongens representant over et område eller len, før amtsordningen."
+Borgermester,position,Sivile embetsmenn,,,,,Danmark-Norge,"Leder av magistraten i en kjøpstad; i Danmark-Norge kongelig utnevnt embetsmann, ikke folkevalgt."
+Brennevins- og matkontrollør,position,Sivile embetsmenn,,,,,,"Kontrollerte brennevin og matvarer, trolig for avgifts- eller kvalitetsformål."
+Byfogd,position,Sivile embetsmenn,Fogd,,50,,Danmark-Norge,Dommer og politimester i en kjøpstad.
+Bygningsinspektør,position,Sivile embetsmenn,Inspektør,,,,,Hadde tilsyn med bygging og bygningsreglement.
+Diplomat,position,Sivile embetsmenn,,,,,,Forhandlet eller representerte på vegne av en stat eller fyrste.
+Dommer,occupation,Sivile embetsmenn,,,,,,Rettsavgjørende embetsmann (generell betegnelse).
+Ekstra tollbetjent,position,Sivile embetsmenn,Tollbetjent,,,,Danmark-Norge,Midlertidig eller ekstra tollbetjent («extratollbetjent»).
+Embetsmann,occupation,Sivile embetsmenn,,,,,Danmark-Norge,Kongelig utnevnt tjenestemann (generell betegnelse).
+Fløtningsinspektør,position,Sivile embetsmenn,Inspektør,,,,Norge,Hadde tilsyn med tømmerfløting i vassdrag.
+Fogd,position,Sivile embetsmenn,,,50,,Danmark-Norge,"Kongens embetsmann i et fogderi; krevde inn skatt, holdt orden og var påtalemyndighet."
+Forbrukerombud,position,Sivile embetsmenn,,,,1973–,Norge,Leder for Forbrukerombudet.
+Fortskriver,occupation,Sivile embetsmenn,Skriver,,,1600-/1700-tallet,Det tysk-romerske rike,Skriver som førte videre eksisterende registre og protokoller (tysk «Fortschreiber»).
+Fylkesskogsjef,position,Sivile embetsmenn,,,,,Norge,Leder for skogforvaltningen i et fylke.
+Gehejmekonferensråd,title,Sivile embetsmenn,,,90,1671–1800-tallet,Danmark-Norge,"Høyeste rangtittel i rangforordningen, gitt til de øverste embetsmennene. Rang, ikke en stilling."
+Guvernør,position,Sivile embetsmenn,,,,,,Styresmann over en provins eller koloni på vegne av en fyrste.
+Havnefogd,position,Sivile embetsmenn,,,,,,"Hadde ansvar for orden, plassering og avgifter i en havn."
+Herredsfogd,position,Sivile embetsmenn,Fogd,,45,,Danmark,Fogd over et herred i Danmark.
+Hoffråd,title,Sivile embetsmenn,,,40,1700-/1800-tallet,Danmark-Norge,"Rangtittel, ofte gitt embetsmenn eller fremtredende borgere. Til tross for navnet ikke nødvendigvis knyttet til hoffet."
+Høyesterettsassessor,position,Sivile embetsmenn,Høyesterettsdommer,,80,,Danmark,Dommer i Danmarks Højesteret (assessor = bisitter).
+Høyesterettsdommer,position,Sivile embetsmenn,Dommer,,80,,Danmark-Norge,Dommer i Høyesterett.
+Høyesterettsjustitiarius,position,Sivile embetsmenn,Høyesterettsdommer,,90,,Danmark-Norge,Leder for Høyesterett.
+Inspektør,position,Sivile embetsmenn,,,,,,Tilsynsmann. Ved Grønland var inspektøren kolonistyrets øverste lokale leder.
+Justisråd,title,Sivile embetsmenn,,,60,1671–1800-tallet,Danmark-Norge,"Rangtittel, typisk for jurister og embetsmenn. Ga plass i rangordenen, ikke en bestemt jobb."
+Kammerråd,title,Sivile embetsmenn,,,50,1671–1800-tallet,Danmark-Norge,"Rangtittel, ofte for embetsmenn i finans- og skatteforvaltningen."
+Kanselliråd,title,Sivile embetsmenn,,,50,1671–1800-tallet,Danmark-Norge,"Rangtittel, ofte gitt sorenskrivere, fogder og andre mellomstore embetsmenn. Kunne også kjøpes."
+Konferensråd,title,Sivile embetsmenn,,,80,1671–1900-tallet,Danmark-Norge,"Høy rangtittel i rangforordningen (2. klasse). Rang, ikke en stilling."
+Krigskansellisekretær,title,Sivile embetsmenn,,,,1700-/1800-tallet,Danmark-Norge,Rangtittel eller stilling i krigskancelliet.
+Lagmann,position,Sivile embetsmenn,,,60,,Norge,"Dommer i lagtinget, ankeinstansen over sorenskriveren."
+Lensmann,position,Sivile embetsmenn,,,,,Danmark-Norge,"To ulike roller avhengig av tid: før 1660 kongens lensherre over et len (høy adel); senere en lokal embetsmann (bygdelensmann) med politi-, skatte- og namsoppgaver."
+Lensmannskone,title,Sivile embetsmenn,,,,,,Gift med en lensmann («lennsmannshustru»).
+Magasinforvalter,position,Sivile embetsmenn,,,,1700-/1800-tallet,Danmark-Norge,"Forvaltet et offentlig magasin, f.eks. et korn- eller proviantmagasin."
+Måler og veier,position,Sivile embetsmenn,,,,,Danmark-Norge,Offentlig godkjent måler og veier av varer (justerer); grunnlaget for handel og toll.
+Overinspektør,position,Sivile embetsmenn,Inspektør,,,,,Overordnet inspektør.
+Protokollist,position,Sivile embetsmenn,,,,,,Førte protokoll ved en rett eller et kontor.
+Rådmann,position,Sivile embetsmenn,,,,,Danmark-Norge,Medlem av magistraten (byrådet) i en kjøpstad. Skrevet «Rådmand» i eldre kilder.
+Rådstueskriver,position,Sivile embetsmenn,,,,,Danmark-Norge,Sekretær for magistraten i en by.
+Skriver,occupation,Sivile embetsmenn,,,,,,Skrivekyndig tjenestemann; førte protokoller og regnskap.
+Sorenskriver,position,Sivile embetsmenn,,,50,,Norge,"Dommer i førsteinstans på bygdene, og førte tinglysning og skifte."
+Stadskonduktør,position,Sivile embetsmenn,,,,1800-tallet,Norge,"Bygningsteknisk embetsmann i en by, omtrent som stadsingeniør."
+Statsadvokat,position,Sivile embetsmenn,,,,,Norge,Påtalemyndighet mellom politiet og riksadvokaten. Etter 1945 hadde egne statsadvokater ansvar for landssviksakene.
+Stattholder,position,Sivile embetsmenn,,,100,1500-tallet–1873,Norge,"Kongens øverste representant i Norge. Under Danmark-Norge ofte en kongesønn eller nær slektning, f.eks. Ulrik Frederik Gyldenløve."
+Stiftamtmann,position,Sivile embetsmenn,,,80,1671–1918,Danmark-Norge,Øverste sivile embetsmann i et stift. Forløperen til fylkesmann/statsforvalter.
+Stiftsbefalingsmann,position,Sivile embetsmenn,Stiftamtmann,,80,1600-tallet,Danmark-Norge,Eldre tittel for den som senere ble kalt stiftamtmann.
+Stiftsskriver,position,Sivile embetsmenn,,,,,Danmark-Norge,Hadde ansvar for stiftets regnskaper og arkiv.
+Told- og konsumsjonskasserer,position,Sivile embetsmenn,Tollkasserer,,,1600-tallet–tidlig 1800-tall,Danmark-Norge,"Kongelig kasserer for både toll og konsumsjon, en forbruksavgift på varer som ble omsatt i byen."
+Tollbetjent,position,Sivile embetsmenn,,,,,,Ansatt i tollvesenet.
+Tollforvalter,position,Sivile embetsmenn,,,,,Danmark-Norge,Leder for et tollsted («toller»).
+Tollkasserer,position,Sivile embetsmenn,,,,,Danmark-Norge,Tok imot og forvaltet tollinntektene og førte regnskap.
+Tollprokurør,position,Sivile embetsmenn,,,,,Danmark-Norge,Førte tollvesenets saker for retten.
+Underfogd,position,Sivile embetsmenn,Fogd,,40,,Danmark-Norge,Fogdens fullmektig eller stedfortreder.
+Visepresident i landsretten,position,Sivile embetsmenn,,,60,1700-tallet,Danmark-Norge,Nest øverste dommer i en landsrett.
+Auditør,position,Offiserer,,,,,Danmark-Norge,Militær jurist; aktor og rådgiver i krigsretten.
+Feltskjær,occupation,Offiserer,,,,1600-/1700-tallet,,"Militær kirurg (feltskjærer, «feltserer»). Behandlet sår, brudd og amputasjoner; håndverkspreget utdanning, ikke universitet."
+General,military_rank,Offiserer,,,100,,,Høyeste ordinære offisersgrad.
+Generaladjutant,position,Offiserer,,,,,Danmark-Norge,Stabsoffiser og nær rådgiver for kongen eller øverstkommanderende.
+Generalauditør,position,Offiserer,Auditør,,,1600-/1700-tallet,Danmark-Norge,Øverste militærjuridiske embetsmann i hæren; tilsyn med krigsrettene.
+Generalinne,title,Offiserer,,,,1600-/1700-tallet,Danmark-Norge,Gift med en general («generalinde»).
+Generalløytnant,military_rank,Offiserer,General,,90,,,Generalsgrad mellom generalmajor og general.
+Generalmajor,military_rank,Offiserer,General,,80,,,Laveste generalsgrad.
+Kaptein,military_rank,Offiserer,,,40,,,Sjef for et kompani; i tillegg ansvarlig for kompaniets økonomi. Kunne være lønnsomt.
+Kommandant,position,Offiserer,,,,,,"Sjef for en festning, f.eks. Fredriksten eller Munkholmen."
+Kommanderende general,position,Offiserer,General,,,,Danmark-Norge,"Øverstkommanderende for hæren i Norge (eller i en landsdel, f.eks. nordafjells)."
+Løytnant,military_rank,Offiserer,,,31,,,Offisersgrad under kaptein; nestkommanderende i et kompani.
+Major,military_rank,Offiserer,,,50,,,Offisersgrad mellom kaptein og oberstløytnant.
+Marskalk av Frankrike,military_rank,Offiserer,,,110,,Frankrike,Frankrikes høyeste militære verdighet. Ulrich Friedrich Woldemar von Löwendal oppnådde den i 1747.
+Mønstringsskriver,position,Offiserer,,,,,Danmark-Norge,Førte mønstringsrullene for soldater (mynsterskriver).
+Oberst,military_rank,Offiserer,,,70,,,Sjef for et regiment.
+Oberstløytnant,military_rank,Offiserer,,,60,,,Nestkommanderende i et regiment.
+Offiser,military_rank,Offiserer,,,,,,Offiser uten kjent grad.
+Overauditør,position,Offiserer,Auditør,,,,Danmark-Norge,Overordnet auditør.
+Premierløytnant,military_rank,Offiserer,Løytnant,,32,,Danmark-Norge,"Høyeste løytnantsgrad, over sekondløytnant."
+President i Krigskollegiet,position,Offiserer,,,,1700-tallet,Danmark-Norge,"Leder for krigskollegiet, den sentrale militære forvaltningen."
+Regimentsfeltskjær,position,Offiserer,Feltskjær,,,1700-tallet,Danmark-Norge,Overordnet feltskjær for et helt regiment.
+Reichs-Oberfeldhauptmann,position,Offiserer,,,,1500-tallet,Ungarn / Det tysk-romerske rike,Øverstkommanderende for rikets hær i felt; svært høy militær kommando.
+Sekondløytnant,military_rank,Offiserer,Løytnant,,30,,Danmark-Norge,"Laveste offisersgrad, under premierløytnant."
+Sjøoffiser,military_rank,Offiserer,Offiser,,,,,Offiser i marinen.
+Militær,military_rank,Underoffiserer og menige,,,,,,Militær tjeneste uten kjent grad.
+Sersjant,military_rank,Underoffiserer og menige,,,20,,,Underoffiser; ledet soldatene i det daglige.
+Soldat,military_rank,Underoffiserer og menige,,,10,,,Menig i hæren. I Danmark-Norge ofte en bondesønn utskrevet til et nasjonalt regiment.
+Vernepliktig,military_rank,Underoffiserer og menige,Soldat,,10,,Norge,Gjennomførte førstegangstjeneste.
+Bankdirektør,position,Borgerskap – handel,Direktør,,,,,Leder for en bank.
+Borger,occupation,Borgerskap – handel,,,,til slutten av 1800-tallet,Danmark-Norge,"Innehaver av borgerskap: retten til å drive handel eller håndverk i en kjøpstad. Ga både rettigheter og plikter (skatt, borgervæpning)."
+Brennevinshandler,occupation,Borgerskap – handel,Handelsmann,,,,,Handlet med brennevin.
+Brusfabrikant,occupation,Borgerskap – handel,Fabrikkeier,,,1800-tallet–,,Produserte mineralvann og brus.
+Bryggekjøpmann,occupation,Borgerskap – handel,Kjøpmann,,,1700-tallet–,Bergen,"Kjøpmann med gård på Bryggen i Bergen, typisk i handelen med tørrfisk fra Nord-Norge."
+Butikkeier,occupation,Borgerskap – handel,,,,,,Eide og drev en butikk.
+Direksjonsformann,position,Borgerskap – handel,Styreleder,,,1800-tallet,,Formann i direksjonen (styret) i et selskap.
+Direktør,position,Borgerskap – handel,,,,,,Daglig leder for et selskap eller en institusjon.
+Disponent,position,Borgerskap – handel,,,,,,Daglig leder med fullmakt til å disponere selskapets midler; tilsvarer administrerende direktør.
+Drogist,occupation,Borgerskap – handel,,,,,,"Drev drogeri: kjemikalier, farger, toalettartikler og husholdningsvarer."
+Eier,occupation,Borgerskap – handel,,,,,,Eier av en virksomhet (f.eks. et apotek eller en forretning).
+Fabrikkeier,occupation,Borgerskap – handel,,,,,,Eide og drev en fabrikk.
+Forretningskvinne,occupation,Borgerskap – handel,,,,,,Kvinne som drev egen forretning.
+Generaltollforpakter,position,Borgerskap – handel,,,,ca. 1700,Danmark-Norge,Forpaktet tollinntektene fra kongen: betalte en fast sum og beholdt det han klarte å kreve inn. Lukrativt og risikabelt.
+Grosserer,occupation,Borgerskap – handel,Kjøpmann,,,,,Engroshandler; solgte i større partier til andre handelsmenn.
+Grunnlegger,other,Borgerskap – handel,,,,,,Grunnla en virksomhet eller institusjon.
+Handelsborger,occupation,Borgerskap – handel,Borger,,,til slutten av 1800-tallet,Danmark-Norge,Borger med rett til å drive handel.
+Handelsmann,occupation,Borgerskap – handel,,,,,,"Drev handel, ofte i mindre skala eller på landet; brukes også som generell betegnelse."
+Hotellvertinne,occupation,Borgerskap – handel,,,,,,Drev eller bestyrte et hotell.
+Initiativtaker,other,Borgerskap – handel,,,,,,Tok initiativet til et prosjekt eller en virksomhet.
+Kjøpmann,occupation,Borgerskap – handel,,,,,,"Drev handel med borgerskap i en kjøpstad. Det var standens toppsjikt, til forskjell fra mindre handelsmenn og høkere."
+Kjøtthandler,occupation,Borgerskap – handel,Handelsmann,,,,,Handlet med kjøtt.
+Kommerseråd,title,Borgerskap – handel,,,50,1600-/1700-tallet,Danmark-Norge,Rangtittel for fremtredende kjøpmenn og næringsdrivende.
+Konsul,position,Borgerskap – handel,,,,,,"Representerte et annet lands borgere og handelsinteresser i en havneby, ofte kombinert med egen handelsvirksomhet."
+Kroholder,occupation,Borgerskap – handel,,,,,,Drev et krohold eller gjestgiveri på bevilling.
+Landhandler,occupation,Borgerskap – handel,Handelsmann,,,1800-tallet–,Norge,Drev landhandel (krambod) på bygda.
+Medeier,occupation,Borgerskap – handel,Eier,,,,,Deleier i en virksomhet.
+Negotiant,occupation,Borgerskap – handel,Kjøpmann,,,1600-/1700-tallet,Danmark-Norge,Grosserer eller storkjøpmann (fra «negotie» = handel).
+Negotieassistent,occupation,Borgerskap – handel,Kjøpmann,,,1700-tallet,Danmark-Norge,"Assistent i et handelshus, ofte en ung mann under opplæring til kjøpmann."
+Raffinadør,occupation,Borgerskap – handel,,,,1700-/1800-tallet,,Drev sukkerraffineri.
+Stadsmegler,position,Borgerskap – handel,,,,,Danmark-Norge,"Edsvoren megler i en kjøpstad, f.eks. for skip og varer."
+Styreleder,position,Borgerskap – handel,Styremedlem,,,,,Leder av et styre (i eldre kilder «formann»).
+Styremedlem,position,Borgerskap – handel,,,,,,Medlem av et styre.
+Supercargo,occupation,Borgerskap – handel,,,,1600-/1700-tallet,,"Reiste med skipet på vegne av rederiet eller handelshuset og hadde det kommersielle ansvaret for lasten: kjøp, salg og regnskap. Vanlig i Asia- og Kinahandelen."
+Utgiver,occupation,Borgerskap – handel,,,,,,"Ga ut en avis, et tidsskrift eller bøker."
+Baker,occupation,Borgerskap – håndverk,,,,,,Bakte brød. I kjøpstedene laugsorganisert.
+Bakermester,occupation,Borgerskap – håndverk,Baker,,,,,Baker med mesterbrev og borgerskap; kunne drive eget bakeri og ta læregutter.
+Farger,occupation,Borgerskap – håndverk,,,,,,Farget tekstiler (i kilder «farver»).
+Garver,occupation,Borgerskap – håndverk,,,,,,Garvet huder til lær.
+Gullsmed,occupation,Borgerskap – håndverk,,,,,,Laget smykker og sølvtøy; et høyt ansett laugshåndverk.
+Handelsgartner,occupation,Borgerskap – håndverk,,,,,,Gartner som dyrket planter og blomster for salg.
+Hjulmaker,occupation,Borgerskap – håndverk,,,,,,Laget hjul og vogner.
+Mekaniker,occupation,Borgerskap – håndverk,,,,,,Monterte og reparerte maskiner.
+Skomaker,occupation,Borgerskap – håndverk,,,,,,Laget og reparerte sko.
+Skomakermester,occupation,Borgerskap – håndverk,Skomaker,,,,,Skomaker med mesterbrev.
+Skreddermester,occupation,Borgerskap – håndverk,,,,,,Skredder med mesterbrev.
+Slakter,occupation,Borgerskap – håndverk,,,,,,Slaktet dyr og solgte kjøtt.
+Smed,occupation,Borgerskap – håndverk,,,,,,Smidde jern og metall.
+Støperimester,occupation,Borgerskap – håndverk,,,,,,Ledet et metallstøperi.
+Tømmermann,occupation,Borgerskap – håndverk,,,,,,"Bygget i tre: hus, skip og konstruksjoner."
+Urtegårdsmann,occupation,Borgerskap – håndverk,,,,1600-/1700-tallet,,Gartner som drev en urtehage (kjøkkenhage) for en herregård eller en by.
+Fisker,occupation,Sjøfolk,,,,,,Livnærte seg av fiske.
+Jektreder,occupation,Sjøfolk,,,,1600-/1700-tallet,Nord-Norge / Bergen,Eide jekter som fraktet fisk fra Nord-Norge til Bergen og varer tilbake.
+Losinspektør,position,Sjøfolk,Inspektør,,,,Norge,Hadde tilsyn med losvesenet i et distrikt.
+Losoldermann,position,Sjøfolk,,,,,Norge,Leder for losene i et losdistrikt.
+Marine surveyor,occupation,Sjøfolk,,,,,,"Besiktiget skip og last for forsikring, klassing eller skadevurdering."
+Skipper,occupation,Sjøfolk,,,,,,"Fører av et skip, gjerne mindre fartøy og ofte medeier i skuta."
+Skipperborger,occupation,Sjøfolk,Borger,,,til slutten av 1800-tallet,Danmark-Norge,Borger med rett til å føre og drive skip fra byen.
+Skipsfører,occupation,Sjøfolk,,,,,,Fører (kaptein) av et handelsskip.
+Styrmann,occupation,Sjøfolk,,,,,,Nestkommanderende om bord; ansvarlig for navigasjon.
+Bonde,occupation,Bønder og jordeiere,,,,,,"Drev en gård, som eier eller leilending."
+Festebonde,occupation,Bønder og jordeiere,Bonde,,,,Danmark-Norge,"Bonde som leide (festet) gården av en godseier, kirken eller kongen og betalte avgift."
+Forpakter,occupation,Bønder og jordeiere,,,,,,Leide og drev en gård eller herregård mot avgift.
+Godseier,occupation,Bønder og jordeiere,,,,,,Eide et gods: en herregård med underliggende bondegårder.
+Godsforvalter,position,Bønder og jordeiere,,,,,,Forvaltet et gods på vegne av eieren («forvalter»).
+Gårdbruker,occupation,Bønder og jordeiere,,,,,,Drev en gård (nyere betegnelse for bonde).
+Gårdeier,occupation,Bønder og jordeiere,,,,,,Eide en gård (på landet eller i by).
+Gårdmann,occupation,Bønder og jordeiere,Bonde,,,,Danmark,"Bonde på en hel gård, til forskjell fra husmann. I Danmark ofte fæster."
+Jordeier,occupation,Bønder og jordeiere,,,,,,Eide jord og eiendom.
+Meieribestyrer,position,Bønder og jordeiere,Bestyrer,,,,,Ledet et meieri.
+Odelsgutt,other,Bønder og jordeiere,,,,,Norge,Odelsberettiget sønn: den som etter odelsretten skal overta gården.
+Proprietær,occupation,Bønder og jordeiere,,,,1600–1800-tallet,Danmark-Norge,"Eier av større jordegods uten å være adelig, ofte med privilegier. En mellomposisjon mellom bonde og godseier."
+Selveier,occupation,Bønder og jordeiere,Bonde,,,,,"Bonde som eide sin egen gård, til forskjell fra leilending og fester."
+Småbruker,occupation,Bønder og jordeiere,,,,,,Drev et lite bruk.
+Agronom,occupation,Akademikere og frie yrker,,,,,,Utdannet i landbruk.
+Apoteker,occupation,Akademikere og frie yrker,,,,,Danmark-Norge,"Drev apotek på kongelig privilegium. På 1700-tallet et privilegert borgerskap, senere en akademisk profesjon."
+Apotekerprivilegium,other,Akademikere og frie yrker,,,,,Danmark-Norge,"Kongelig bevilling til å drive apotek. Ikke en utdanning, men en tildelt rettighet."
+Arkitekt,occupation,Akademikere og frie yrker,,,,,,Tegnet og prosjekterte bygninger.
+Arkitektassistent,occupation,Akademikere og frie yrker,Arkitekt,,,,,Assistent hos en arkitekt.
+Bachelor (BSc),education,Akademikere og frie yrker,,,,,,Bachelorgrad.
+Bandinstruktør,occupation,Akademikere og frie yrker,,,,,,Instruerte et musikkorps eller band.
+Bygningssjef,position,Akademikere og frie yrker,,,,,,Leder for byggevirksomheten i en by eller etat.
+Cand.jur.,education,Akademikere og frie yrker,,,,,Norge / Danmark,Juridisk embetseksamen.
+Cand.theol.,education,Akademikere og frie yrker,,,,,Norge / Danmark,Teologisk embetseksamen; krav for å bli prest.
+Dispasjør,occupation,Akademikere og frie yrker,,,,,Norge,"Offentlig oppnevnt ekspert som fordeler tap ved havari mellom skip, last og forsikring (dispasje)."
+Dispasjøreksamen,education,Akademikere og frie yrker,,,,,Norge,Kvalifisering som dispasjør.
+Dr.jur.,education,Akademikere og frie yrker,,,,,,Doktorgrad i juss.
+Dr.med.,education,Akademikere og frie yrker,,,,,,Doktorgrad i medisin.
+Dyrlege,occupation,Akademikere og frie yrker,,,,,,Veterinær. Amtsdyrlegen var den offentlige dyrlegen i et amt.
+Døvelærer,occupation,Akademikere og frie yrker,Lærer,,,,,Lærer for døve.
+Edsvoren fullmektig,occupation,Akademikere og frie yrker,,,,,Norge,"Juridisk fullmektig som hadde avlagt ed, og dermed kunne utføre rettshandlinger på vegne av advokaten eller embetsmannen."
+Elektroingeniør,occupation,Akademikere og frie yrker,Ingeniør,,,,,Ingeniør innen elektrisitet.
+Examen artium,education,Akademikere og frie yrker,,,,1630–,Danmark-Norge,Opptaksprøve til universitetet; senere avsluttende eksamen fra gymnas.
+Farmasøyt,occupation,Akademikere og frie yrker,,,,,,Utdannet i farmasi.
+Farmasøytisk eksamen,education,Akademikere og frie yrker,,,,,Danmark-Norge,Eksamen som ga rett til å arbeide som farmasøyt eller provisor.
+Fiolinist,occupation,Akademikere og frie yrker,,,,,,Spilte fiolin profesjonelt.
+Fiolinlærer,occupation,Akademikere og frie yrker,Musikklærer,,,,,Underviste i fiolin.
+Forfatter,occupation,Akademikere og frie yrker,,,,,,Skrev litteratur.
+Fotograf,occupation,Akademikere og frie yrker,,,,1840-tallet–,,Tok fotografier.
+Høyesterettsadvokat,occupation,Akademikere og frie yrker,,,,1800-tallet–,Norge,Advokat med rett til å føre saker for Høyesterett. Skrevet «Høiesteretsadvokat» i eldre kilder.
+Ingeniør,occupation,Akademikere og frie yrker,,,,,,Teknisk utdannet.
+Jurist,occupation,Akademikere og frie yrker,,,,,,"Rettslærd, typisk med juridisk embetseksamen."
+Kapellmester,occupation,Akademikere og frie yrker,,,,,,Dirigent og leder for et orkester eller musikkorps.
+Kirurg,occupation,Akademikere og frie yrker,Lege,,,,,Lege som opererer.
+Komponist,occupation,Akademikere og frie yrker,,,,,,Skrev musikk.
+Konrektor,position,Akademikere og frie yrker,Rektor,,,,,Nestleder ved en latinskole eller skole.
+Korrespondent,occupation,Akademikere og frie yrker,,,,,,"Skrev rapporter, brev eller artikler fra et annet sted, f.eks. for en avis eller et handelshus."
+Lege,occupation,Akademikere og frie yrker,,,,,,Medisinsk utdannet.
+Lichenolog,occupation,Akademikere og frie yrker,,,,,,Botaniker spesialisert på lav.
+Litterat,occupation,Akademikere og frie yrker,,,,1800-tallet,,Litterært dannet skribent eller kritiker (i kilder også «literat»).
+Lærer,occupation,Akademikere og frie yrker,,,,,,Underviste i skole.
+MBA,education,Akademikere og frie yrker,,,,,,Master of Business Administration.
+Maler,occupation,Akademikere og frie yrker,,,,,,Kunstmaler.
+Maskiningeniør,occupation,Akademikere og frie yrker,Ingeniør,,,,,Ingeniør innen maskiner.
+Master (MSc),education,Akademikere og frie yrker,,,,,,Mastergrad.
+Musikklærer,occupation,Akademikere og frie yrker,Lærer,,,,,Underviste i musikk.
+Overlege,position,Akademikere og frie yrker,Lege,,,,,Ledende lege ved et sykehus eller en avdeling.
+Overrettssakfører,occupation,Akademikere og frie yrker,Sakfører,,,1800-tallet–1930-tallet,Norge,Sakfører med rett til å føre saker for overretten (lagmannsretten). Tilsvarer senere advokat.
+Pianist,occupation,Akademikere og frie yrker,,,,,,Spilte piano profesjonelt.
+Professor,position,Akademikere og frie yrker,,,,,,Innehaver av et professorat ved et universitet.
+Prokurator,occupation,Akademikere og frie yrker,,,,1600-/1700-tallet,Danmark-Norge,Prosessfullmektig ved underrettene; forløperen til sakfører og advokat.
+Provisor,position,Akademikere og frie yrker,Apoteker,,,,Danmark-Norge,Eksaminert farmasøyt som bestyrte apoteket for eieren.
+Redaktør,occupation,Akademikere og frie yrker,,,,,,Ansvarlig for innholdet i en avis eller et tidsskrift.
+Rektor,position,Akademikere og frie yrker,,,,,,Leder for en skole.
+Sakfører,occupation,Akademikere og frie yrker,,,,1800-tallet–1930-tallet,Norge,Advokat uten rett til å føre saker for høyere domstoler. Skrevet «Sagfører» i eldre kilder.
+Sanger,occupation,Akademikere og frie yrker,,,,,,Sang profesjonelt.
+Sangerinne,occupation,Akademikere og frie yrker,,Sanger,,,,Kvinnelig sanger.
+Skoledirektør,position,Akademikere og frie yrker,,,,,,Leder for skolevesenet i et område.
+Skuespiller,occupation,Akademikere og frie yrker,,,,,,Spilte teater eller film.
+Skuespillerinne,occupation,Akademikere og frie yrker,,Skuespiller,,,,Kvinnelig skuespiller.
+Sykepleier,occupation,Akademikere og frie yrker,,,,,,Pleiet syke.
+Tegnemester,occupation,Akademikere og frie yrker,,,,,,"Tegnelærer, ofte ved skole eller akademi."
+Undervisningsassistent,occupation,Akademikere og frie yrker,,,,,,Assisterte i undervisning ved universitet eller høyskole.
+Assurancekasserer,position,Funksjonærer,,,,1800-tallet,,Kasserer i et forsikringsselskap.
+Bankskriver,position,Funksjonærer,Skriver,,,1800-tallet,,"Skriver (kontorfunksjonær) i en bank, f.eks. Norges Bank."
+Barnepleier,occupation,Funksjonærer,,,,,,Pleiet og passet barn (i kilder «barnepleierske»).
+Bestyrer,position,Funksjonærer,,,,,,"Ledet en virksomhet, et hotell, en skole eller lignende på vegne av eier."
+Bokholder,occupation,Funksjonærer,,,,,,Førte regnskap.
+Butikkassistent,occupation,Funksjonærer,,,,,,Ekspeditør i butikk.
+Butikksjef,occupation,Funksjonærer,,,,,,Ledet en butikk eller avdeling i et varemagasin.
+Hovedbokholder,position,Funksjonærer,Bokholder,,,,,Ansvarlig for hovedboken; øverste regnskapsfører.
+Kontordame,occupation,Funksjonærer,,,,,,Kvinnelig kontoransatt.
+Leirleder,occupation,Funksjonærer,,,,,,Ledet en leir eller ferieopphold.
+Politibetjent,occupation,Funksjonærer,,,,,,Polititjenestemann.
+Rådgiver,position,Funksjonærer,,,,,,Rådgivende stilling.
+Sekretær,occupation,Funksjonærer,,,,,,Skrivende eller administrativ medarbeider.
+Tannlegeassistent,occupation,Funksjonærer,,,,,,Assisterte tannlege.
+Fabrikkarbeider,occupation,Tjenestefolk og arbeidere,,,,,,Arbeidet i fabrikk.
+Fruerpike,occupation,Tjenestefolk og arbeidere,,,,1600-/1700-tallet,Danmark-Norge,Personlig tjenestepike for frue på en herregård («fruerpige»).
+Kranbetjent,occupation,Tjenestefolk og arbeidere,,,,,,"Betjente en kran, f.eks. på kai."
+Sypike,occupation,Tjenestefolk og arbeidere,,,,,,"Syerske, ofte i kundenes hjem."
+Tjenestegutt,occupation,Tjenestefolk og arbeidere,,,,,,Ung mann i tjeneste på gård eller i husholdning.
+Tjenestepike,occupation,Tjenestefolk og arbeidere,,,,,,Ugift kvinne i tjeneste på gård eller i husholdning (i kilder «tjenestepige»).
+Bystyremedlem,position,Politikere og tillitsverv,,,,,Norge,Folkevalgt medlem av bystyret.
+Eidsvollsmann,position,Politikere og tillitsverv,,,,1814,Norge,Valgt representant til riksforsamlingen på Eidsvoll i 1814.
+Ordfører,position,Politikere og tillitsverv,,,,1837–,Norge,Folkevalgt leder for kommunestyret (etter formannskapslovene 1837).
+Statsråd,position,Politikere og tillitsverv,,,,1814–,Norge,Medlem av regjeringen (minister).
+Stortingsrepresentant,position,Politikere og tillitsverv,,,,1814–,Norge,Folkevalgt medlem av Stortinget.
+Utenriksminister,position,Politikere og tillitsverv,,,,,,Regjeringsmedlem med ansvar for utenrikssaker.
+Functional Manager,occupation,Moderne arbeidsliv,,,,2000-tallet–,,Leder for en fagfunksjon.
+Product Developer,occupation,Moderne arbeidsliv,,,,2000-tallet–,,Utvikler produkter og tjenester.
+Product Manager,occupation,Moderne arbeidsliv,,,,2000-tallet–,,"Ansvarlig for et produkts retning og verdi: prioriterer hva som skal bygges, og hvorfor."
+Product Owner,occupation,Moderne arbeidsliv,,,,2000-tallet–,,Rolle i smidig utvikling; eier og prioriterer backlogen for et utviklingsteam.
+Husmor,occupation,,,,,,,Ansvarlig for husholdningen. I eldre kilder ofte registrert i stedet for yrke for gifte kvinner.
