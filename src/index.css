@@ -1254,3 +1254,11 @@ html, body { overflow-x: hidden; }
   .pedigree-row { grid-template-columns: 1fr auto; }
   .pedigree-track { grid-column: 1 / -1; order: 3; }
 }
+
+/* Historisk kontekst for steder */
+.place-context { color: var(--color-text-light); font-style: italic; font-size: 0.95em; }
+
+.place-mode-toggle { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-body); font-weight: 400; }
+.place-mode-toggle button { border: 1px solid var(--color-border); background: transparent; color: var(--color-text-muted);
+  font-size: var(--text-xs); padding: 2px 8px; border-radius: 999px; cursor: pointer; }
+.place-mode-toggle button.active { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
