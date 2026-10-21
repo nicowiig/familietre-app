@@ -22,8 +22,8 @@ OVR = {
  'Rud Høland Akershus 03.02.': ('Rud, Høland', 'Akershus', NOR, None),
  'Skanderborg S.- Hjelmslev H.- Skanderborg A.': ('Skanderborg', 'Skanderborg', 'Danmark', 'Trolig Skanderborg slott.'),
  'Jylland?, Danmark?': ('Jylland', None, 'Danmark', 'Usikkert sted i kilden («Jylland?, Danmark?»).'),
- 'Vestindien': ('Dansk Vestindia', None, 'Danmark', None),
- 'Sct. Croix, De Dansk Vestindiske Øer': ('St. Croix, Dansk Vestindia', None, 'Danmark', None),
+ 'Vestindien': ('Jomfruøyene', None, 'De amerikanske Jomfruøyene', 'Kilden sier bare «Vestindien» – trolig Dansk Vestindia.'),
+ 'Sct. Croix, De Dansk Vestindiske Øer': ('St. Croix', None, 'De amerikanske Jomfruøyene', None),
  'Sunnmøre': ('Sunnmøre', 'Møre og Romsdal', NOR, None),
  'Amundsrød, Østervallskog / Tøcksmark': ('Amundsrød, Östervallskog', 'Värmland', 'Sverige', None),
 }
@@ -101,6 +101,23 @@ SELECT a.id, 'person', p.pid, 'residence', 'Fra kilden: «Bosatt på Elofsbyn»'
 FROM addresses a, (VALUES ((SELECT husband_id FROM families WHERE family_id = 'F500540')), ((SELECT wife_id FROM families WHERE family_id = 'F500540'))) p(pid)
 WHERE a.name_display = 'Elofsbyn, Östervallskog, Värmland, Sverige' AND p.pid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM address_periods x WHERE x.address_id = a.id AND x.entity_id = p.pid);
+
+-- Dansk Vestindia: St. Thomas (1672), St. Jan (1718), St. Croix (1733), solgt til USA 31.3.1917.
+-- Dagens land er De amerikanske Jomfruøyene; tidsdataene gir «den gang Dansk Vestindia».
+INSERT INTO polities (name, description) VALUES
+ ('Dansk Vestindia (Danmark-Norge)', 'Dansk-norsk koloni i Karibia: St. Thomas (1672), St. Jan (1718) og St. Croix (kjøpt fra Frankrike 1733). Sukkerplantasjer drevet med slavearbeid.'),
+ ('Dansk Vestindia (Danmark)', 'Dansk koloni etter 1814, solgt til USA for 25 millioner dollar 31. mars 1917. Slaveriet ble opphevet i 1848.')
+ON CONFLICT (name) DO NOTHING;
+INSERT INTO place_jurisdictions (country, region, valid_from, valid_to, polity_id)
+SELECT 'De amerikanske Jomfruøyene', NULL, v.f, v.t, p.id FROM (VALUES (1672, 1813, 'Dansk Vestindia (Danmark-Norge)'), (1814, 1916, 'Dansk Vestindia (Danmark)')) v(f, t, n)
+JOIN polities p ON p.name = v.n
+WHERE NOT EXISTS (SELECT 1 FROM place_jurisdictions j WHERE j.country = 'De amerikanske Jomfruøyene' AND j.polity_id = p.id);
+INSERT INTO place_name_periods (modern_name, country, historical_name, valid_from, valid_to, note)
+SELECT 'Jomfruøyene', 'De amerikanske Jomfruøyene', 'Dansk Vestindia', 1672, 1916, NULL
+WHERE NOT EXISTS (SELECT 1 FROM place_name_periods WHERE modern_name = 'Jomfruøyene');
+UPDATE addresses SET country = 'De amerikanske Jomfruøyene', county = NULL, historical_region = 'Dansk Vestindia',
+  name_display = coalesce(name_short, city) || ', De amerikanske Jomfruøyene'
+WHERE coalesce(county, historical_region) IN ('Dansk Vestindia', 'De Dansk Vestindiske Øer') OR city IN ('St. Croix', 'Sct. Croix', 'St. Thomas', 'St. Jan');
 
 -- Sjekk av fylke/land: regionen viser hvilket land stedet ligger i
 UPDATE addresses SET country = 'Danmark' WHERE country IN ('Norge','Sverige','USA')
