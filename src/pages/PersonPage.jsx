@@ -2104,7 +2104,9 @@ function AddressesSection({ addresses, deathYear, coResidents = {} }) {
   // som OVERLAPPER tidsmessig — historiske vage adresser som avsluttes før de spesifikke
   // starter, vises likevel (f.eks. Trondheim-oppvekst før Bergen-adresser)
   const VAGUE = new Set(['city', 'county', 'country', 'unknown'])
-  const specificAddrs = addresses.filter(a => ['full_address', 'street', 'locality'].includes(a.granularity))
+  // Hendelsessteder (fødsel, dåp, død, grav) vises alltid og teller ikke som bosted
+  const EVENT_TYPES = new Set(['birth_place', 'baptism_place', 'death_place', 'burial_place'])
+  const specificAddrs = addresses.filter(a => !EVENT_TYPES.has(a.address_type) && ['full_address', 'street', 'locality'].includes(a.granularity))
   const hasSpecificAddr = specificAddrs.length > 0
   const earliestSpecificStart = hasSpecificAddr
     ? Math.min(...specificAddrs.map(a => addrDateNum(a.date_from)).filter(Boolean))
@@ -2119,7 +2121,7 @@ function AddressesSection({ addresses, deathYear, coResidents = {} }) {
 
   const filtered = addresses
     .filter(a => {
-      if (VAGUE.has(a.granularity) && hasSpecificAddr) {
+      if (VAGUE.has(a.granularity) && hasSpecificAddr && !EVENT_TYPES.has(a.address_type)) {
         // Studieopphold og arbeidsopphold med employer vises alltid
         if (a.employer) return true
         // Vis likevel hvis adressen tydelig avsluttes FØR de spesifikke starter
