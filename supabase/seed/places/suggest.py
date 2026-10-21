@@ -115,13 +115,18 @@ for c in ctx:
         why = f'land fra familien: {round(fam_share*100)} % av hendelsene til personen, foreldre, søsken og barn i {fam_country}' + (f', mest {fam_county}' if fam_county else '')
     else:
         action, conf, why = 'manuell', 'lav', 'ingen familiekontekst'
+    if known: struct = dict(name=known[0], region=known[1], country=known[2])
+    elif action == 'opprett': struct = dict(name=first, region=fam_county, country=fam_country)
+    else: struct = None
     rows.append(dict(antall=cnt.get(raw, 1), raw=raw, forslag=sug or '', sikkerhet=conf, handling=action, koble_til_id=target or '',
-                     begrunnelse=why, personer=', '.join(persons[:4]), aar=y0 or ''))
+                     begrunnelse=why, personer=', '.join(persons[:4]), aar=y0 or '', struct=struct))
 order = {'høy': 0, 'middels': 1, 'lav': 2}
 rows.sort(key=lambda r: (order[r['sikkerhet']], -r['antall'], r['raw']))
+json.dump(rows, open('forslag.json', 'w'), ensure_ascii=False, indent=0)
 with open('forslag_steder.csv', 'w', newline='', encoding='utf-8') as f:
-    w = csv.DictWriter(f, fieldnames=['sikkerhet', 'antall', 'raw', 'forslag', 'handling', 'koble_til_id', 'begrunnelse', 'personer', 'aar'])
+    w = csv.DictWriter(f, fieldnames=['sikkerhet', 'antall', 'raw', 'forslag', 'handling', 'koble_til_id', 'begrunnelse', 'personer', 'aar'], extrasaction='ignore')
     w.writeheader(); w.writerows(rows)
 print(collections.Counter(r['sikkerhet'] for r in rows), collections.Counter(r['handling'] for r in rows))
-for r in rows[:12] + [r for r in rows if r['sikkerhet'] == 'middels'][:12] + [r for r in rows if r['sikkerhet'] == 'lav'][:14]:
+if False:
+  for r in rows[:12] + [r for r in rows if r['sikkerhet'] == 'middels'][:12] + [r for r in rows if r['sikkerhet'] == 'lav'][:14]:
     print(r['sikkerhet'], '|', r['raw'], '->', r['forslag'], '|', r['handling'], r['koble_til_id'], '|', r['begrunnelse'])
