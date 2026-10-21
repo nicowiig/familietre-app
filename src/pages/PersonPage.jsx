@@ -1528,8 +1528,9 @@ function WorkExpGroup({ group, nameMap, isLiving }) {
   const ongoing  = isLiving && entries.some(e => e.date_from && !e.date_to)
   const minYear  = fromNums.length ? Math.min(...fromNums) : null
   const maxYear  = toNums.length   ? Math.max(...toNums)   : null
+  const openEnded = !isLiving && entries.some(e => e.date_from && !e.date_to)
   const period   = minYear
-    ? (ongoing ? `${minYear}–nå` : maxYear && maxYear !== minYear ? `${minYear}–${maxYear}` : String(minYear))
+    ? (ongoing ? `${minYear}–nå` : openEnded ? `fra ${minYear}` : maxYear && maxYear !== minYear ? `${minYear}–${maxYear}` : String(minYear))
     : null
 
   const sorted = [...entries].sort((a, b) => (yr(a.date_from) || 0) - (yr(b.date_from) || 0))
@@ -1837,7 +1838,7 @@ function RolesSection({ roles, title = 'Titler og roller' }) {
       if (!acc[key]) {
         acc[key] = { ...r, value: expandedValue, _periods: [] }
       }
-      const period = [r.date_from, r.date_to].filter(Boolean).join(' – ')
+      const period = formatRolePeriod(r.date_from, r.date_to)
       if (period) acc[key]._periods.push(period)
       return acc
     }, {})
@@ -1860,7 +1861,7 @@ function RoleItem({ role }) {
   const displayValue = expandRoleValue(role.value)
   const periods      = role._periods?.length > 0
     ? role._periods.join(', ')
-    : [role.date_from, role.date_to].filter(Boolean).join(' – ')
+    : formatRolePeriod(role.date_from, role.date_to)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -2247,7 +2248,8 @@ function AddressesSection({ addresses, isLiving, coResidents = {} }) {
   const merged = []
   const byKey = new Map()
   for (const a of deduped) {
-    const place = a.address_id || addrKey(a)
+    // Samme sted: samme gate+nr, ellers samme visningsnavn (adresse-ID kan være ulik for samme sted)
+    const place = (addrKey(a) || a.name_display || a.address_id || '').toString().toLowerCase().replace(/,\s*norge$/, '').trim() || null
     const key = place ? `${place}|${String(a.date_from || '').slice(0, 4)}` : null
     const prev = key && byKey.get(key)
     if (!prev) {
@@ -2261,8 +2263,10 @@ function AddressesSection({ addresses, isLiving, coResidents = {} }) {
     if (!prev.date_to && a.date_to) prev.date_to = a.date_to
     if (!prev.effective_date_to && a.effective_date_to) prev.effective_date_to = a.effective_date_to
     if (EVENT_TYPES.has(prev.address_type) && !EVENT_TYPES.has(a.address_type)) prev.address_type = a.address_type
-    const notes = [prev.notes, a.notes].filter(Boolean)
-    prev.notes = [...new Set(notes)].join(' — ') || null
+    // Notater: ta bare med tekst som ikke allerede står der
+    if (a.notes && !(prev.notes || '').includes(a.notes)) {
+      prev.notes = prev.notes && !a.notes.includes(prev.notes) ? `${prev.notes} — ${a.notes}` : a.notes
+    }
     if (!prev.building_name && a.building_name) prev.building_name = a.building_name
   }
 
