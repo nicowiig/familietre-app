@@ -93,7 +93,7 @@ MAPPING = {
     "Eier": ["Eier"],
     "Eier av Løgismose": [("Godseier", {"place": "Løgismose"})],
     "Elektroingeniør": ["Elektroingeniør"],
-    "Elskerinde": ["Elskerinne (kongelig)"],
+    "Elskerinde": ["Frille"],
     "Embetsmann": ["Embetsmann"],
     "Enkeltfag, Økonomi": None,
     "Erkebiskop": ["Erkebiskop"],

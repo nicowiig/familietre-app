@@ -118,8 +118,8 @@ CATALOG = [
      "Adelig kvinne i tjeneste ved hoffet, typisk som selskap for dronningen eller prinsessene."),
     ("Hoffrøken", "title", HOF, "Hoffdame", None, None, None, None,
      "Ugift hoffdame."),
-    ("Elskerinne (kongelig)", "other", HOF, None, None, None, None, None,
-     "Kongens eller fyrstens elskerinne. Ofte en kjent og nesten offisiell posisjon, og barna kunne bli adlet (f.eks. Gyldenløve-slekten)."),
+    ("Frille", "other", HOF, None, None, None, None, None,
+     "Kongens eller en høytstående manns elskerinne utenfor ekteskap – en kjent og nærmest offisiell posisjon. Barna ble ofte anerkjent, fikk navn som Gyldenløve og kunne bli adlet."),
 
     # ── Rangtitler (Danmark-Norge) ───────────────────────────────────────
     ("Gehejmekonferensråd", "title", EMB, None, None, 90, "1671–1800-tallet", DN,
@@ -326,6 +326,8 @@ CATALOG = [
      "Gjennomførte førstegangstjeneste."),
     ("Sersjant", "military_rank", MEN, None, None, 20, None, None,
      "Underoffiser; ledet soldatene i det daglige."),
+    ("Fenrik", "military_rank", OFF, "Løytnant", None, 25, "1600-tallet–", DN,
+     "Laveste offisersgrad; bar opprinnelig kompaniets fane (fenrik = fanebærer). Under sekondløytnant."),
     ("Sekondløytnant", "military_rank", OFF, "Løytnant", None, 30, None, DN,
      "Laveste offisersgrad, under premierløytnant."),
     ("Løytnant", "military_rank", OFF, None, None, 31, None, None,

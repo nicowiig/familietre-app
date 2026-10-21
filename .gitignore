@@ -28,3 +28,4 @@ dist-ssr
 
 # Admin/engangsskript med potensielle hemmeligheter
 scripts/
+__pycache__/
