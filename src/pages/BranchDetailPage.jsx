@@ -98,7 +98,7 @@ export function BranchDetailPage() {
           ← Alle slektsgrener
         </Link>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 'var(--space-10)', alignItems: 'start' }}>
+        <div className="profile-layout">
           <div>
             {/* Tittel */}
             <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-4xl)', marginBottom: 'var(--space-2)' }}>

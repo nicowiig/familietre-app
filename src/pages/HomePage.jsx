@@ -81,7 +81,7 @@ function QuickStats() {
   const [stats, setStats] = useState(null)
   useEffect(() => {
     Promise.all([
-      supabase.from('persons').select('person_id', { count: 'exact', head: true }),
+      supabase.from('persons').select('person_id', { count: 'exact', head: true }).eq('is_deleted', false),
       supabase.from('families').select('family_id', { count: 'exact', head: true }),
     ]).then(([p, f]) => setStats({ persons: p.count || 0, families: f.count || 0 }))
   }, [])
@@ -220,7 +220,7 @@ function ArticlesFeed() {
 
       {/* Grid */}
       {rest.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-5)', marginTop: 'var(--space-6)' }}>
+        <div className="home-article-grid">
           {rest.slice(0, 6).map(a => (
             <ArticleCard key={a.id} article={a} imageUrl={getImageUrl(a)} link={getLink(a)} />
           ))}
@@ -362,6 +362,7 @@ function MyProfile({ personId }) {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
         <Link to={`/person/${personId}`} className="btn btn-secondary btn-sm w-full" style={{ justifyContent: 'center' }}>Se min profil</Link>
+        <Link to="/min-slekt" className="btn btn-ghost btn-sm w-full" style={{ justifyContent: 'center' }}>Min slekt og kjente aner →</Link>
         <Link to={`/tre?person=${personId}&mode=aner`} className="btn btn-ghost btn-sm w-full" style={{ justifyContent: 'center' }}>Mine aner →</Link>
         <Link to={`/tre?person=${personId}&mode=etterkommere`} className="btn btn-ghost btn-sm w-full" style={{ justifyContent: 'center' }}>Mine etterkommere →</Link>
       </div>
@@ -478,8 +479,9 @@ function DailyEvents({ type }) {
       const today = new Date()
       const { data: facts } = await supabase
         .from('person_facts')
-        .select('fact_type, date_month, date_day, date_year, person_id, persons!inner(is_living)')
+        .select('fact_type, date_month, date_day, date_year, person_id, persons!inner(is_living, is_deleted)')
         .eq('fact_type', factType)
+        .eq('persons.is_deleted', false)
         .eq('date_month', today.getMonth() + 1)
         .eq('date_day', today.getDate())
         .limit(8)
@@ -516,7 +518,7 @@ function DailyEvents({ type }) {
           const ageText = age
             ? isBirthday
               ? (item.persons?.is_living ? `fyller ${age}` : `ville fylt ${age}`)
-              : `– ${year} · ${age} år gammel`
+              : `d. ${year} · for ${age} år siden`
             : year ? (isBirthday ? `f. ${year}` : `– ${year}`) : null
 
           return (

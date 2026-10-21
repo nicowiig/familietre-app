@@ -391,10 +391,19 @@ export function PersonPage() {
             <PrimaryOccupation roles={roles} />
 
             <div className="profile-actions">
-              <button className="btn btn-secondary btn-sm">Send rettelse</button>
+              <a
+                className="btn btn-secondary btn-sm"
+                href={`mailto:nicowiig@gmail.com?subject=${encodeURIComponent(`Rettelse: ${fullName} (${id})`)}&body=${encodeURIComponent(`Gjelder: ${window.location.href}\n\nHva er feil, og hva er riktig (gjerne med kilde)?\n\n`)}`}
+              >
+                Send rettelse
+              </a>
               <button
                 className="btn btn-ghost btn-sm"
-                onClick={() => { navigator.clipboard.writeText(window.location.href) }}
+                onClick={e => {
+                  navigator.clipboard.writeText(window.location.href)
+                  const b = e.currentTarget; const t = b.textContent
+                  b.textContent = 'Lenke kopiert ✓'; setTimeout(() => { b.textContent = t }, 1800)
+                }}
               >
                 Del profil
               </button>
@@ -403,16 +412,11 @@ export function PersonPage() {
         </div>
 
         {/* Profilinnhold */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 'var(--space-10)', alignItems: 'start' }}>
+        <div className="profile-layout">
 
           {/* Venstre: biografi + fakta + tidslinje + roller + adresser */}
           <div>
             <BiographySection biography={biography} personId={id} media={media} />
-            <FactsSection
-              facts={facts}
-              birth={birth}
-              death={death}
-            />
             <TimelineSection
               facts={facts}
               families={families}
@@ -999,48 +1003,6 @@ const FACT_LABELS = {
   ILLN: 'Sykdom',
   OCCU: 'Yrke',
   TITL: 'Tittel',
-}
-
-function FactsSection({ facts, birth, death }) {
-  // Kun fødsel og død i nøkkelfakta-rutenettet
-  const keyFacts = [birth, death].filter(Boolean)
-
-  if (keyFacts.length === 0) return null
-
-  return (
-    <div className="profile-section">
-      <h2 className="profile-section-header">Fakta og hendelser</h2>
-      <div className="facts-table mb-6">
-        {keyFacts.map(f => (
-          <FactItem key={f.id} fact={f} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function FactItem({ fact }) {
-  const label = FACT_LABELS[normFact(fact.fact_type)] || fact.fact_type
-  const date  = formatDateText(fact.date_text, fact.date_year, fact.date_month, fact.date_day)
-  const place = fact.place_city || fact.place_raw
-
-  return (
-    <div className="fact-item">
-      <span className="fact-label">{label}</span>
-      <span className="fact-value">
-        {date}
-        {date && place && ' · '}
-        {place && (
-          <a href={mapsUrl(place)} target="_blank" rel="noreferrer">{place}</a>
-        )}
-        {fact.notes && isContextualNote(fact.notes) && (
-          <span style={{ display: 'block', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', fontStyle: 'italic', marginTop: 2 }}>
-            {fact.notes}
-          </span>
-        )}
-      </span>
-    </div>
-  )
 }
 
 /* ===== Tidslinje (år-gruppert) ===== */
@@ -2328,7 +2290,8 @@ function AddressItem({ addr, deathYear, coResidents = [] }) {
   const [confirmed, setConfirmed] = useState(addr.is_confirmed)
 
   const typeLabel = ADDR_TYPE_LABELS[addr.address_type] || addr.address_type || 'Bosted'
-  const isBirthPlace = addr.address_type === 'birth_place'
+  // Hendelsessteder (fødsel, dåp, død, grav, folketelling) er et tidspunkt, ikke en periode
+  const isBirthPlace = ['birth_place', 'baptism_place', 'death_place', 'burial_place', 'census_record'].includes(addr.address_type)
   const dateTo = isBirthPlace ? null : (dateTo_ ?? addr.effective_date_to)
   const duration  = isBirthPlace ? null : calcYears(dateFrom, dateTo, deathYear)
   const streetPart = addr.street_name ? `${addr.street_name} ${addr.street_number || ''}`.trim() : null
@@ -2807,11 +2770,20 @@ function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
   const spouseId   = sex === 'M' ? family.wife_id : family.husband_id
   const [spouseName, setSpouseName] = useState(null)
   const [childNames, setChildNames] = useState({})
+  const [frille, setFrille] = useState(null) // 'spouse' | 'self' | null
   const children   = family.family_children || []
 
   useEffect(() => {
     async function load() {
       const ids = [spouseId, ...children.map(c => c.child_id)].filter(Boolean)
+      // Frilleforhold: vises ikke som ekteskap
+      const pair = [spouseId, personId].filter(Boolean)
+      if (pair.length) {
+        const { data: fr } = await supabase
+          .from('person_roles').select('person_id').eq('value', 'Frille').in('person_id', pair)
+        const fIds = new Set((fr || []).map(r => r.person_id))
+        setFrille(spouseId && fIds.has(spouseId) ? 'spouse' : fIds.has(personId) ? 'self' : null)
+      }
       if (!ids.length) return
       const { data } = await supabase
         .from('person_names')
@@ -2834,7 +2806,10 @@ function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
   return (
     <div className="card">
       <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-base)', marginBottom: 'var(--space-3)' }}>
-        {sex === 'M' ? 'Hustru' : 'Ektemann'}
+        {frille === 'spouse' ? 'Frille'
+          : frille === 'self' ? 'Partner'
+          : family.family_type === 'divorced' ? (sex === 'M' ? 'Tidligere hustru' : 'Tidligere ektemann')
+          : (sex === 'M' ? 'Hustru' : 'Ektemann')}
       </h4>
       {spouseId ? (
         <RelativeLink id={spouseId} name={spouseName} isAncestor={myAncestors?.has(spouseId)} />
@@ -2842,9 +2817,9 @@ function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
         <p className="text-sm text-muted">Ukjent ektefelle</p>
       )}
 
-      {family.marr_date && (
+      {family.marr_date && !frille && (
         <p className="text-sm text-muted mt-2">
-          Gift: {parseFamilyDate(family.marr_date)}
+          {family.family_type === 'divorced' ? 'Gift (senere skilt)' : 'Gift'}: {parseFamilyDate(family.marr_date)}
           {family.marr_place_raw && ` · ${family.marr_place_raw}`}
         </p>
       )}
@@ -2853,7 +2828,7 @@ function SpouseFamilyCard({ family, personId, sex, myAncestors }) {
         <>
           <hr className="divider" style={{ margin: 'var(--space-4) 0' }} />
           <h5 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Barn
+            {frille ? 'Barn utenfor ekteskap' : 'Barn'}
           </h5>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             {children.map(c => (

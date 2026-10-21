@@ -31,12 +31,12 @@ export function StatistikkPage() {
 
         <OverviewStats />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-8)', marginTop: 'var(--space-8)' }}>
+        <div className="stats-grid">
           <SexDistribution />
           <BirthDecades />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-8)', marginTop: 'var(--space-8)' }}>
+        <div className="stats-grid">
           <TopSurnames />
           <TopBirthCities />
           <TopOccupations />
@@ -79,7 +79,7 @@ function OverviewStats() {
   ] : []
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-4)' }}>
+    <div className="stats-overview">
       {items.map(({ value, label }) => (
         <div key={label} className="card" style={{ textAlign: 'center', padding: 'var(--space-6)' }}>
           <div style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-3xl)', fontWeight: 700, color: 'var(--color-accent)', lineHeight: 1 }}>{value}</div>
@@ -250,12 +250,17 @@ function TopOccupations() {
 
   useEffect(() => {
     async function load() {
-      const data = await fetchAll('person_roles', 'value', [['eq', 'role_type', 'occupation'], ['not', 'value', 'is', null]])
+      // Tell via rollekatalogen, så gamle skrivemåter («Høiesteretsadvokat») havner på samme rolle.
+      // Hver person telles én gang per rolle.
+      const data = await fetchAll('person_roles', 'person_id, role_id, catalog:role_catalog!inner(id, name, category)',
+        [['in', 'catalog.category', ['occupation', 'position']]])
       const counts = {}
+      const seen = new Set()
       data.forEach(r => {
-        // Normaliser til lowercase for sammenligning
-        const key = r.value.trim().toLowerCase()
-        counts[key] = { count: (counts[key]?.count || 0) + 1, label: r.value.trim() }
+        const key = `${r.role_id}|${r.person_id}`
+        if (!r.catalog || seen.has(key)) return
+        seen.add(key)
+        counts[r.role_id] = { count: (counts[r.role_id]?.count || 0) + 1, label: r.catalog.name, id: r.role_id }
       })
       const sorted = Object.values(counts)
         .sort((a, b) => b.count - a.count)
@@ -269,11 +274,11 @@ function TopOccupations() {
 
   return (
     <div className="card">
-      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-lg)', marginBottom: 'var(--space-5)' }}>Vanligste yrker</h3>
+      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-lg)', marginBottom: 'var(--space-5)' }}>Vanligste yrker og embeter</h3>
       {items.length === 0
         ? <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Ingen yrkesdata registrert.</p>
-        : <TopList items={items.map(i => ({ label: i.label, count: i.count }))} max={max}
-            getLink={item => `/søk?occupation=${encodeURIComponent(item.label)}`} />
+        : <TopList items={items.map(i => ({ label: i.label, count: i.count, id: i.id }))} max={max}
+            getLink={item => `/rolle/${item.id}`} />
       }
     </div>
   )
@@ -283,8 +288,9 @@ function TopOccupations() {
 function TopList({ items, max, getLink }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-      {items.map(({ label, count }, i) => {
-        const href = getLink ? getLink({ label, count }) : null
+      {items.map((item, i) => {
+        const { label, count } = item
+        const href = getLink ? getLink(item) : null
         const labelEl = href
           ? <Link to={href} style={{ color: 'inherit', textDecoration: 'none' }}
               onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}

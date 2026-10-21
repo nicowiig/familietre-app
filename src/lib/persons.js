@@ -44,7 +44,8 @@ export function formatName(nameObj, { title = true, personId } = {}) {
   const name = parts.join(' ') || 'Ukjent'
   if (!title) return name
   const t = getDisplayTitle(personId || nameObj.person_id)
-  return t ? `${t} ${name}` : name
+  // Navnet står alltid alene (overskrift, liste, lenke) – stor forbokstav på tittelen
+  return t ? `${t.charAt(0).toUpperCase()}${t.slice(1)} ${name}` : name
 }
 
 /**

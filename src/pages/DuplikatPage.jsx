@@ -318,7 +318,7 @@ export function DuplikatPage() {
         </div>
 
         {/* To kolonner: profiler */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-8)', marginBottom: 'var(--space-8)' }}>
+        <div className="stats-grid" style={{ marginTop: 0, marginBottom: 'var(--space-8)' }}>
           <div className="card" style={{ padding: 'var(--space-6)' }}>
             {p1 && <PersonColumn data={p1} label="Person 1" />}
           </div>
