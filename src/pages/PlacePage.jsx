@@ -169,6 +169,72 @@ function renderMarkdown(md) {
   return elements
 }
 
+// Første årstall i en fritekst-dato («ca. 1875» → 1875). Ukjent sorteres sist.
+function yearOf(text) {
+  const m = String(text ?? '').match(/\d{4}/)
+  return m ? Number(m[0]) : 9999
+}
+
+function formatPeriod(from, to) {
+  if (!from && !to) return '—'
+  if (from && !to) return `${from}–`
+  if (!from && to) return `–${to}`
+  return from === to ? from : `${from}–${to}`
+}
+
+const cellStyle = {
+  padding: 'var(--space-2) var(--space-3)',
+  borderBottom: '1px solid var(--color-border)',
+  color: 'var(--color-text)',
+  verticalAlign: 'top',
+}
+const headStyle = {
+  textAlign: 'left',
+  padding: 'var(--space-2) var(--space-3)',
+  borderBottom: '2px solid var(--color-border)',
+  fontWeight: 600,
+  color: 'var(--color-text)',
+}
+
+function PersonRoleTable({ title, rows, personNames }) {
+  return (
+    <div className="card" style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-4)' }}>
+      <h2 className="profile-section-header" style={{ marginBottom: 'var(--space-3)' }}>{title}</h2>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
+          <thead>
+            <tr>
+              <th style={headStyle}>Navn</th>
+              <th style={headStyle}>Rolle</th>
+              <th style={{ ...headStyle, whiteSpace: 'nowrap' }}>Periode</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(p => (
+              <tr key={p.id ?? `${p.person_id}-${p.title}`}>
+                <td style={cellStyle}>
+                  <LinkPreview to={`/person/${p.person_id}`}>
+                    {personNames[p.person_id] || p.person_id}
+                  </LinkPreview>
+                </td>
+                <td style={cellStyle}>
+                  {p.title || '—'}
+                  {p.role_note && (
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2 }}>
+                      {p.role_note}
+                    </div>
+                  )}
+                </td>
+                <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{formatPeriod(p.date_from, p.date_to)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 export function PlacePage() {
   const { articleId } = useParams()
   const [article,    setArticle]    = useState(null)
@@ -283,6 +349,15 @@ export function PlacePage() {
       ].filter(Boolean).join(', ')
     : [article.locality, article.city, article.country].filter(Boolean).join(', ')
 
+  // Personkoblinger med rolle/periode vises som tabell (institusjoner)
+  const isRoleTable = persons.some(p => p.relation_type || p.title)
+  const sortedPersons = [...persons].sort((a, b) =>
+    (a.sort_order ?? 0) - (b.sort_order ?? 0) ||
+    yearOf(a.date_from) - yearOf(b.date_from)
+  )
+  const directPersons   = sortedPersons.filter(p => p.relation_type !== 'indirekte')
+  const indirectPersons = sortedPersons.filter(p => p.relation_type === 'indirekte')
+
   // Alle bilder til galleriet (forsidebilde alltid først)
   const allGalleryImages = coverUrl
     ? [{ storage_path: article.cover_image_path, signedUrl: coverUrl, caption: images[0]?.caption, year: images[0]?.year, creator: images[0]?.creator, sort_order: -1 }, ...images.filter(i => i.storage_path !== article.cover_image_path)]
@@ -394,13 +469,33 @@ export function PlacePage() {
           </div>
         )}
 
+        {/* ── Personer i institusjonen (rolle + periode) ── */}
+        {isRoleTable && (
+          <>
+            {directPersons.length > 0 && (
+              <PersonRoleTable
+                title="Personer i treet"
+                rows={directPersons}
+                personNames={personNames}
+              />
+            )}
+            {indirectPersons.length > 0 && (
+              <PersonRoleTable
+                title="Indirekte tilknytning"
+                rows={indirectPersons}
+                personNames={personNames}
+              />
+            )}
+          </>
+        )}
+
         {/* ── Tilknyttede personer ── */}
-        {persons.length > 0 && (
+        {!isRoleTable && persons.length > 0 && (
           <div className="card" style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-4)' }}>
             <h2 className="profile-section-header" style={{ marginBottom: 'var(--space-3)' }}>Tilknyttede personer</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               {persons.map(p => (
-                <div key={p.person_id} style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                <div key={p.id ?? p.person_id} style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                   <LinkPreview to={`/person/${p.person_id}`}>
                     {personNames[p.person_id] || p.person_id}
                   </LinkPreview>
