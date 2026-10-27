@@ -207,7 +207,7 @@ function ArticlesFeed() {
 
   function getLink(a) {
     if (a._type === 'bio') return `/person/${a.personId}`
-    return `/steder?article=${a.id}`
+    return `/place/${a.id}`
   }
 
   return (
