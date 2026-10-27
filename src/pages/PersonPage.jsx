@@ -17,6 +17,7 @@ import {
 } from '../lib/persons'
 import { useFamilyGraph } from '../hooks/useFamilyGraph'
 import { findKinship, findSpouseKinship, getAncestors } from '../lib/kinship'
+import { TILE_URL, TILE_ATTRIBUTION, TILE_MAX_ZOOM } from '../lib/mapTiles'
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -2002,8 +2003,9 @@ function BuildingsSection({ buildings }) {
             scrollWheelZoom={false}
           >
             <TileLayer
-              attribution='&copy; <a href="https://carto.com">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              attribution={TILE_ATTRIBUTION}
+              url={TILE_URL}
+              maxZoom={TILE_MAX_ZOOM}
             />
             {mapBuildings.map((b) => {
               const origIdx = buildings.findIndex(bb => bb.id === b.id)
