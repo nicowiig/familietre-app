@@ -144,6 +144,7 @@ export function StederPage() {
     const { data } = await supabase
       .from('place_articles')
       .select('id, title, subtitle, article_type, city, country, period_from, period_to, cover_image_path')
+      .neq('article_type', 'news')
       .order('city')
     if (!data) return
     setArticles(data)
