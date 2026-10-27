@@ -8,6 +8,7 @@ import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { LinkPreview } from '../components/LinkPreview'
 import { InstitutionLink } from '../components/InstitutionLink'
+import { matchInstitution, useInstitutionAliases } from '../lib/institutions'
 import { SilhouetteSvg } from '../components/PersonCard'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -1168,10 +1169,11 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles
 
 function sortYearEvents(events) {
   return [...events].sort((a, b) => {
-    const am = a.month || 99, bm = b.month || 99
-    const ad = a.day || 99, bd = b.day || 99
-    if (am !== bm) return am - bm
-    return ad - bd
+    // Nyeste først innen året; hendelser uten måned/dag havner nederst
+    const am = a.month || 0, bm = b.month || 0
+    const ad = a.day || 0, bd = b.day || 0
+    if (am !== bm) return bm - am
+    return bd - ad
   })
 }
 
@@ -1427,9 +1429,35 @@ function BriefcaseIcon() {
 
 // Normaliser person_roles til work-exp-format
 // employer = rolle-navn (vises som bold header), place = sted/org (vises som undertekst)
-function roleToEntry(r) {
+// Er rollens «sted» en arbeidsgiver/organisasjon (DNB, Norges Blindeforbund) og ikke bare en by?
+// Da grupperes rollene under organisasjonen, slik en CV gjør.
+const ORG_PLACE_RE = /(\bA\/?S\b|\bASA\b|\bUB\b|bank|& ?co|firma|forbund|klubb|forening|selskab|skole|universit|høyskole|høgskole|institut|forsvaret|kompani|fabri[ck]|rederi|bryggeri|evry|\bgroup\b|\binc\b|\bltd\b)/i
+function isOrgPlace(r, aliases) {
+  if (!r.place) return false
+  if (matchInstitution(r.place, aliases)) return true
+  if (ORG_PLACE_RE.test(r.place)) return true
+  // CV-importerte roller har måned i datoen og arbeidsgiver i place
+  return /^\d{4}-\d{2}/.test(String(r.date_from || '')) && (r.source || '').toLowerCase() === 'linkedin'
+}
+
+function roleToEntry(r, aliases, multiOrgs = new Set()) {
   const ABBREV = { 'h.r.adv': 'Høyesterettsadvokat', 'h.r.adv.': 'Høyesterettsadvokat', 'hr.adv': 'Høyesterettsadvokat', 'h.r.advokat': 'Høyesterettsadvokat' }
   const roleName = ABBREV[(r.value || '').toLowerCase().trim()] || r.value
+  // Bare organisasjoner med flere roller grupperes – ellers vises rollen øverst med stedet under
+  if (multiOrgs.has((r.place || '').toLowerCase().trim()) && isOrgPlace(r, aliases)) {
+    return {
+      id:        `role_${r.id}`,
+      employer:  r.place,
+      title:     roleName,
+      place:     null,
+      date_from: r.date_from,
+      date_to:   r.date_to,
+      notes:     r.reason || null,
+      _type:     'role',
+      _role:     r,
+      _orgGrouped: true,
+    }
+  }
   return {
     id:        `role_${r.id}`,
     employer:  roleName,
@@ -1462,6 +1490,7 @@ function WorkExpIcon() {
 }
 
 function CareerSection({ roles = [], workExp = [], isLiving }) {
+  const aliases = useInstitutionAliases()
   // Hent navn for eventuelle person-ID-er nevnt i notater
   const [nameMap, setNameMap] = useState({})
   useEffect(() => {
@@ -1484,9 +1513,12 @@ function CareerSection({ roles = [], workExp = [], isLiving }) {
   // Normaliser roles til work-exp-format og slå sammen.
   // En rolle som også står som stillingstittel i arbeidserfaringen (samme tittel) vises bare der.
   const workTitles = new Set(workExp.map(w => (w.title || '').toLowerCase().trim()).filter(Boolean))
+  const placeCount = {}
+  roles.forEach(r => { const k = (r.place || '').toLowerCase().trim(); if (k) placeCount[k] = (placeCount[k] || 0) + 1 })
+  const multiOrgs = new Set(Object.keys(placeCount).filter(k => placeCount[k] > 1))
   const roleEntries = roles
     .filter(r => !workTitles.has((expandRoleValue(r.value) || '').toLowerCase().trim()))
-    .map(roleToEntry)
+    .map(r => roleToEntry(r, aliases, multiOrgs))
   const allEntries = [...roleEntries, ...workExp]
 
   // Grupper etter employer
@@ -1518,7 +1550,8 @@ function CareerSection({ roles = [], workExp = [], isLiving }) {
 function WorkExpGroup({ group, nameMap, isLiving }) {
   const { employer, entries } = group
   const hasMultiple = entries.length > 1
-  const groupRole = entries.find(e => e._role?.role_id)?._role || null
+  // Overskriften er rollen bare når gruppen er samme rolle (ikke organisasjon)
+  const groupRole = entries.some(e => e._orgGrouped) ? null : (entries.find(e => e._role?.role_id)?._role || null)
 
   // Felles sted vises bare når alle innslagene deler det (ellers står stedet på hvert innslag)
   const places = [...new Set(entries.map(e => e.place).filter(Boolean))]
@@ -1535,7 +1568,13 @@ function WorkExpGroup({ group, nameMap, isLiving }) {
     ? (ongoing ? `${minYear}–nå` : openEnded ? `fra ${minYear}` : maxYear && maxYear !== minYear ? `${minYear}–${maxYear}` : String(minYear))
     : null
 
-  const sorted = [...entries].sort((a, b) => (yr(a.date_from) || 0) - (yr(b.date_from) || 0))
+  // Nyeste stilling øverst (pågående først)
+  const sortKey = e => {
+    if (isLiving && e.date_from && !e.date_to) return 999999
+    const p = parseRoleDate(e.date_to) || parseRoleDate(e.date_from)
+    return p ? p.year * 100 + (p.month || 0) : 0
+  }
+  const sorted = [...entries].sort((a, b) => sortKey(b) - sortKey(a) || (parseRoleDate(b.date_from)?.year || 0) - (parseRoleDate(a.date_from)?.year || 0))
 
   return (
     <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
@@ -1600,7 +1639,7 @@ function WorkExpEntry({ entry, compact, nameMap = {}, isLiving, hidePlace = fals
     <div style={compact ? { paddingLeft: 'var(--space-2)', borderLeft: '2px solid var(--color-border)' } : {}}>
       {entry.title && (
         <div style={{ fontWeight: compact ? 500 : 600, fontSize: 'var(--text-sm)' }}>
-          {entry.title}
+          {entry._role ? <RoleTitleWithInfo role={entry._role}>{entry.title}</RoleTitleWithInfo> : entry.title}
         </div>
       )}
       <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
@@ -1669,7 +1708,8 @@ function UtdannelseSection({ roles, facts }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
         {[...roles].sort((a, b) => {
           const toNum = v => { const p = parseRoleDate(v); return p ? p.year * 100 + (p.month || 0) : 0 }
-          return toNum(b.date_to) - toNum(a.date_to)
+          const end = r => toNum(r.date_to) || toNum(r.date_from)
+          return end(b) - end(a) || toNum(b.date_from) - toNum(a.date_from)
         }).map((r, i) => <UtdannelseCard key={r.id || i} role={r} />)}
         {educFacts.map(f => <UtdannelseFactCard key={f.id} fact={f} />)}
       </div>
@@ -2336,7 +2376,7 @@ function renderNoteWithLinks(text) {
   return parts.length > 1 ? parts : text
 }
 
-function EditableDate({ value, periodId, field, onSaved, isConfirmed }) {
+function EditableDate({ value, periodId, field, onSaved, isConfirmed, placeholder = '?' }) {
   const [editing, setEditing] = useState(false)
   const [input, setInput] = useState(value || '')
   const { user } = useAuth()
@@ -2352,7 +2392,7 @@ function EditableDate({ value, periodId, field, onSaved, isConfirmed }) {
     if (!error && onSaved) onSaved(field, trimmed || null)
   }
 
-  if (!user) return <span className={isConfirmed ? '' : 'date-unconfirmed'}>{formatAddrDate(value)}</span>
+  if (!user) return <span className={isConfirmed && value ? '' : 'date-unconfirmed'}>{formatAddrDate(value) || placeholder}</span>
 
   if (editing) {
     return (
@@ -2374,7 +2414,7 @@ function EditableDate({ value, periodId, field, onSaved, isConfirmed }) {
       onClick={() => { setInput(value || ''); setEditing(true) }}
       title="Klikk for å redigere"
     >
-      {formatAddrDate(value) || '?'}
+      {formatAddrDate(value) || placeholder}
     </span>
   )
 }
@@ -2407,6 +2447,8 @@ function AddressItem({ addr, isLiving, coResidents = [] }) {
   const [dateFrom, setDateFrom] = useState(addr.date_from)
   const [dateTo_, setDateTo_] = useState(addr.date_to)
   const [confirmed, setConfirmed] = useState(addr.is_confirmed)
+  const [noteOpen, setNoteOpen] = useState(false)
+  const NOTE_MAX = 180
 
   const types = addr._types?.length ? addr._types : [addr.address_type]
   const typeLabel = [...new Set(types.map(t => ADDR_TYPE_LABELS[t] || t || 'Bosted'))].join(' · ')
@@ -2464,6 +2506,7 @@ function AddressItem({ addr, isLiving, coResidents = [] }) {
               periodId={addr.id}
               field="date_to"
               isConfirmed={confirmed}
+              placeholder={addr.effective_date_to ? formatAddrDate(addr.effective_date_to) : (isLiving ? 'nå' : '?')}
               onSaved={(f, v) => setDateTo_(v)}
             />
           </>
@@ -2507,7 +2550,15 @@ function AddressItem({ addr, isLiving, coResidents = [] }) {
       )}
       {noteText && !noteText.includes('<a href=') && (
         <div className="timeline-place" style={{ fontStyle: 'italic', color: 'var(--color-text-light)' }}>
-          {renderNoteWithLinks(noteText)}
+          {renderNoteWithLinks(noteOpen || noteText.length <= NOTE_MAX ? noteText : noteText.slice(0, NOTE_MAX).trimEnd() + '…')}
+          {noteText.length > NOTE_MAX && (
+            <button
+              onClick={() => setNoteOpen(o => !o)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-accent)', fontSize: 'var(--text-sm)', fontStyle: 'normal', padding: '0 0 0 4px' }}
+            >
+              {noteOpen ? 'Vis mindre' : 'Vis mer'}
+            </button>
+          )}
         </div>
       )}
       {addr.place_article_id && (
