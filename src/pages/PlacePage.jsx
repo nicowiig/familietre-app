@@ -5,6 +5,7 @@ import { formatName } from '../lib/persons'
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { LinkPreview } from '../components/LinkPreview'
+import { ArticleExplore } from '../components/ArticleExplore'
 
 // Markdown-renderer — støtter overskrifter, bold, kursiv, lenker, sitater, horisontale linjer, tabeller
 function renderInline(text) {
@@ -350,7 +351,8 @@ export function PlacePage() {
     : [article.locality, article.city, article.country].filter(Boolean).join(', ')
 
   // Personkoblinger med rolle/periode vises som tabell (institusjoner)
-  const isRoleTable = persons.some(p => p.relation_type || p.title)
+  const isNews = article.article_type === 'news'
+  const isRoleTable = !isNews && persons.some(p => p.relation_type || p.title)
   const sortedPersons = [...persons].sort((a, b) =>
     (a.sort_order ?? 0) - (b.sort_order ?? 0) ||
     yearOf(a.date_from) - yearOf(b.date_from)
@@ -387,6 +389,16 @@ export function PlacePage() {
 
         {/* ── Tittel og metadata ── */}
         <div style={{ marginBottom: 'var(--space-6)' }}>
+          {isNews && (
+            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-accent)', marginBottom: 'var(--space-2)' }}>
+              Nytt i slekten
+              {article.created_at && (
+                <span style={{ color: 'var(--color-text-light)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
+                  {' · '}{new Date(article.created_at).toLocaleDateString('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+              )}
+            </div>
+          )}
           <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 700, color: 'var(--color-text)', marginBottom: 'var(--space-1)' }}>
             {article.title}
           </h1>
@@ -421,6 +433,9 @@ export function PlacePage() {
             {renderMarkdown(article.body)}
           </div>
         )}
+
+        {/* ── Utforsk mer (nyhetssaker) ── */}
+        {isNews && <ArticleExplore articleId={article.id} persons={persons} />}
 
         {/* ── Bildegalleri (ekstra bilder utover forsidebilde) ── */}
         {allGalleryImages.length > 1 && (
@@ -490,7 +505,7 @@ export function PlacePage() {
         )}
 
         {/* ── Tilknyttede personer ── */}
-        {!isRoleTable && persons.length > 0 && (
+        {!isNews && !isRoleTable && persons.length > 0 && (
           <div className="card" style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-4)' }}>
             <h2 className="profile-section-header" style={{ marginBottom: 'var(--space-3)' }}>Tilknyttede personer</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>

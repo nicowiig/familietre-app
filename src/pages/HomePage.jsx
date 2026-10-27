@@ -17,6 +17,7 @@ const ARTICLE_TYPE_LABEL = {
   occupation: 'Yrke',
   company:  'Bedrift',
   general:  'Artikkel',
+  news:     'Nytt i slekten',
 }
 
 // ─── Hjelpefunksjoner ─────────────────────────────────────
