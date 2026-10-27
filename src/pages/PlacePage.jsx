@@ -59,7 +59,12 @@ function renderInline(text) {
   return result.length > 0 ? result : [text]
 }
 
-function renderMarkdown(md) {
+// Finn bildestier i brødteksten: ![tekst](storage:sti "kreditering")
+function storageImagePaths(md) {
+  return [...String(md || '').matchAll(/!\[[^\]]*\]\(storage:([^)\s]+)/g)].map(m => m[1])
+}
+
+function renderMarkdown(md, imageUrls = {}) {
   if (!md) return null
   const lines = md.split('\n')
   const elements = []
@@ -68,6 +73,66 @@ function renderMarkdown(md) {
 
   while (i < lines.length) {
     const line = lines[i]
+
+    // Faktaboks: «:::fakta Tittel» … «:::»
+    if (line.startsWith(':::fakta')) {
+      const title = line.slice(8).trim()
+      const inner = []
+      i++
+      while (i < lines.length && lines[i].trim() !== ':::') { inner.push(lines[i]); i++ }
+      i++
+      elements.push(
+        <aside key={key++} style={{
+          margin: 'var(--space-5) 0',
+          padding: 'var(--space-4) var(--space-5)',
+          background: 'rgba(192,154,90,0.08)',
+          border: '1px solid rgba(192,154,90,0.35)',
+          borderLeft: '4px solid var(--color-accent)',
+          borderRadius: 'var(--radius)',
+          fontSize: 'var(--text-sm)',
+        }}>
+          {title && (
+            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-accent)', marginBottom: 'var(--space-2)' }}>
+              {title}
+            </div>
+          )}
+          {renderMarkdown(inner.join('\n'), imageUrls)}
+        </aside>
+      )
+      continue
+    }
+
+    // Bilde fra lagringen: ![bildetekst](storage:sti "kreditering")
+    const img = line.trim().match(/^!\[([^\]]*)\]\(storage:([^)\s]+)(?:\s+"([^"]*)")?\)$/)
+    if (img) {
+      const url = imageUrls[img[2]]
+      if (url) {
+        elements.push(
+          <figure key={key++} style={{ margin: 'var(--space-5) 0' }}>
+            <img src={url} alt={img[1]} style={{ width: '100%', maxHeight: 520, objectFit: 'contain', borderRadius: 'var(--radius)', background: '#f5f0e8', display: 'block' }} />
+            {(img[1] || img[3]) && (
+              <figcaption style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic', marginTop: 'var(--space-2)', lineHeight: 1.5 }}>
+                {renderInline(img[1])}
+                {img[3] && <span style={{ fontStyle: 'normal', color: 'var(--color-text-light)' }}>{img[1] ? ' · ' : ''}{img[3]}</span>}
+              </figcaption>
+            )}
+          </figure>
+        )
+      }
+      i++; continue
+    }
+
+    // Punktliste
+    if (line.startsWith('- ')) {
+      const items = []
+      while (i < lines.length && lines[i].startsWith('- ')) { items.push(lines[i].slice(2)); i++ }
+      elements.push(
+        <ul key={key++} style={{ margin: 'var(--space-2) 0', paddingLeft: 'var(--space-5)', lineHeight: 1.6 }}>
+          {items.map((it, ii) => <li key={ii}>{renderInline(it)}</li>)}
+        </ul>
+      )
+      continue
+    }
 
     // Horisontal linje
     if (line.trim() === '---' || line.trim() === '***') {
@@ -248,6 +313,7 @@ export function PlacePage() {
   const [loading,    setLoading]    = useState(true)
   const [notFound,   setNotFound]   = useState(false)
   const [activeImg,  setActiveImg]  = useState(0)
+  const [bodyImageUrls, setBodyImageUrls] = useState({})
 
   useEffect(() => {
     if (articleId) load(articleId)
@@ -277,6 +343,19 @@ export function PlacePage() {
       const srcs    = (data.place_article_sources || []).sort((a, b) => a.sort_order - b.sort_order)
 
       setArticle(data)
+
+      // Signerte URL-er for bilder i brødteksten
+      const bodyPaths = storageImagePaths(data.body)
+      if (bodyPaths.length > 0) {
+        const { data: signedBody } = await supabase.storage
+          .from('person-photos')
+          .createSignedUrls(bodyPaths, 3600)
+        const bodyMap = {}
+        ;(signedBody || []).forEach(s => { if (s.signedUrl) bodyMap[s.path] = s.signedUrl })
+        setBodyImageUrls(bodyMap)
+      } else {
+        setBodyImageUrls({})
+      }
       setImages(imgs)
       setPersons(persCon)
       setSources(srcs)
@@ -430,7 +509,7 @@ export function PlacePage() {
         {/* ── Brødtekst ── */}
         {article.body && (
           <div className="card" style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-6)' }}>
-            {renderMarkdown(article.body)}
+            {renderMarkdown(article.body, bodyImageUrls)}
           </div>
         )}
 
