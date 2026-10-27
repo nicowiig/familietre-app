@@ -7,6 +7,7 @@ import { placeAt, placeShortAt, isRedundantPlaceNote, placeMapsUrl, PLACE_SELECT
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { LinkPreview } from '../components/LinkPreview'
+import { InstitutionLink } from '../components/InstitutionLink'
 import { SilhouetteSvg } from '../components/PersonCard'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -783,7 +784,7 @@ function PrimaryOccupation({ roles, isLiving }) {
   return (
     <p style={{ fontSize: 'var(--text-md)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>
       {expandRoleValue(occ.value)}
-      {occ.place && ` · ${occ.place}`}
+      {occ.place && <> · <InstitutionLink name={occ.place} /></>}
     </p>
   )
 }
@@ -1542,11 +1543,13 @@ function WorkExpGroup({ group, nameMap, isLiving }) {
         <div style={{ fontWeight: 700, fontSize: 'var(--text-base)' }}>
           {groupRole
             ? <RoleTitleWithInfo role={groupRole}>{employer}</RoleTitleWithInfo>
-            : (employer || 'Ukjent arbeidsgiver')}
+            : (employer ? <InstitutionLink name={employer} /> : 'Ukjent arbeidsgiver')}
         </div>
         {hasMultiple && (place || period) && (
           <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-2)' }}>
-            {[place, period].filter(Boolean).join(' · ')}
+            {place && <InstitutionLink name={place} />}
+            {place && period && ' · '}
+            {period}
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
@@ -1600,7 +1603,9 @@ function WorkExpEntry({ entry, compact, nameMap = {}, isLiving, hidePlace = fals
         </div>
       )}
       <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
-        {[hidePlace ? null : entry.place, period, duration].filter(Boolean).join(' · ')}
+        {!hidePlace && entry.place && <InstitutionLink name={entry.place} />}
+        {!hidePlace && entry.place && (period || duration) && ' · '}
+        {[period, duration].filter(Boolean).join(' · ')}
       </div>
       {entry._role && <RoleSourceNote role={entry._role} style={{ display: 'block' }} />}
       {entry.notes && (
@@ -1687,11 +1692,11 @@ function UtdannelseCard({ role }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         {heading && (
           <div style={{ fontWeight: 700, fontSize: 'var(--text-base)', marginBottom: 'var(--space-1)' }}>
-            {heading}
+            <InstitutionLink name={heading} />
           </div>
         )}
         {sub && (
-          <div style={{ fontSize: 'var(--text-sm)', marginBottom: 2 }}>{sub}</div>
+          <div style={{ fontSize: 'var(--text-sm)', marginBottom: 2 }}><InstitutionLink name={sub} /></div>
         )}
         {period && (
           <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>{period}</div>
@@ -1790,7 +1795,7 @@ function TitleCard({ role }) {
         </div>
         <RoleSourceNote role={role} style={{ display: 'block', marginBottom: 2 }} />
         {role.place && (
-          <div style={{ fontSize: 'var(--text-sm)', marginBottom: 2 }}>{role.place}</div>
+          <div style={{ fontSize: 'var(--text-sm)', marginBottom: 2 }}><InstitutionLink name={role.place} /></div>
         )}
         {period && (
           <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>{period}</div>
@@ -1872,7 +1877,7 @@ function RoleItem({ role }) {
         {periods && <span className="text-xs text-light">{periods}</span>}
       </div>
       {role.place && (
-        <span className="text-sm text-muted">{role.place}</span>
+        <span className="text-sm text-muted"><InstitutionLink name={role.place} /></span>
       )}
       {role.reason && (
         <span className="text-sm" style={{ fontStyle: 'italic', color: 'var(--color-text-muted)' }}>{role.reason}</span>
