@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { InstitutionLink } from '../components/InstitutionLink'
 import { Layout } from '../components/Layout'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { LinkPreview } from '../components/LinkPreview'
@@ -194,7 +195,10 @@ export function RolePage() {
                   return (
                     <div key={r.id} style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'baseline' }}>
                       {showName && <Link to={`/rolle/${r.role_id}`}>{r.value}</Link>}
-                      {[r.place, period].filter(Boolean).join(' · ') || (!showName && '—')}
+                      {r.place && <InstitutionLink name={r.place} />}
+                      {r.place && period && ' · '}
+                      {period}
+                      {!r.place && !period && !showName && '—'}
                       <AcquiredBadge value={r.acquired_by} />
                       {orig && <span style={{ fontStyle: 'italic', color: 'var(--color-text-light)', fontSize: 'var(--text-xs)' }}>i kilden: «{orig}»</span>}
                     </div>
