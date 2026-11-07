@@ -795,6 +795,11 @@ function PrimaryOccupation({ roles, isLiving }) {
 const TAG_RE = /<a\s+href="([^"]*)"[^>]*>(.*?)<\/a>/gi
 
 function renderBiographyParagraph(text, paraKey) {
+  return <p key={paraKey}>{renderLinkedText(text)}</p>
+}
+
+// Gjør <a href="/person/I…">Navn</a> i fritekst (biografi, hendelsesnotater) om til lenker.
+function renderLinkedText(text) {
   const parts = []
   let lastIndex = 0
   let match
@@ -815,7 +820,7 @@ function renderBiographyParagraph(text, paraKey) {
   if (lastIndex < text.length) {
     parts.push(text.slice(lastIndex))
   }
-  return <p key={paraKey}>{parts}</p>
+  return parts
 }
 
 const MEDIA_CATEGORY_LABELS = {
@@ -1324,7 +1329,7 @@ function TimelineEventRow({ event }) {
         )}
         {note && isContextualNote(note) && (
           <div style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', marginTop: 1 }}>
-            {note}
+            {renderLinkedText(note)}
           </div>
         )}
       </div>
@@ -1772,7 +1777,7 @@ function UtdannelseFactCard({ fact }) {
         )}
         {fact.notes && isContextualNote(fact.notes) && (
           <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)', fontStyle: 'italic' }}>
-            {fact.notes}
+            {renderLinkedText(fact.notes)}
           </div>
         )}
       </div>
