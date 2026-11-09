@@ -1103,6 +1103,7 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles
       placeContext,
       placeTitle,
       source,
+      factType: type,
     })
   })
 
@@ -1174,16 +1175,34 @@ function buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles
 
 function sortYearEvents(events) {
   return [...events].sort((a, b) => {
-    // Nyeste først innen året; hendelser uten måned/dag havner nederst
-    const am = a.month || 0, bm = b.month || 0
-    const ad = a.day || 0, bd = b.day || 0
+    // Nyeste først innen året; hendelser uten måned/dag havner nederst.
+    // Udaterte hendelser som er forankret til en annen (f.eks. gravferd → død)
+    // sorteres med ankerets dato og legges rett over det (de skjedde etterpå).
+    const am = a.sortMonth ?? a.month ?? 0, bm = b.sortMonth ?? b.month ?? 0
+    const ad = a.sortDay ?? a.day ?? 0, bd = b.sortDay ?? b.day ?? 0
     if (am !== bm) return bm - am
-    return bd - ad
+    if (ad !== bd) return bd - ad
+    return (b.afterAnchor ? 1 : 0) - (a.afterAnchor ? 1 : 0)
+  })
+}
+
+// Udaterte hendelser som naturlig følger en annen hendelse: plasseres etter ankeret
+// i stedet for nederst i tidslinjen.
+const TIMELINE_ANCHORS = { BURI: 'DEAT', CHR: 'BIRT', BAPM: 'BIRT' }
+
+function anchorUndatedEvents(events) {
+  const firstDated = type => events.find(e => e.factType === type && e.year)
+  return events.map(e => {
+    if (e.year || !e.factType) return e
+    const anchorType = TIMELINE_ANCHORS[e.factType]
+    const anchor = anchorType && firstDated(anchorType)
+    if (!anchor) return e
+    return { ...e, year: anchor.year, sortMonth: anchor.month || 0, sortDay: anchor.day || 0, afterAnchor: true }
   })
 }
 
 function TimelineSection({ facts, families, spouseNamesMap, childBirths, roles }) {
-  const events = buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles)
+  const events = anchorUndatedEvents(buildTimelineEvents(facts, families, spouseNamesMap, childBirths, roles))
   if (!events.length) return null
 
   // Grupper etter år
